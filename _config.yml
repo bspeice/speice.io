@@ -17,7 +17,7 @@ isso_url: "https://comments.speice.io/"
 # Build settings
 include: [_pages]
 markdown: kramdown
-permalink: /:year/:month/:title
+permalink: /:year/:month/:title.html
 
 sass:
     style: compressed
