@@ -26,8 +26,8 @@ that go into making it useful beyond just the [datetime](https://docs.python.org
 module. `dateutil.parser` specifically is code to take all the super-weird time formats people
 come up with and turn them into something actually useful.
 
-Date/time parsing, it turns out, is just like everything else(https://zachholman.com/talk/utc-is-enough-for-everyone-right)
-involving(https://i.redd.it/syw7q6gc77f01.jpg) [computers](https://infiniteundo.com/post/25326999628/falsehoods-programmers-believe-about-time)
+Date/time parsing, it turns out, is just like everything else involving
+[computers](https://infiniteundo.com/post/25326999628/falsehoods-programmers-believe-about-time)
 and [time](https://infiniteundo.com/post/25509354022/more-falsehoods-programmers-believe-about-time):
 it feels like it shouldn't be that difficult to do, until you try to do it,
 and you realize that people suck and this is why [we can't we have nice things](https://zachholman.com/talk/utc-is-enough-for-everyone-right).
