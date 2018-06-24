@@ -63,7 +63,7 @@ you're more looking for typos.
 Also, **don't use nice Rust things like enums**. While 
 [one time it worked out OK for me](https://github.com/bspeice/dtparse/blob/7d565d3a78876dbebd9711c9720364fe9eba7915/src/lib.rs#L88-L94),
 I also managed to shoot myself in the foot a couple times because `dateutil` stores AM/PM as a boolean
-and I got mixed up on the enum trying to figure out which AM and PM were (side note: AM is false, PM is true).
+and I mixed up which was true, and which was false (side note: AM is false, PM is true).
 In general, writing nice code *should not be a first-pass priority* when you're just trying to recreate
 the same functionality.
 
@@ -77,13 +77,14 @@ take a while to verify.
 As another Python quirk, **be very careful about [long nested if-elif-else blocks](https://github.com/dateutil/dateutil/blob/16561fc99361979e88cccbd135393b06b1af7e90/dateutil/parser/_parser.py#L494-L568)**.
 I used to think that Python's whitespace was just there
 to get you to format your code correctly. I think that no longer. It's way too easy
-to close an extra block and have incredibly weird issues in the logic.
+to close a block too early and have incredibly weird issues in the logic. Make sure you use an editor that displays
+indentation levels so you can keep things straight.
 
 **Rust macros are not free.** I originally had the
 [main test body](https://github.com/bspeice/dtparse/blob/b0e737f088eca8e83ab4244c6621a2797d247697/tests/compat.rs#L63-L217)
 wrapped up in a macro using [pyo3](https://github.com/PyO3/PyO3). It took two minutes to compile. After
 [moving things to a function](https://github.com/bspeice/dtparse/blob/e017018295c670e4b6c6ee1cfff00dbb233db47d/tests/compat.rs#L76-L205)
-compile times dropped down to ~5 seconds. Turns out 150 lines * 100 tests = a lot of redundant code.
+compile times dropped down to ~5 seconds. Turns out 150 lines * 100 tests = a lot of redundant code to be compiled.
 My new rule of thumb is that any macros longer than 10-15 lines are actually functions that need to be liberated, man.
 
 Finally, **I really miss list comprehensions and dictionary comprehensions.**
@@ -100,8 +101,8 @@ On more than one occasion though, I've had issues navigating the Rust ecosystem.
 
 What I'll call the "canonical library" is still being built. In Python, if you need datetime parsing,
 you use `dateutil`. If you want `decimal` types, it's already in the
-[standard library](https://docs.python.org/3.6/library/decimal.html). The way `dateutil` uses decimals
-probably isn't strictly necessary, but I wanted to follow the principle of **stay as close to the original library as possible**.
+[standard library](https://docs.python.org/3.6/library/decimal.html). While I might've gotten away with `f64`,
+`dateutil` uses decimals, and I wanted to follow the principle of **staying as close to the original library as possible**.
 Thus began my quest to find a decimal library in Rust. What I quickly found was summarized
 in a comment:
 
@@ -119,7 +120,7 @@ to figure out if the library I'm look at is dead or just stable.
 
 And even when the "canonical library" exists, there's no guarantees that it will be well-maintained.
 [Chrono](https://github.com/chronotope/chrono) is the *de facto* date/time library in Rust,
-and just released version 0.4.3 like a week ago. Meanwhile, [chrono-tz](https://github.com/chronotope/chrono-tz)
+and just released version 0.4.3 like two weeks ago. Meanwhile, [chrono-tz](https://github.com/chronotope/chrono-tz)
 appears to be dead in the water even though [there are people happy to help maintain it](https://github.com/chronotope/chrono-tz/issues/19).
 I know relatively little about it, but it appears that most of the release process is automated; keeping
 that up to date should be a no-brainer.
@@ -136,7 +137,7 @@ and close the issue without resolution if I hear nothing back after a month.
 
 The second point I think has the potential to be a bit controversial, so I'm happy to receive feedback on that.
 And if a contributor responds with "hey, still working on it, had a kid and I'm running on 30 seconds of sleep a night,"
-then first congratulations on sustaining human life, and second I don't mind keeping those going indefinitely.
+then first: congratulations on sustaining human life. And second: I don't mind keeping those requests going indefinitely.
 I just want to try and balance keeping things moving with giving people the necessary time they need.
 
 I should also note that I'm still getting some best practices in place - CONTRIBUTING and CONTRIBUTORS files
@@ -153,7 +154,7 @@ coreutils rewrite going on, and `dtparse` would potentially be an interesting ca
 doesn't bring in a lot of extra dependencies. [`humantime`](https://crates.io/crates/humantime)
 could help pick up some of the (current) slack in dtparse, so maybe we can share and care with each other?
 
-All in all, I'm mostly hoping that nobody's already done this and I've spent a bit over a month
+All in all, I'm mostly hoping that nobody's already done this and I haven't spent a bit over a month
 on redundant code. So if it exists, tell me. I need to know, but be nice about it, because I'm going to take it hard.
 
 And in the mean time, I'm looking forward to building more. Onwards.
