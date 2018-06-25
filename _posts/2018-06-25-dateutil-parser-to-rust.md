@@ -120,7 +120,7 @@ to figure out if the library I'm look at is dead or just stable.
 
 And even when the "canonical library" exists, there's no guarantees that it will be well-maintained.
 [Chrono](https://github.com/chronotope/chrono) is the *de facto* date/time library in Rust,
-and just released version 0.4.3 like two weeks ago. Meanwhile, [chrono-tz](https://github.com/chronotope/chrono-tz)
+and just released version 0.4.4 like two days ago. Meanwhile, [chrono-tz](https://github.com/chronotope/chrono-tz)
 appears to be dead in the water even though [there are people happy to help maintain it](https://github.com/chronotope/chrono-tz/issues/19).
 I know relatively little about it, but it appears that most of the release process is automated; keeping
 that up to date should be a no-brainer.
