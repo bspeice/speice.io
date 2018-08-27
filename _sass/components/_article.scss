@@ -32,6 +32,11 @@
     color: $c-base__02;
 }
 
+.c-article__description {
+    @include fs--heading-2;
+    color: $c-base__01;
+}
+
 .c-article__time {
     @include fs--body;
     color: $c-base__01;
