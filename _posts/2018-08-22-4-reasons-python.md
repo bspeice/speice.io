@@ -6,8 +6,6 @@ category:
 tags: []
 ---
 
-<span style="font-size:.7em">*but are super technical and not very convincing.*</span>
-
 I'm going to put on my hipster hot takes hat for a moment:
 
 *I think Python has kinda made some mistakes.*

@@ -6,8 +6,6 @@ category:
 tags: [rust, c, java, python, x86]
 ---
 
-*but mostly weird.*
-
 I wrote a really small Rust program a while back that I was 100% convinced couldn't possibly run:
 
 ```rust
