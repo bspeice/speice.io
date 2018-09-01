@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Rust's Primitives are Weird (and Cool)"
+title: "Primitives in Rust are Weird (and Cool)"
 description: "but mostly weird."
 category: 
 tags: [rust, c, java, python, x86]
