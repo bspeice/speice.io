@@ -62,6 +62,11 @@ task :check do
 	puts `htmlproofer --assume-extension --alt-ignore '/.*/' ./_site`
 end
 
+desc 'Deploy site'
+task :deploy do
+  sh 'jgd -b deploy'
+end
+
 # Usage: rake post title="A Title" [date="2012-02-09"] [tags=[tag1,tag2]] [category="category"]
 desc "Begin a new post in #{CONFIG['posts']}"
 task :post do
