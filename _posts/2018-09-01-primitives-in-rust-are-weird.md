@@ -18,7 +18,7 @@ fn main() {
 And to my complete befuddlement, it compiled, ran, and produced a completely sensible output.
 The reason I was so surprised has to do with how Rust treats a special category of things
 I'm going to call *primitives*. In the current version of the Rust book, you'll see them
-referred to as [scalars](rust_scalar), and in older versions they'll be called [primitives](rust_primitive),
+referred to as [scalars][rust_scalar], and in older versions they'll be called [primitives][rust_primitive],
 but we're going to stick with the name *primitive* for the time being. Explaining
 why this program is so cool requires talking about a number of other programming languages,
 and keeping a consistent terminology makes things easier.
@@ -243,7 +243,7 @@ impl MyVal {
 pub fn main() {
     let my_val = MyVal { x: 8 };
 
-    // THESE ARE TOTALLY EQUIVALENT
+    // THESE ARE THE SAME
     my_val.to_string();
     MyVal::to_string(&my_val);
 }
@@ -311,7 +311,5 @@ as a quirky feature of Rust's type system, `8.to_string()` is actually valid cod
 Now go forth and fool your friends into thinking you know assembly. This is all I've got.
 
 [x86_guide]: http://www.cs.virginia.edu/~evans/cs216/guides/x86.html
-[java_primitive]: https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html
-[compiler_explorer]: https://godbolt.org/
 [rust_scalar]: https://doc.rust-lang.org/book/second-edition/ch03-02-data-types.html#scalar-types
 [rust_primitive]: https://doc.rust-lang.org/book/first-edition/primitive-types.html
