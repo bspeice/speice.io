@@ -1,12 +1,13 @@
 ---
 layout: post
-title: "Rust's primitives are Weird (and cool)"
+title: "Rust's Primitives are Weird (and Cool)"
 description: "but mostly weird."
 category: 
 tags: [rust, c, java, python, x86]
 ---
 
-I wrote a really small Rust program a while back that I was 100% convinced couldn't possibly run:
+I wrote a really small Rust program a while back because I was curious. I was 100% convinced it
+couldn't possibly run:
 
 ```rust
 fn main() {
@@ -14,7 +15,7 @@ fn main() {
 }
 ```
 
-And to my complete befuddlement, it compiled, it ran, and it produced a completely sensible output.
+And to my complete befuddlement, it compiled, ran, and produced a completely sensible output.
 The reason I was so surprised has to do with how Rust treats a special category of things
 I'm going to call *primitives*. In the current version of the Rust book, you'll see them
 referred to as [scalars](rust_scalar), and in older versions they'll be called [primitives](rust_primitive).
@@ -23,24 +24,13 @@ why this program is so cool requires talking about a number of other programming
 and keeping a consistent terminology makes things easier.
 
 **You've been warned:** this is going to be a tedious post about a relatively minor issue that involves
-a quick jaunt all the way through Java, Python, C, and x86 Assembly, but demonstrates a really cool
-way that Rust thinks differently about the world.
-
-But because I'm not a monster, here's someone else who's just as excited as you are to learn about
-primitives:
-
-![Excited dog](/assets/images/rust-primitives/excited.jpg)
-> [Unreasonably excited doggo][excited_doggo]
+Java, Python, C, and x86 Assembly. And also me pretending like I know what I'm talking about with assembly.
 
 # Defining primitives (Java)
 
-My day job is in Java. I'm continually amazed by how much of the world runs on Java,
-and somehow manages to continue functioning. Like, it can't be that good, because nothing
-in Computer Science functions that well. And yet, Java is maybe one of the few things
-CS people can high-five and say "you know what, we did a good thing."
-
-But that's not what this post is about. In Java, there's a special name for
-some specific types of values:
+The reason I'm using the name *primitive* comes from how much of my life is Java right now.
+Spoiler alert: a lot of it. And for the most part I like Java, but I digress. In Java, there's a
+special name for some specific types of values:
 
 > ```
 bool    char    byte
@@ -72,12 +62,14 @@ Main.java:5: error: int cannot be dereferenced
 1 error
 ```
 
-The reason for this error is that only things inheriting from
-[`Object`](https://docs.oracle.com/javase/9/docs/api/java/lang/Object.html)
-can have instance methods, and the primitive types do not in fact inherit this.
+Specifically, Java considers [`Object`](https://docs.oracle.com/javase/10/docs/api/java/lang/Object.html)
+and things that inherit from it as pointers, and thus we have to dereference the pointer
+before the fields and methods it defines can be used. In contrast, *primitive types are just values* -
+there's nothing to be dereferenced. In memory, they're just a sequence of bits.
+
 If we really want, we can turn the `int` into an
-[`Integer`](https://docs.oracle.com/javase/9/docs/api/java/lang/Integer.html) and then
-turn that into a `String` and print it, but that seems like a lot of work:
+[`Integer`](https://docs.oracle.com/javase/10/docs/api/java/lang/Integer.html) and then
+dereference it, but it's a bit wasteful:
 
 ```java
 class Main {
@@ -89,23 +81,15 @@ class Main {
 }
 ```
 
-This allows us to create the variable `y` of type `Integer`, and at run time peek into `y`
-to locate the `toString()` function and call it.
-
-So why do we have to jump through the extra hoops for this? The reason is partially that Java
-treats the primitive values as just a "bag of bits"; there are no functions to call, no references
-to maintain, it's just a set number of bits to represent a value. If you call a function using
-`int` or `long` as an argument, internally Java will copy the bits across and your original value
-can't be modified.
-
-And if Rust has a similar "bag of bits" representation for its primitives (spoiler alert: it does),
-that gives us our first question: how does Rust get away with calling the equivalent of instance methods?
+This creates the variable `y` of type `Integer` (which inherits `Object`), and at run time we
+dereference `y` to locate the `toString()` function and call it. Rust obviously handles things a bit
+differently, but we have to look at some low-level details to see how differently it actually is.
 
 # Low Level Handling of Primitives (C)
 
-Now, I still want to show off the "bag of bits" representation of primitives in Rust. But to do that,
-we have to expose a bit of how your computer thinks about those values. Let's consider the following
-code in C:
+We first need to build a foundation for reading and understanding the assembly code the
+final answer involves. Let's begin with showing how the `C` language (and your computer)
+thinks about "primitive" values in memory:
 
 ```c
 void my_function(int num) {}
@@ -116,21 +100,26 @@ int main() {
 }
 ```
 
-And to drive the point home (and pretend like I understand assembly), let's take a look at the result
-using the [compiler explorer](https://godbolt.org/z/lgNYcc): <span style="font-size:.6em">whose output has been lightly edited</span>
+The [compiler explorer](https://godbolt.org/z/lgNYcc) gives us an easy way of showing off
+the assembly-level code that's generated: <span style="font-size:.6em">whose output has been lightly edited</span>
 
-```
+```nasm
 main:
         push    rbp
         mov     rbp, rsp
         sub     rsp, 16
+
         ; We assign the value `8` to `x` here
         mov     DWORD PTR [rbp-4], 8
+
         ; And copy the bits making up `x` to a location
-        ; `my_function` can access
+        ; `my_function` can access (`edi`)
         mov     eax, DWORD PTR [rbp-4]
         mov     edi, eax
+
+        ; Call `my_function` and give it control
         call    my_function
+
         mov     eax, 0
         leave
         ret
@@ -138,17 +127,18 @@ main:
 my_function:
         push    rbp
         mov     rbp, rsp
-        ; Copy the bits out of the pre-determined location
+
+        ; Copy the bits out of the pre-determined location (`edi`)
         ; to somewhere we can use
         mov     DWORD PTR [rbp-4], edi
         nop
+
         pop     rbp
         ret
 ```
 
-At a really low level of memory, we're copying bits around; nothing crazy. That's what the `mov` instruction
-is intended to do (use [this][x86_guide] as a reference). But to show how similar Rust is, let's take a look at the equivalent
-Rust code in the [compiler explorer](https://godbolt.org/z/cAlmk0): <span style="font-size:.6em">again, lightly edited</span>
+At a really low level of memory, we're copying bits around using the [`mov`][x86_guide] instruction; nothing crazy.
+But to show how similar Rust is, let's take a look at our program translated from C to Rust: 
 
 ```rust
 fn my_function(x: i32) {}
@@ -159,38 +149,48 @@ fn main() {
 }
 ```
 
-```
+And the assembly generated when we stick it in the [compiler explorer](https://godbolt.org/z/cAlmk0):
+<span style="font-size:.6em">again, lightly edited</span>
+
+```nasm
 example::main:
   push rax
+
   ; Look familiar? We're copying bits to a location for `my_function`
   ; The compiler just optimizes out holding `x` in memory
   mov edi, 8
+
+  ; Call `my_function` and give it control
   call example::my_function
+
   pop rax
   ret
 
 example::my_function:
   sub rsp, 4
+
   ; And copying those bits again, just like in C
   mov dword ptr [rsp], edi
+
   add rsp, 4
   ret
 ```
 
-The generated Rust looks almost identical to C, and is the same as how Java thinks of primitives: just bits in memory.
+The generated Rust assembly is functionally pretty close to the C assembly (and Java as well):
+*When working with primitives, we're just dealing with bits in memory*. 
 
-And now that we're a bit more familiar with the low-level representation of primitives, it's time to answer:
-how exactly does Rust manage to compile `8.to_string()`?
+In Java we have to dereference a pointer to call its functions; in Rust, there's no pointer to dereference. So what
+exactly is going on with this `.to_string()` function call?
 
 # impl primitive (and Python)
 
-Now it's time to reveal my <strike>trap card</strike> <strike>dirty secret</strike> revelation: *Rust has
+Now it's time to <strike>reveal my trap card</strike> show the revelation that tied all this together: *Rust has
 implementations for its primitive types.* That's right, `impl` blocks aren't only for `structs` and `traits`,
 primitives get them too. Don't believe me? Check out [u32](https://doc.rust-lang.org/std/primitive.u32.html),
 [f64](https://doc.rust-lang.org/std/primitive.f64.html) and [char](https://doc.rust-lang.org/std/primitive.char.html)
 as examples.
 
-But the really interesting bit is how Rust turns the code we started with into assembly. Let's break out the
+But the really interesting bit is how Rust turns those `impl` blocks into assembly. Let's break out the
 [compiler explorer](https://godbolt.org/z/6LBEwq) once again:
 
 ```rust
@@ -199,31 +199,32 @@ pub fn main() {
 }
 ```
 
-And the interesting bits in the assembly:
+And the interesting bits in the assembly: <span style="font-size:.6em">heavily trimmed down</span>
 
-```
+```nasm
 example::main:
   sub rsp, 24
   mov rdi, rsp
   lea rax, [rip + .Lbyte_str.u]
   mov rsi, rax
+  
   ; Bombshell right here
   call <T as alloc::string::ToString>::to_string@PLT
+
   mov rdi, rsp
   call core::ptr::drop_in_place
   add rsp, 24
   ret
 ```
 
-Now, this assembly is far more complicated, but here's the big revelation: **we're calling
-`to_string()` as a function that isn't bound to the instance of `8`**. Instead of thinking
-of the value 8 as an instance of `u32` and then peeking in to find the location of the function
-we want to call, we have a function that exists outside of the instance and just give
-that function the value `8`.
+Now, this assembly is a bit more complicated, but here's the big revelation: **we're calling
+`to_string()` as a function that exists all on its own, and giving it the instance of `8`**.
+Instead of thinking of the value 8 as an instance of `u32` and then peeking in to find
+the location of the function we want to call (like Java), we have a function that exists
+outside of the instance and just give that function the value `8`.
 
 This is an incredibly technical detail, but the interesting idea I had was this:
-*if `to_string()` is a static function, can I refer to the unbound function and give
-it an instance?*
+*if `to_string()` is a static function, can I refer to the unbound function and give it an instance?*
 
 Better explained in code (and a [compiler explorer](https://godbolt.org/z/fJY-gA) link
 because I seriously love this thing):
@@ -242,7 +243,7 @@ impl MyVal {
 pub fn main() {
     let my_val = MyVal { x: 8 };
 
-    // THESE ARE THE SAME
+    // THESE ARE TOTALLY EQUIVALENT
     my_val.to_string();
     MyVal::to_string(&my_val);
 }
@@ -252,7 +253,7 @@ Rust is totally fine "binding" the function call to the instance, and also as a 
 
 MIND == BLOWN.
 
-Python does something equivalent where I can both call functions bound to their instances
+Python does the same thing where I can both call functions bound to their instances
 and also call as an unbound function where I give it the instance:
 
 ```python
@@ -268,9 +269,9 @@ m.my_function()
 MyClass.my_function(m)
 ```
 
-That said, Python still doesn't treat "primitives" as things that can have instance methods:
+And Python tries to make you *think* that primitives can have instance methods...
 
-```
+```python
 >>> dir(8)
 ['__abs__', '__add__', '__and__', '__class__', '__cmp__', '__coerce__',
 '__delattr__', '__div__', '__divmod__', '__doc__', '__float__', '__floordiv__',
@@ -285,7 +286,14 @@ That said, Python still doesn't treat "primitives" as things that can have insta
     8.__str__()
              ^
 SyntaxError: invalid syntax
+
+>>> # It will run if we assign it first though:
+>>> x = 8
+>>> x.__str__()
+'8'
 ```
+
+...but in practice it's a bit complicated.
 
 So while Python handles binding instance methods in a way similar to Rust, it's still not able
 to run the example we started with.
@@ -293,19 +301,16 @@ to run the example we started with.
 # Conclusion
 
 This was a super-roundabout way of demonstrating it, but the way Rust handles incredibly minor details
-like primitives is one of the reasons I enjoy the language. It's optimized like C in how it lays out
-memory and is efficient ("bag of bits" representation). And it still has a lot of
-the nice features I like in Python that make it easy to work with the language (late/static binding).
+like primitives leads to really cool effects. Primitives are optimized like C in how they have a
+space-efficient memory layout, yet the language still has a lot of features I enjoy in Python
+(like both instance and late binding).
 
-And even given that, there are still areas where Rust shines that none of the other languages discussed do;
-as a kinda quirky feature of Rust's type system, `8.to_string()` is actually valid code.
+And when you put it together, there are areas where Rust does cool things nobody else can;
+as a quirky feature of Rust's type system, `8.to_string()` is actually valid code.
 
-There aren't too many grand lessons to be learned from this, the behavior I'm talking about is
-a relatively minor detail in the grand picture. But it's still something I learned where Rust
-just gets the details right, and I love it.
+Now go forth and fool your friends into thinking you know assembly. This is all I've got.
 
 [x86_guide]: http://www.cs.virginia.edu/~evans/cs216/guides/x86.html
-[excited_doggo]: https://flic.kr/p/2jr8Zp
 [java_primitive]: https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html
 [compiler_explorer]: https://godbolt.org/
 [rust_scalar]: https://doc.rust-lang.org/book/second-edition/ch03-02-data-types.html#scalar-types
