@@ -18,8 +18,8 @@ fn main() {
 And to my complete befuddlement, it compiled, ran, and produced a completely sensible output.
 The reason I was so surprised has to do with how Rust treats a special category of things
 I'm going to call *primitives*. In the current version of the Rust book, you'll see them
-referred to as [scalars](rust_scalar), and in older versions they'll be called [primitives](rust_primitive).
-We're going to stick with the name *primitive* for the time being though because to explain
+referred to as [scalars](rust_scalar), and in older versions they'll be called [primitives](rust_primitive),
+but we're going to stick with the name *primitive* for the time being. Explaining
 why this program is so cool requires talking about a number of other programming languages,
 and keeping a consistent terminology makes things easier.
 
@@ -39,7 +39,7 @@ float   double
 ```
 
 They are referred to as [primitives][java_primitive]. And relative to the other bits of Java,
-they have two super-cool features. First, they don't have to worry about the
+they have two unique features. First, they don't have to worry about the
 [billion-dollar mistake](https://en.wikipedia.org/wiki/Tony_Hoare#Apologies_and_retractions);
 primitives in Java can never be `null`. Second: *they can't have instance methods*.
 Remember that Rust program from earlier? Java has no idea what to do with it:
@@ -62,9 +62,9 @@ Main.java:5: error: int cannot be dereferenced
 1 error
 ```
 
-Specifically, Java considers [`Object`](https://docs.oracle.com/javase/10/docs/api/java/lang/Object.html)
-and things that inherit from it as pointers, and thus we have to dereference the pointer
-before the fields and methods it defines can be used. In contrast, *primitive types are just values* -
+Specifically, Java's [`Object`](https://docs.oracle.com/javase/10/docs/api/java/lang/Object.html)
+and things that inherit from it are pointers under the hood, and we have to dereference them before
+the fields and methods they define can be used. In contrast, *primitive types are just values* -
 there's nothing to be dereferenced. In memory, they're just a sequence of bits.
 
 If we really want, we can turn the `int` into an
@@ -83,12 +83,12 @@ class Main {
 
 This creates the variable `y` of type `Integer` (which inherits `Object`), and at run time we
 dereference `y` to locate the `toString()` function and call it. Rust obviously handles things a bit
-differently, but we have to look at some low-level details to see how differently it actually is.
+differently, but we have to dig into the low-level details to see it in action.
 
 # Low Level Handling of Primitives (C)
 
 We first need to build a foundation for reading and understanding the assembly code the
-final answer involves. Let's begin with showing how the `C` language (and your computer)
+final answer requires. Let's begin with showing how the `C` language (and your computer)
 thinks about "primitive" values in memory:
 
 ```c
@@ -176,7 +176,7 @@ example::my_function:
   ret
 ```
 
-The generated Rust assembly is functionally pretty close to the C assembly (and Java as well):
+The generated Rust assembly is functionally pretty close to the C assembly:
 *When working with primitives, we're just dealing with bits in memory*. 
 
 In Java we have to dereference a pointer to call its functions; in Rust, there's no pointer to dereference. So what
@@ -208,7 +208,7 @@ example::main:
   lea rax, [rip + .Lbyte_str.u]
   mov rsi, rax
   
-  ; Bombshell right here
+  ; Cool stuff right here
   call <T as alloc::string::ToString>::to_string@PLT
 
   mov rdi, rsp
