@@ -311,5 +311,6 @@ as a quirky feature of Rust's type system, `8.to_string()` is actually valid cod
 Now go forth and fool your friends into thinking you know assembly. This is all I've got.
 
 [x86_guide]: http://www.cs.virginia.edu/~evans/cs216/guides/x86.html
+[java_primitive]: https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html
 [rust_scalar]: https://doc.rust-lang.org/book/second-edition/ch03-02-data-types.html#scalar-types
 [rust_primitive]: https://doc.rust-lang.org/book/first-edition/primitive-types.html
