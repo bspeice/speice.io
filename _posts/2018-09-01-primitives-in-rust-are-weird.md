@@ -11,7 +11,7 @@ couldn't possibly run:
 
 ```rust
 fn main() {
-    println("{}", 8.to_string())
+    println!("{}", 8.to_string())
 }
 ```
 
