@@ -1,102 +1,119 @@
 ---
 layout: post
 title: "Isomorphic Desktop Apps with Rust"
-description: "and other buzzwords"
+description: "Electron + WASM = ☣"
 category: 
-tags: [rust, javascript]
+tags: [rust, javascript, webassembly]
 ---
 
-Forgive me, but this is going to be a bit of a schizophrenic post. I both absolutely hate Javascript
-and the modern ECMAScript ecosystem, and I'm stunned by its success at doing some things I think
-are really cool. And it's this duality that led me to a couple of nights up at 2 AM over the past
-weeks trying to reconcile myself.
+Forgive me, but this is going to be a bit of a schizophrenic post. I both despise Javascript and the
+modern ECMAScript ecosystem, and I'm stunned by its success at doing some things I think are really cool.
+And it's [this duality](https://www.destroyallsoftware.com/talks/the-birth-and-death-of-javascript)
+that led me to a couple of (very) late nights over the past weeks trying to reconcile myself.
 
 See, as much as [Webassembly isn't trying to replace Javascript](https://webassembly.org/docs/faq/#is-webassembly-trying-to-replace-javascript),
-**I want to replace Javascript**. I cringe every time I hear the word "Webpack",
-and I think it's hilarious that the [language specification](https://ecma-international.org/publications/standards/Ecma-402.htm)
-dramatically outpaces anyone's ability [to actually implement](https://kangax.github.io/compat-table/es2016plus/)
-the specification. The answer to this conundrum is of course to have a "polyfill" that actually recompiles
+**I want Javascript gone**. There are plenty of people who do not share my views, and they are probably
+nicer and more fun at parties. But I cringe every time "Webpack" is mentioned, and I think it's hilarious
+that the [language specification](https://ecma-international.org/publications/standards/Ecma-402.htm)
+dramatically outpaces anyone's [actually implementing](https://kangax.github.io/compat-table/es2016plus/)
+the spec. The answer to this conundrum is of course to have a "polyfill" that translates
 code from newer versions of the language to older versions of the language. At least
-[Babel][babel] is a nice tongue-in-cheek reference.
+[Babel] is a nice tongue-in-cheek reference.
 
-And yet, for as much hate as [Electron][electron] receives, it does a stunningly good job at solving
+And yet, for as much hate as [Electron] receives, it does a stunningly good job at solving
 a really hard problem: *how the hell do I put a button on the screen and react when the user clicks it*?
 GUI programming is hard, straight up. But if browsers are already able to run everywhere, why don't
-we take advantage of someone else solving the hard problems for us? Don't reinvent wheels. I hate
-that I have to use Javascript for it, but I apparently don't hate Javascript enough to want to
-whip out good ol' [wxWidgets][wxwidgets].
+we take advantage of someone else solving the hard problems for us? Don't reinvent wheels. I don't like
+that I have to use Javascript for it, but I apparently don't mind Javascript enough that I feel inclined to
+whip out good ol' [wxWidgets].
 
-Now, there are other "native" solutions ([libui-rs][libui-rs], [conrod][conrod], [oh hey wxWdidgets again!][wxRust]),
+Now, there are other "native" solutions ([libui-rs], [conrod], [oh hey wxWdidgets again!][wxRust]),
 but those also potentially have their own issues with distribution, styling, etc.
 With Electron, I can `yarn create electron-app my-app` and just get going, knowing that distribution/upgrades/etc.
 are built in.
 
-So the question I want to answer is: **Are we Electron yet**?
+So the question is: given recent innovations with WASM, *are we Electron yet*?
 
-<span style="color:white;">No. No we are not.</span>
+No, not really.
 
-# Technology Survey
+Instead, **what would it take to get to a point where we can skip Javascript in Electron apps?**
 
-The truth is, WASM/Webassembly is a pretty new technology, and there aren't a lot of nice tools. I knew going in
-that there were going to be some rough edges, but was curious to see what could be done. Before I get to that
-though, I need to explain a little bit of what the state of play is. **If you're already familiar with the WASM ecosystem,
-[skip ahead a bit](#building-an-electron-app).**
+# Setting the Stage
 
-First things first, we're going to skip [asm.js][asm.js] and [emscripten][emscripten]. Truth be told, I couldn't
-get either of these to produce a usable binary, and so I'm just going to say [here be dragons.][https://en.wikipedia.org/wiki/Here_be_dragons]
+Truth is, WASM/Webassembly is a pretty new technology and I'm generally unfamiliar with the tools.
+There may already be solutions to the issues I discuss, but I'm totally unaware of them,
+so I'm going to try and organize what I know exists.
 
-So how does one go about producing a "Webassembly"? That's done by compiling to a separate *target*.
-First, make sure the target is installed:
+I should also mention that the content and things I'm talking about here are not intended to be prescriptive,
+but more "if someone else is interested, where should you start?" *I expect everything in this post to be irrelevant
+within two months.* Even over the course of writing this, [a blog post](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/)
+was invalidated because [upstream changes](https://github.com/WebAssembly/binaryen/pull/1642)
+broke [a Rust tool](https://github.com/rustwasm/wasm-bindgen/pull/787) that ultimately
+[forced changes in the blog post](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/#comment-477).
+**And all that happened within the span of a week.** Things are moving quickly.
 
+I'll also note that we're going to skip [asm.js] and [emscripten]. Truth be told, I couldn't get either of these
+to produce anything, and so I'm just going to say [here be dragons.](https://en.wikipedia.org/wiki/Here_be_dragons)
+Everything I'm discussing here is using the `wasm32-unknown-unknown` target.
+
+And the code that I *did* get running is available [over here](https://github.com/bspeice/isomorphic_rust).
+Feel free to use that as a starting point, but I'm mostly including the link as a reference point for the things
+that do and don't work.
+
+# An Example Running Application
+
+So, I did *technically* get a running application:
+
+![Electron app using WASM](/assets/images/2018-09-08-electron-percy-wasm.png)
+
+...which you can also try out if you want to:
+
+```sh
+git clone https://github.com/bspeice/isomorphic_rust.git
+cd isomorphic_rust/percy
+yarn install && yarn start
 ```
-rustup install nightly # Just trust me on this one
-rustup target add wasm32-unknown-unknown
-```
 
-And then we can build the project with:
+...but I really wouldn't use this as a "high quality" starting point. It's mostly just there
+to prove that this is possible in the first place. And that's something to be proud of!
+There's a huge amount of engineering that went into showing a window with the text "It's alive!".
 
-```
-cargo +nightly build --target=wasm32-unknown-unknown
-```
+There's also a huge number of issues under the hood that prevent me from recommending anyone
+try using Electron and WASM at the moment, and I think that's the more important thing to discuss.
 
-Now, this produces a Webassembly/WASM file (in `target/wasm32-unknown-unknown/debug/`) that we can load in the
-browser. However, the resulting blob isn't really easy to use; you'd have to write a lot of extra code
-for Javascript to figure out what functions are actually usable. Fortunately, [wasm-bindgen][wasm-bindgen]
-handles a lot of that for you (and is part of why we need nightly). The end result is that we can
-easily allow Javascript to access Rust code.
+# Issues:
 
-This only gets you one-direction communication though. If you want to interact with Javascript,
-[js-sys][js-sys] acts as a "header" library; it tells the Rust compiler "no trust me, these functions
-will totally exist at runtime" and allows the compiler to generate your code.
+- Have to use wasm-bindgen so symbols get exported and are usable
+- Have to use webpack/babel after bindgen so we can compile to something that's usable in a browser
+- yew doesn't require wasm_bindgen, but doesn't link via webpack (env module) - think this is a stdweb issue
+- Electron forces us to deal with MIME types - open webpack issue
+- Incompatible low-level utilities - js-sys exists, but very fragmented with web-sys, stdweb, percy-webapis
+- Keeping wasm-bindgen-cli updated:
+    error: failed to extract wasm-bindgen custom sections
+        caused by:
 
-If you want to interact with the Browser the answer is a bit complicated at the moment.
-There are currently [three][stdweb] [different][percy-webapis] [libraries][web-sys]
-that seek to do that, and only one of them has made it past version `0.0.1` ([stdweb][stdweb], it's stdweb).
-That said, I expect [web-sys][web-sys] to be the long-term solution, so keep an eye on that one.
+    it looks like the Rust project used to create this wasm file was linked against
+    a different version of wasm-bindgen than this binary:
 
-But we don't want to just interact with the browser, we want to build an entire application.
-And since We Totally Need An Application Framework™, there are a couple of options available:
-[virtual-dom-rs][virtual-dom-rs] (a.k.a. [percy][percy]), and [yew][yew]. From what I gather,
-`virtual-dom-rs` is attempting to be [React][react], and `yew` is attempting to be [elm][elm].
+    rust wasm file: 0.2.21
+        this binary: 0.2.17
 
-Testing your applications is a bit tricky at the moment, and to be honest, I didn't manage to get that far.
-If you're brave though, [cargo-web][cargo-web] has some nice handling to actually run your tests
-inside a browser (we're using WASM, remember?). As a practical example, [percy][percy-test] has
-a unit test or two to demonstrate, but it's pretty basic so far.
+    Currently the bindgen format is unstable enough that these two version must
+    exactly match, so it's required that these two version are kept in sync by
+    either updating the wasm-bindgen dependency or this binary. You should be able
+    to update the wasm-bindgen dependency with:
 
-And while we won't cover it here, if you want to ship Webassembly code to NPM, you can do that
-via [wasm-pack][wasm-pack]. It attempts to handle some of the difficult bits so that people who want
-to use Javascript (not me) can get access to your code really easily.
+        cargo update -p wasm-bindgen
 
-So, that's a quick tour of the state of play. Things are in the early stages, so it's a bit difficult
-to figure out who's doing what and why they exist, but this hopefully at least sets the stage.
+    or you can update the binary with
 
-# Building an Electron App
+        cargo install -f wasm-bindgen-cli
 
-Now that you've managed to piece your way through a fragmented ecosystem ([not][gulpjs] [unlike][typescript]
-[current][vuejs] [ECMAScript](https://benmccormick.org/2015/09/14/es5-es6-es2016-es-next-whats-going-on-with-javascript-versioning/)),
-it's time to actually build an application. The code I'll be referring to is
-[over here](https://github.com/bspeice/isomorphic_rust).
+    if this warning fails to go away though and you're not sure what to do feel free
+    to open an issue at https://github.com/rustwasm/wasm-bindgen/issues!
+
+    error Command failed with exit code 1.
+    info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
 
 [wxwidgets]: https://wxwidgets.org/
 [libui-rs]: https://github.com/LeoTindall/libui-rs/
