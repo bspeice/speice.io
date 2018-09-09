@@ -1,7 +1,7 @@
 @font-face {
     font-family: 'Hasklig';
-    src: url('/assets/webfonts/hasklig-regular-webfont.woff2') format('woff2'),
-         url('hasklig-regular-webfont.woff') format('woff');
+    src: url('/assets/webfonts/hasklig-semibold-webfont.woff2') format('woff2'),
+         url('/assets/webfonts/hasklig-semibold-webfont.woff') format('woff');
     font-weight: normal;
     font-style: normal;
 
