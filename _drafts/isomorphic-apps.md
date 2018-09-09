@@ -88,7 +88,7 @@ try using Electron and WASM at the moment, and I think that's the more important
 - yew doesn't require wasm_bindgen, but doesn't link via webpack (env module) - think this is a stdweb issue
 - Electron forces us to deal with MIME types - open webpack issue
 - Incompatible low-level utilities - js-sys exists, but very fragmented with web-sys, stdweb, percy-webapis
-- Keeping wasm-bindgen-cli updated:
+- Can't include Cargo.lock so wasm-bindgen-cli is updated:
     error: failed to extract wasm-bindgen custom sections
         caused by:
 
@@ -114,6 +114,8 @@ try using Electron and WASM at the moment, and I think that's the more important
 
     error Command failed with exit code 1.
     info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+
+- Things I didn't try: wasm-pack to publish to NPM or local registry and pull down from there, static file server in Electron
 
 [wxwidgets]: https://wxwidgets.org/
 [libui-rs]: https://github.com/LeoTindall/libui-rs/
