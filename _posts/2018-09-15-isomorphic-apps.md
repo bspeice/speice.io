@@ -242,7 +242,7 @@ Let's finish with a wishlist then - here are the things that I think need to hap
 can become a thing:
 
 - Webpack still needs some updates. The necessary work is in progress, but hasn't landed yet ([#7983](https://github.com/webpack/webpack/pull/7983))
-- Browser API libraries ([web-sys] and [stdweb]) need to make sure they can support running in Electron (see module error above)
+- Browser API libraries (`web-sys` and `stdweb`) need to make sure they can support running in Electron (see module error above)
 - Projects need to stabilize. There's talk of `stdweb` being turned into a Rust API
   [on top of web-sys](https://github.com/rustwasm/team/issues/226#issuecomment-418475778), and percy
   [moving to web-sys](https://github.com/chinedufn/percy/issues/24), both of which are big changes
