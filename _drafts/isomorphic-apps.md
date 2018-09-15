@@ -44,7 +44,7 @@ There may already be solutions to the issues I discuss, but I'm totally unaware 
 so I'm going to try and organize what I know exists.
 
 I should also mention that the content and things I'm talking about here are not intended to be prescriptive,
-but more "if someone else is interested, where should you start?" *I expect everything in this post to be irrelevant
+but more "if someone else is interested, what do we already know doesn't work?" *I expect everything in this post to be obsolete
 within two months.* Even over the course of writing this, [a blog post](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/)
 was invalidated because [upstream changes](https://github.com/WebAssembly/binaryen/pull/1642)
 broke [a Rust tool](https://github.com/rustwasm/wasm-bindgen/pull/787) that ultimately
@@ -52,18 +52,18 @@ broke [a Rust tool](https://github.com/rustwasm/wasm-bindgen/pull/787) that ulti
 **And all that happened within the span of a week.** Things are moving quickly.
 
 I'll also note that we're going to skip [asm.js] and [emscripten]. Truth be told, I couldn't get either of these
-to produce anything, and so I'm just going to say [here be dragons.](https://en.wikipedia.org/wiki/Here_be_dragons)
+to output anything, and so I'm just going to say [here be dragons.](https://en.wikipedia.org/wiki/Here_be_dragons)
 Everything I'm discussing here is using the `wasm32-unknown-unknown` target.
 
 And the code that I *did* get running is available [over here](https://github.com/bspeice/isomorphic_rust).
 Feel free to use that as a starting point, but I'm mostly including the link as a reference point for the things
-that do and don't work.
+that were attempted.
 
 # An Example Running Application
 
 So, I did *technically* get a running application:
 
-![Electron app using WASM](/assets/images/2018-09-08-electron-percy-wasm.png)
+![Electron app using WASM](/assets/images/2018-09-15-electron-percy-wasm.png)
 
 ...which you can also try out if you want to:
 
@@ -98,18 +98,20 @@ while attempting to link things via Webpack is a detail in the WebAssembly spec:
 
 Specifically, if you try and load a WebAssembly blob without the MIME type set, you'll get an error.
 On the web, this isn't a huge issue because you actually have a server delivering the blob. With Electron,
-you're resolving things with a `file://` URL, and thus can't control the MIME type.
+you're resolving things with a `file://` URL, and thus can't control the MIME type:
+
+![TypeError: Incorrect response MIME type. Expected 'application/wasm'.](/assets/images/2018-09-15-incorrect-MIME-type.png)
 
 There are a couple of solutions depending on how far into the deep end you care to venture:
 
-- Embedding a static file server in your Electron application
-- Using a [custom protocol](https://electronjs.org/docs/api/protocol) and custom protocol handler
-- Hosting your WASM blob on a website, thus tying your users to the internet
+- Embed a static file server in your Electron application
+- Use a [custom protocol](https://electronjs.org/docs/api/protocol) and custom protocol handler
+- Host your WASM blob on a website, thus tying your users to the internet
 
 But all of these are pretty bad solutions and defeat the purpose of using WASM in the first place. Instead,
 my workaround was to [open a PR with webpack](https://github.com/webpack/webpack/issues/7918) and
 use regex to remove calls to `instantiateStreaming` in the
-[build script](https://github.com/bspeice/isomorphic_rust/blob/master/percy/build.sh#L21-L25)
+[build script](https://github.com/bspeice/isomorphic_rust/blob/master/percy/build.sh#L21-L25):
 
 ```sh
 cargo +nightly build --target=wasm32-unknown-unknown && \
@@ -141,7 +143,7 @@ looks something like this:
 - `yarn start` triggers the `prestart` script
 - `prestart` checks for missing tooling (`wasm-bindgen-cli`, etc.) and then:
     - Uses `cargo` to compile the Rust code into WASM
-    - Uses `wasm-bindgen` to link the WASM blob into a Javascript file with export symbols
+    - Uses `wasm-bindgen` to link the WASM blob into a Javascript file with exported symbols
     - Uses `webpack` to bundle the page start script with the Javascript we just generated
         - Uses `babel` under the hood to compile the `wasm-bindgen` down from ES6 to something browser-compatible
 - The `start` script actually runs an Electron Forge handler to do some sanity checks
@@ -157,64 +159,9 @@ For as much as I didn't enjoy the Javascript tooling needed to interface with Ru
 any better at the moment. I get it, a lot of projects are just starting off, and that leads to a fragmented
 ecosystem. So here's what I can recommend as a starting point:
 
-There are two projects that are attempting to be actual "frameworks": [percy] and [yew]. Between those,
-I got [two](https://github.com/bspeice/isomorphic_rust/tree/master/percy)
-[examples](https://github.com/bspeice/isomorphic_rust/tree/master/percy_patched_webpack) running
-using `percy`, but was unable to get an [example](https://github.com/bspeice/isomorphic_rust/tree/master/yew)
-running with `yew` because of issues with "missing modules":
-
-```sh
-ERROR in ./dist/electron_yew_wasm_bg.wasm
-Module not found: Error: Can't resolve 'env' in '/home/bspeice/Development/isomorphic_rust/yew/dist'
- @ ./dist/electron_yew_wasm_bg.wasm
- @ ./dist/electron_yew_wasm.js
- @ ./dist/app.js
- @ ./dist/app_loader.js
-```
-
-If you want to work with the browser APIs directly, your choices are [percy-webapis] or [stdweb] (or eventual [web-sys]).
-See above for my `percy` examples, but when I [tried to use `stdweb`](https://github.com/bspeice/isomorphic_rust/tree/master/stdweb),
-I was unable to get it running:
-
-```sh
-ERROR in ./dist/stdweb_electron_bg.wasm
-Module not found: Error: Can't resolve 'env' in '/home/bspeice/Development/isomorphic_rust/stdweb/dist'
- @ ./dist/stdweb_electron_bg.wasm
- @ ./dist/stdweb_electron.js
- @ ./dist/app_loader.js
-```
-
-At this point I'm pretty convinced that `stdweb` is the issue for `yew` as well, but can't prove it.
-
-I did also get a [minimal example](https://github.com/bspeice/isomorphic_rust/tree/master/minimal) running
-that doesn't depend on any frameworks, just `wasm-bindgen`. It would require manually writing `extern C`
-blocks for everything in the browser though, so I don't recommend it.
-
-Finally, from a frameworks view, there are two up-and-coming packages that should be mentioned:
-If you're interested in building something from scratch, [js-sys] and [web-sys] are ones to keep your eyes on.
-The idea is to generate all the browser interfaces for you, and leave you to do your thing in peace. I didn't
-touch either though, as I'm lazy and wanted to wrap this up.
-
-So there's a lot in play from the Rust side of things, and it's just going to take some time to figure out
-what works and what doesn't.
-
-# Issue the Third: Known Unknowns
-
-Alright, so after I managed to get an application started, I stopped there. It was an incredible amount of effort
-to chain together everything that was needed, and at this point I'd just rather learn [Typescript] than keep
-trying to maintain an incredibly brittle pipeline. Blasphemy, I know...
-
-The important point I want to make is that there's a lot uknown about how any of this would hold up outside
-of proofs of concept <span style="font-size:.6em">(proof of concepts? proofs of concepts?)</span>.
-Things I didn't attempt:
-
-- Testing
-- Packaging
-- Updates
-- Literally anything related to why I wanted to use Electron in the first place
-
-And even outside Electron, the Rust tools are pretty brittle; if someone manages to install a version of `wasm-bindgen-cli`
-different from what's in your `Cargo.lock`, they receive a nasty error:
+Don't check in your `Cargo.lock` files to version control. If there's a disagreement between the
+version of `wasm-bindgen-cli` you have installed and the `wasm-bindgen` you're compiling with in `Cargo.lock`,
+you can get a nasty error:
 
 ```
 it looks like the Rust project used to create this wasm file was linked against
@@ -228,17 +175,77 @@ exactly match, so it's required that these two version are kept in sync by
 either updating the wasm-bindgen dependency or this binary.
 ```
 
+Not that I managed to run into this error myself (*coughs nervously*).
+
+There are two projects attempting to be "frameworks": [percy] and [yew]. Between those, I managed to get
+[two](https://github.com/bspeice/isomorphic_rust/tree/master/percy)
+[examples](https://github.com/bspeice/isomorphic_rust/tree/master/percy_patched_webpack) running
+using `percy`, but was unable to get an [example](https://github.com/bspeice/isomorphic_rust/tree/master/yew)
+running with `yew` because of issues with "missing modules" during the `webpack` step:
+
+```sh
+ERROR in ./dist/electron_yew_wasm_bg.wasm
+Module not found: Error: Can't resolve 'env' in '/home/bspeice/Development/isomorphic_rust/yew/dist'
+ @ ./dist/electron_yew_wasm_bg.wasm
+ @ ./dist/electron_yew_wasm.js
+ @ ./dist/app.js
+ @ ./dist/app_loader.js
+```
+
+If you want to work with the browser APIs directly, your choices are [percy-webapis] or [stdweb] (or eventually [web-sys]).
+See above for my `percy` examples, but when I [tried to use `stdweb`](https://github.com/bspeice/isomorphic_rust/tree/master/stdweb),
+I was unable to get it running:
+
+```sh
+ERROR in ./dist/stdweb_electron_bg.wasm
+Module not found: Error: Can't resolve 'env' in '/home/bspeice/Development/isomorphic_rust/stdweb/dist'
+ @ ./dist/stdweb_electron_bg.wasm
+ @ ./dist/stdweb_electron.js
+ @ ./dist/app_loader.js
+```
+
+At this point I'm pretty convinced that `stdweb` is causing issues for `yew` as well, but can't prove it.
+
+I did also get a [minimal example](https://github.com/bspeice/isomorphic_rust/tree/master/minimal) running
+that doesn't depend on any frameworks, just `wasm-bindgen`. It would require manually writing "`extern C`"
+blocks for everything in the browser though, so I don't recommend it.
+
+Finally, from a tools and platform view, there are two up-and-coming packages that should be mentioned:
+[js-sys] and [web-sys]. Their purpose is to be a low-level building block that simply exposes the browser's APIs
+to Rust. If you're interested in building a web app framework from scratch, these should give you the most
+flexibility. I didn't touch either for this post, though I expect them to be essential long-term.
+
+So there's a lot in play from the Rust side of things, and it's just going to take some time to figure out
+what works and what doesn't.
+
+# Issue the Third: Known Unknowns
+
+Alright, so after I managed to get an application started, I stopped there. It was an incredible amount of effort
+to chain together everything that was needed, and at this point I'd rather learn [Typescript] than keep
+trying to maintain an incredibly brittle pipeline. Blasphemy, I know...
+
+The important point I want to make is that there's a lot unknown about how any of this would hold up outside
+of proofs of concept. Things I didn't attempt:
+
+- Testing
+- Packaging
+- Updates
+- Literally anything related to why I wanted to use Electron in the first place
+
 # What it Would Take
 
-Much as I don't like Javascript, the foundation is too shaky for me to recommend mixing Electron and WASM
-at the moment. There's a lot of innovation happening here, so who knows? Someone might have an application in production
-a couple months from now. But at the moment, I'm personally going to stay away.
+Much as I don't like Javascript, the tools are too shaky for me to recommend mixing Electron and WASM
+at the moment. There's a lot of innovation happening here, so who knows? Someone might have an application
+in production a couple months from now. But at the moment, I'm personally going to stay away.
 
-Let's finish then with a wishlist. Here are the things that I think need to happen before Electron/WASM/Rust
+Let's finish with a wishlist then - here are the things that I think need to happen before Electron/WASM/Rust
 can become a thing:
 
 - Webpack still needs some updates. The necessary work is in progress, but hasn't landed yet ([#7983](https://github.com/webpack/webpack/pull/7983))
 - Browser API libraries ([web-sys] and [stdweb]) need to make sure they can support running in Electron (see module error above)
+- Projects need to stabilize. There's talk of `stdweb` being turned into a Rust API
+  [on top of web-sys](https://github.com/rustwasm/team/issues/226#issuecomment-418475778), and percy
+  [moving to web-sys](https://github.com/chinedufn/percy/issues/24)
 - `wasm-bindgen` is great, but still in the "move fast and break things" phase
 - A good "boilerplate" app would dramatically simplify the start costs; [electron-react-boilerplate](https://github.com/chentsulin/electron-react-boilerplate)
   comes to mind
