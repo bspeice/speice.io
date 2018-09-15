@@ -10,10 +10,10 @@ Forgive me, but this is going to be a bit of a schizophrenic post. I both despis
 modern ECMAScript ecosystem, and I'm stunned by its success doing some really cool things.
 It's [this duality](https://www.destroyallsoftware.com/talks/the-birth-and-death-of-javascript)
 that's led me to a couple of (very) late nights over the past weeks trying to reconcile myself as
-I try to bootstrap a simple desktop application.
+I bootstrap a simple desktop application.
 
 See, as much as [Webassembly isn't trying to replace Javascript](https://webassembly.org/docs/faq/#is-webassembly-trying-to-replace-javascript),
-**I want Javascript gone**. There are plenty of people who do not share my views, and they are probably
+**I want Javascript gone**. There are plenty of people who don't share my views, and they are probably
 nicer and more fun at parties. But I cringe every time "Webpack" is mentioned, and I think it's hilarious
 that the [language specification](https://ecma-international.org/publications/standards/Ecma-402.htm)
 dramatically outpaces anyone's [actual implementation](https://kangax.github.io/compat-table/es2016plus/).
@@ -27,8 +27,8 @@ we take advantage of someone else solving the hard problems for us? I don't like
 Javascript for it, but I really don't feel inclined to whip out good ol' [wxWidgets].
 
 Now there are other native solutions ([libui-rs], [conrod], [oh hey wxWdidgets again!][wxRust]),
-but those also potentially have their own issues with distribution, styling, etc.
-With Electron, I can `yarn create electron-app my-app` and just get going, knowing that distribution/upgrades/etc.
+but those also have their own issues with distribution, styling, etc. With Electron, I can
+`yarn create electron-app my-app` and just get going, knowing that packaging/upgrades/etc.
 are built in.
 
 My question is: given recent innovations with WASM, *are we Electron yet*?
@@ -45,18 +45,18 @@ so I'm going to try and organize what I did manage to discover.
 
 I should also mention that the content and things I'm talking about here are not intended to be prescriptive,
 but more "if someone else is interested, what do we already know doesn't work?" *I expect everything in this post to be obsolete
-within two months.* Even over the course of writing this, [another blog post](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/)
+within two months.* Even over the course of writing this, [a separate blog post](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/)
 had to be modified because [upstream changes](https://github.com/WebAssembly/binaryen/pull/1642)
-broke a [Rust tool](https://github.com/rustwasm/wasm-bindgen/pull/787) that the post tried to use.
-The post [was fixed](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/#comment-477),
+broke a [Rust tool](https://github.com/rustwasm/wasm-bindgen/pull/787) the post tried to use.
+The post ultimately [got updated](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/#comment-477),
 **but all this happened within the span of a week.** Things are moving quickly.
 
 I'll also note that we're going to skip [asm.js] and [emscripten]. Truth be told, I couldn't get either of these
 to output anything, and so I'm just going to say [here be dragons.](https://en.wikipedia.org/wiki/Here_be_dragons)
-Everything I'm discussing here is using the `wasm32-unknown-unknown` target.
+Everything I'm discussing here uses the `wasm32-unknown-unknown` target.
 
 The code that I *did* get running is available [over here](https://github.com/bspeice/isomorphic_rust).
-Feel free to use it as a starting point, but I'm mostly including the link as a reference point for the things
+Feel free to use it as a starting point, but I'm mostly including the link as a reference for the things
 that were attempted.
 
 # An Example Running Application
@@ -88,7 +88,7 @@ the goal was to package everything using [webpack] so that I could just load a `
 That decision was to be the last thing that kinda worked in this process.
 
 The first issue [I ran into](https://www.reddit.com/r/rust/comments/98lpun/unable_to_load_wasm_for_electron_application/)
-while attempting to bundle everything via Webpack is a detail in the WebAssembly spec:
+while attempting to bundle everything via `webpack` is a detail in the WASM spec:
 
 > This function accepts a Response object, or a promise for one, and ...
 > **[if it] does not match the `application/wasm` MIME type**, the returned promise
@@ -97,7 +97,7 @@ while attempting to bundle everything via Webpack is a detail in the WebAssembly
 > [WebAssembly - Additional Web Embedding API](https://webassembly.org/docs/web/#additional-web-embedding-api)
 
 Specifically, if you try and load a WASM blob without the MIME type set, you'll get an error.
-On the web, this isn't a huge issue because you have a server that can set MIME types delivering the blob.
+On the web this isn't a huge issue, as the server can set MIME types when delivering the blob.
 With Electron, you're resolving things with a `file://` URL and thus can't control the MIME type:
 
 ![TypeError: Incorrect response MIME type. Expected 'application/wasm'.](/assets/images/2018-09-15-incorrect-MIME-type.png)
@@ -109,7 +109,7 @@ There are a couple of solutions depending on how far into the deep end you care 
 - Host your WASM blob on a website that you resolve at runtime
 
 But all these are pretty bad solutions and defeat the purpose of using WASM in the first place. Instead,
-my workaround was to [open a PR with webpack](https://github.com/webpack/webpack/issues/7918) and
+my workaround was to [open a PR with `webpack`](https://github.com/webpack/webpack/issues/7918) and
 use regex to remove calls to `instantiateStreaming` in the
 [build script](https://github.com/bspeice/isomorphic_rust/blob/master/percy/build.sh#L21-L25):
 
@@ -121,9 +121,9 @@ cargo +nightly build --target=wasm32-unknown-unknown && \
     sed -i 's/.*instantiateStreaming.*//g' "$APP_DIR/bundle.js"
 ```
 
-Once that lands though, the
+Once that lands, the
 [build process](https://github.com/bspeice/isomorphic_rust/blob/master/percy_patched_webpack/build.sh#L24-L27)
-becomes more straight-forward:
+becomes much simpler:
 
 ```sh
 
@@ -133,9 +133,9 @@ cargo +nightly build --target=wasm32-unknown-unknown && \
 ```
 
 But we're not done yet! After we compile Rust into WASM and link WASM to Javascript (via `wasm-bindgen` and `webpack`),
-we still have to make an Electron app. For this purpose I used an Electron starter from [Electron Forge],
+we still have to make an Electron app. For this purpose I used a starter app from [Electron Forge],
 and then a [`prestart` script](https://github.com/bspeice/isomorphic_rust/blob/master/percy/package.json#L8)
-to actually handle the build process.
+to actually handle starting the application.
 
 The [final toolchain](https://github.com/bspeice/isomorphic_rust/blob/master/percy/package.json#L8)
 looks something like this:
@@ -151,7 +151,7 @@ looks something like this:
 
 ...which is complicated. I think more work needs to be done to either build a high-quality starter app that
 can manage these steps, or another tool that "just handles" the complexity of linking a compiled WASM file into
-something the browser can run.
+something the Electron browser can run.
 
 # Issue the Second: WASM tools in Rust
 
@@ -207,12 +207,12 @@ Module not found: Error: Can't resolve 'env' in '/home/bspeice/Development/isomo
 At this point I'm pretty convinced that `stdweb` is causing issues for `yew` as well, but can't prove it.
 
 I did also get a [minimal example](https://github.com/bspeice/isomorphic_rust/tree/master/minimal) running
-that doesn't depend on any tools besides `wasm-bindgen`. It requires manually writing "`extern C`"
-blocks for everything in the browser though, so I don't recommend it.
+that doesn't depend on any tools besides `wasm-bindgen`. However, it requires manually writing "`extern C`"
+blocks for everything you need from the browser. Es no bueno.
 
 Finally, from a tools and platform view, there are two up-and-coming packages that should be mentioned:
-[js-sys] and [web-sys]. Their purpose is to be fundamental building blocks that simply exposes the browser's APIs
-to Rust. If you're interested in building a app framework from scratch, these should give you the most
+[js-sys] and [web-sys]. Their purpose is to be fundamental building blocks that exposes the browser's APIs
+to Rust. If you're interested in building an app framework from scratch, these should give you the most
 flexibility. I didn't touch either in my research, though I expect them to be essential long-term.
 
 So there's a lot in play from the Rust side of things, and it's just going to take some time to figure out
@@ -220,7 +220,7 @@ what works and what doesn't.
 
 # Issue the Third: Known Unknowns
 
-Alright, so after I managed to get an application started, I stopped there. It was an good deal of effort
+Alright, so after I managed to get an application started, I stopped there. It was a good deal of effort
 to chain together even a proof of concept, and at this point I'd rather learn [Typescript] than keep
 trying to maintain an incredibly brittle pipeline. Blasphemy, I know...
 
