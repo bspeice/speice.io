@@ -245,7 +245,7 @@ can become a thing:
 - Browser API libraries ([web-sys] and [stdweb]) need to make sure they can support running in Electron (see module error above)
 - Projects need to stabilize. There's talk of `stdweb` being turned into a Rust API
   [on top of web-sys](https://github.com/rustwasm/team/issues/226#issuecomment-418475778), and percy
-  [moving to web-sys](https://github.com/chinedufn/percy/issues/24), both of which are pretty big changes
+  [moving to web-sys](https://github.com/chinedufn/percy/issues/24), both of which are big changes
 - `wasm-bindgen` is great, but still in the "move fast and break things" phase
 - A good "boilerplate" app would dramatically simplify the start-up costs;
   [electron-react-boilerplate](https://github.com/chentsulin/electron-react-boilerplate)
