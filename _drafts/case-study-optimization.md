@@ -19,8 +19,8 @@ packing a whole 24KB of RAM. By the way, *what are you doing on my lawn?*
 
 The principle remains though: be efficient with the resources you're given, because
 [what Intel giveth, Microsoft taketh away](http://exo-blog.blogspot.com/2007/09/what-intel-giveth-microsoft-taketh-away.html).
-My professional work has been focused on this kind of efficiency; low-latency financial markets force
-you to understand deeply *exactly* what your code is doing. As I've been experimenting with Rust for
+My professional work has been focused on this kind of efficiency; low-latency financial markets demand that
+you understand at a deep level *exactly* what your code is doing. As I've been experimenting with Rust for
 personal projects, I'm glad to see that it's possible to bring that mindset with me. There's flexibility for
 programming as if there was a garbage collector, and flexibility for the times when I really care about efficiency.
 
