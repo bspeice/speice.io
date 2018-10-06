@@ -6,7 +6,7 @@ category:
 tags: []
 ---
 
-One of the first conversations I had about programming went like this:
+One of my first conversations about programming went like this:
 
 > Programmers have it too easy these days. They should learn to develop
 > in low memory environments and be efficient.
@@ -21,25 +21,25 @@ The principle remains though: be efficient with the resources you're given, beca
 [what Intel giveth, Microsoft taketh away](http://exo-blog.blogspot.com/2007/09/what-intel-giveth-microsoft-taketh-away.html).
 My professional work has been focused on this kind of efficiency; low-latency financial markets demand that
 you understand at a deep level *exactly* what your code is doing. As I've been experimenting with Rust for
-personal projects, I'm glad to see that it's possible to bring that mindset with me. There's flexibility for
-programming as if there was a garbage collector, and flexibility for the times when I really care about efficiency.
+personal projects, it's exciting to bring that mindset with me. There's flexibility for the times where I'd rather
+have a garbage collector, and flexibility for the times that I really care about efficiency.
 
 This post is a (small) case study in how I went from the former to the latter. And it's an attempt to prove how easy
 it is for you to do the same.
 
 # The Starting Line
 
-When I first started building the [dtparse] crate, my intention was to mirror as closely as possible the logic from
+When I first started building the [dtparse] crate, my intention was to mirror as closely as possible 
 the equivalent [Python library][dateutil]. Python, as you may know, is garbage collected. Very rarely is memory
-usage considered in Python, and so I likewise wasn't paying attention when `dtparse` was first being built.
+usage considered in Python, and I likewise wasn't paying too much attention when `dtparse` was first being built.
 
-That works out well enough, and I'm not planning on tuning the crate for memory usage.
-But every so often I wondered "what exactly is going on in memory?" With the advent of Rust 1.28 and the
+That works out well enough, and I'm not planning on making that crate hyper-efficient.
+But every so often I've wondered: "what exactly is going on in memory?" With the advent of Rust 1.28 and the
 [Global Allocator trait](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html), I had a really great idea:
 *build a custom allocator that allows you to track your own allocations.* That way, you can do things like
 writing tests for both correct results and correct memory usage. I gave it a [shot][qadapt], but learned
-very quickly: **never write your own allocator**. It very quickly turned from "fun weekend project" into
-"I have literally no idea what my computer is doing."
+very quickly: **never write your own allocator**. It went from "fun weekend project" into
+"I have literally no idea what my computer is doing" at breakneck speed.
 
 Instead, let's highlight another (easier) way you can make sense of your memory usage: [heaptrack]
 
@@ -47,8 +47,8 @@ Instead, let's highlight another (easier) way you can make sense of your memory 
 
 This is the hardest part of the post. Because Rust uses
 [its own allocator](https://github.com/rust-lang/rust/pull/27400#issue-41256384) by default,
-`heaptrack` is unable to properly record what your code is actually doing. We have to
-instead compile our programs with some special options to make it work.
+`heaptrack` is unable to properly record what your code is doing out of the box. Instead,
+we compile our programs with some special options to make it work.
 
 Specifically, in `lib.rs` or `main.rs`, make sure you add this:
 
@@ -89,7 +89,7 @@ which is the last picture I showed above. Normally these charts are used to show
 you spend executing different functions, but the focus for now is to show how much memory
 was allocated during those functions.
 
-I'm not going to spend too much time on how to read flamegraphs, but the idea is this:
+As a quick introduction to reading flamegraphs, the idea is this:
 The width of the bar is how much memory was allocated by that function, and all functions
 that it calls.
 
@@ -137,9 +137,9 @@ The issue is that I keep on creating a new `Parser` every time you call the `par
 Now this is a bit excessive, but was necessary at the time because `Parser.parse()` used `&mut self`.
 In order to properly parse a string, the parser itself required mutable state.
 
-So, I put some time in to
-[make the parser immutable](https://github.com/bspeice/dtparse/commit/741afa34517d6bc1155713bbc5d66905fea13fad#diff-b4aea3e418ccdb71239b96952d9cddb6),
-and now I could re-use the same parser over and over. And would you believe it? No more allocations of default parsers:
+Armed with that information, I put some time in to
+[make the parser immutable](https://github.com/bspeice/dtparse/commit/741afa34517d6bc1155713bbc5d66905fea13fad#diff-b4aea3e418ccdb71239b96952d9cddb6).
+Now I can re-use the same parser over and over! And would you believe it? No more allocations of default parsers:
 
 ![allocations cleaned up](/assets/images/2018-10-heaptrack/heaptrack-flamegraph-after.png)
 
@@ -154,7 +154,7 @@ All the way down to 300KB:
 # Conclusion
 
 In the end, you don't need to write a custom allocator to test memory performance. Rather, there are some
-pretty good tools that already exist you can make use of!
+great tools that already exist you can put to work!
 
 **Use them.**
 
