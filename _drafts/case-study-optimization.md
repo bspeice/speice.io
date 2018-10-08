@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "A Case Study in Heaptrack"
-description: "...because you don't need no garbage collection "
+description: "...because you don't need no garbage collection"
 category: 
 tags: []
 ---
@@ -17,15 +17,15 @@ One of my earliest conversations about programming went like this:
 [graphing calculator](https://education.ti.com/en/products/calculators/graphing-calculators/ti-84-plus-se)
 packing a whole 24KB of RAM. By the way, *what are you doing on my lawn?*
 
-The principle remains though: be efficient with the resources you're given, because
+The principle remains though: be efficient with the resources you have, because
 [what Intel giveth, Microsoft taketh away](http://exo-blog.blogspot.com/2007/09/what-intel-giveth-microsoft-taketh-away.html).
 My professional work is focused on this kind of efficiency; low-latency financial markets demand that
 you understand at a deep level *exactly* what your code is doing. As I continue experimenting with Rust for
 personal projects, it's exciting to bring a utilitarian mindset with me: there's flexibility for the times I pretend
-to have a garbage collector, and flexibility for the times that I really care about efficiency.
+to have a garbage collector, and flexibility for the times that I really care about how memory is used.
 
-This post is a (small) case study in how I went from the former to the latter. And it's an attempt to prove how easy
-it is for you to do the same.
+This post is a (small) case study in how I went from the former to the latter. And ultimately, it's intended
+to be a starting toolkit to empower analysis of your own code.
 
 # Curiosity
 
@@ -33,7 +33,7 @@ When I first started building the [dtparse] crate, my intention was to mirror as
 the equivalent [Python library][dateutil]. Python, as you may know, is garbage collected. Very rarely is memory
 usage considered in Python, and I likewise wasn't paying too much attention when `dtparse` was first being built.
 
-That works out well enough, and I'm not planning on making that `dtparse` hyper-efficient.
+This lackadaisical approach to memory works well enough, and I'm not planning on making `dtparse` hyper-efficient.
 But every so often, I've wondered: "what exactly is going on in memory?" With the advent of Rust 1.28 and the
 [Global Allocator trait](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html), I had a really great idea:
 *build a custom allocator that allows you to track your own allocations.* That way, you can do things like
@@ -47,10 +47,10 @@ Instead, I'll highlight a separate path I took to make sense of my memory usage:
 
 This is the hardest part of the post. Because Rust uses
 [its own allocator](https://github.com/rust-lang/rust/pull/27400#issue-41256384) by default,
-`heaptrack` is unable to properly record what your code is doing out of the box. Instead,
-we compile our programs with some special options to make it work.
+`heaptrack` is unable to properly record unmodified Rust code. To remedy this, we'll make use
+of the `#[global_allocator]` attribute.
 
-Specifically, in `lib.rs` or `main.rs`, make sure you add this:
+Specifically, in `lib.rs` or `main.rs`, add this:
 
 ```rust
 use std::alloc::System;
@@ -86,8 +86,8 @@ And even these pretty colors:
 
 To make sense of our memory usage, we're going to focus on that last picture - it's called
 a ["flamegraph"](http://www.brendangregg.com/flamegraphs.html). These charts are typically
-used to show how much time you spend executing different functions, but they're used here
-to show how much memory was allocated during those functions.
+used to show how much time your program spends executing each function, but they're used here
+to show how much memory was allocated during those functions instead.
 
 For example, we can see that all executions happened during the `main` function:
 
@@ -128,9 +128,9 @@ pub fn parse(timestr: &str) -> ParseResult<(NaiveDateTime, Option<FixedOffset>)>
 
 ---
 
-Because `Parser::parse` requires a mutable reference to itself, I have to create a new parser
-every time it receives a string. This seems excessive! We'd rather have an immutable parser
-that can be re-used, and avoid needing to allocate memory in the first place.
+Because `Parser::parse` requires a mutable reference to itself, I have to create a new `Parser::default`
+every time it receives a string. This is excessive! We'd rather have an immutable parser
+that can be re-used, and avoid allocating memory in the first place.
 
 Armed with that information, I put some time in to
 [make the parser immutable](https://github.com/bspeice/dtparse/commit/741afa34517d6bc1155713bbc5d66905fea13fad#diff-b4aea3e418ccdb71239b96952d9cddb6).
@@ -138,11 +138,11 @@ Now that I can re-use the same parser over and over, the allocations disappear:
 
 ![allocations cleaned up](/assets/images/2018-10-heaptrack/heaptrack-flamegraph-after.png)
 
-In total, we went from requiring 2 MB of memory:
+In total, we went from requiring 2 MB of memory in [version 1.0.2](https://crates.io/crates/dtparse/1.0.2):
 
 ![memory before](/assets/images/2018-10-heaptrack/heaptrack-closeup.png)
 
-All the way down to 300KB:
+All the way down to 300KB in [version 1.0.3](https://crates.io/crates/dtparse/1.0.3):
 
 ![memory after](/assets/images/2018-10-heaptrack/heaptrack-closeup-after.png)
 
