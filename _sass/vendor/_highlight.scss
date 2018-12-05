@@ -25,10 +25,11 @@ pre {
     margin-left: -999em;
     margin-right: -999em;
     padding-left: 999em;
+    padding-top: 1em;
+    padding-bottom: 1em;
 }
 
 .highlight {
-    border-radius: 4px;
     border: 1px solid #E8E8EB;
 
     .gutter {
@@ -46,7 +47,7 @@ span.lineno {
 }
 .highlight  { background: #272822; color: #f8f8f2 }
 .highlight .c { color: #75715e } /* Comment */
-.highlight .err { color: #960050 } /* Error */
+.highlight .err { color: #f8f8f2 } /* Error */
 .highlight .k { color: #66d9ef } /* Keyword */
 .highlight .l { color: #ae81ff } /* Literal */
 .highlight .n { color: #f8f8f2 } /* Name */
