@@ -1,101 +1,163 @@
 ---
 layout: post
 title: "QADAPT - Allocation Safety in Rust"
-description: "...and why you want an allocator that blows up."
+description: "...and why you want an allocator that goes 💥."
 category: 
 tags: []
 ---
 
-I think it's part of the human condition to ignore perfectly good advice that comes our way.
-Just a month ago, I too was dispensing sage wisdom for the ages:
+I think it's part of the human condition to ignore perfectly good advice when it comes our way.
+A bit over a month ago, I was dispensing sage wisdom for the ages:
 
 > I had a really great idea: build a custom allocator that allows you to track
-> your own allocations. That way, you can do things like writing tests for both
-> correct results and correct memory usage. I gave it a shot, but learned very quickly:
+> your own allocations. I gave it a shot, but learned very quickly:
 > **never write your own allocator.**
 >
 > -- [me](/2018/10/case-study-optimization.html)
 
-I then proceeded to ignore it, because we never really learn from our mistakes.
+I proceeded to ignore it, because we never really learn from our mistakes.
 
-There's another part of the human condition that derives a strange sort of joy from
-seeing things explode.
+There's another part of the human condition that derives joy from seeing things explode.
 
 <iframe src="https://giphy.com/embed/YA6dmVW0gfIw8" width="480" height="336" frameBorder="0"></iframe>
 
 And *that's* the part of the human condition I'm going to focus on.
 
-# Why a new Allocator
+# Why an Allocator
 
-So why after complaining about allocators would I want to go back and write one myself?
-There's two reasons for that:
+So why, after complaining about allocators, would I want to go back and write one myself?
+There are two reasons for that:
 
 1. **Allocation/dropping is slow**
-2. **It's difficult to know when exactly Rust will allocate/drop**
+2. **It's difficult to know when exactly Rust will allocate/drop, especially when using
+code that you did not write**
 
 When I say "slow," it's important to define the terms. If you're writing web applications,
 you'll spend orders of magnitude more time waiting for the database than you will the allocator.
 However, there's still plenty of code where micro- or nano-seconds matter; think finance,
 [real-time audio](https://www.reddit.com/r/rust/comments/9hg7yj/synthesizer_progress_update/e6c291f),
 [self-driving cars](https://polysync.io/blog/session-types-for-hearty-codecs/), and networking.
-In these situations it's simply unacceptable for you to be spending time doing things
-that are not your program, and interacting with the allocator feels like it takes forever.
+In these situations it's simply unacceptable for you to spend time doing things
+that are not your program, and waiting on the allocator takes a great deal of time.
 
-Secondly, it's a bit difficult to predict where exactly allocations will happen in Rust code. We're going
+Secondly, it can be difficult to predict where exactly allocations will happen in Rust code. We're going
 to play a quick trivia game: **Does this code trigger an allocation?**
 
 ## Example 1
 
 ```rust
-fn main() {
+fn my_function() {
     let v: Vec<u8> = Vec::new();
 }
 ```
 
-**No**: Rust knows that we can reserve memory on the stack for the `v` vector, and the allocator will
-never be asked to reserve memory in the heap.
+**No**: Rust [knows how big](https://doc.rust-lang.org/std/mem/fn.size_of.html)
+the `Vec` type is, and reserves a fixed amount of memory on the stack for the `v` vector.
+If we were to reserve extra space (using `Vec::with_capacity`), this would trigger
+an allocation.
 
 ## Example 2
 
 ```rust
-fn main() {
+fn my_function() {
     let v: Box<Vec<u8>> = Box::new(Vec::new());
 }
 ```
 
-**Yes**: Even though we know ahead of time the total amount of memory needed, `Box` forces a heap allocation.
+**Yes**: Because Boxes allow us to work with things that are of unknown size, it has to allocate
+on the heap even though the vector has a known size at compile time. Some release builds may
+optimize out the Box in this specific example, but it's not guaranteed to happen.
 
 ## Example 3
 
 ```rust
-fn main() {
-    let v: Vec<u8> = Vec::new();
-    v.push(0);
+fn my_function(v: Vec<u8>) {
+    v.push(5);
 }
 ```
 
-**Maybe**: `Vec::new()` creates an empty vector and thus will be forced to allocate space when we give it a value.
-However, in `release` builds, Rust is able to optimize out the allocation that normally happens in `push()`
-and avoid interacting with the allocator.
-
-That last example should be a bit surprising - Rust may change its allocation behavior depending on the
-optimization level. It's thus important to trust that Rust will optimize code well, but also verify
-that you are getting the behavior you intend.
+**Maybe**: Depending on whether the Vector we were given has space available, we may or may not allocate.
+Especially when dealing with code that you did not author, it's helpful to have a system double-check
+that you didn't accidentally introduce an allocation or drop somewhere unintended.
 
 # Blowing Things Up
 
-So, how exactly does QADAPT solve these problems? **Whenever an allocation occurs in code marked
+So, how exactly does QADAPT solve these problems? **Whenever an allocation/drop occurs in code marked
 allocation-safe, QADAPT triggers a thread panic.** We don't want to let the program continue as if
 nothing strange happened, *we want things to explode*.
 
-QADAPT will handle the destructive part of things, you're responsible for marking the code as
-containing no allocations. To do so, there are two ways:
+However, you don't want code to panic in production because of circumstances you didn't predict.
+Just like [`debug_assert!`](https://doc.rust-lang.org/std/macro.debug_assert.html),
+QADAPT will strip out its own code when building in release mode to guarantee no panics and
+no performance impact.
+
+Finally, there are three ways to have QADAPT check that your code is allocation-free:
+
+## Using a procedural macro
+
+Easiest method, marks an entire function as not allocating/drop safe:
+
+```rust
+use qadapt::no_alloc;
+use qadapt::QADAPT;
+
+#[global_allocator]
+static Q: QADAPT = QADAPT;
+
+#[no_alloc]
+fn push_vec(v: &mut Vec<u8>) {
+    // This triggers a panic if v.len() == v.capacity()
+    v.push(5);
+}
+
+fn main() {
+    let v = Vec::with_capacity(1);
+
+    // This will *not* trigger a panic
+    push_vec(&v);
+
+    // This *will* trigger a panic
+    push_vec(&v);
+}
+```
+
+## Using a regular macro
+
+For times when you need more precision:
+
+```rust
+use qadapt::assert_no_alloc;
+use qadapt::QADAPT;
+
+#[global_allocator]
+static Q: QADAPT = QADAPT;
+
+fn main() {
+    let v = Vec::with_capacity(1);
+
+    // No allocations here, we already have space reserved
+    assert_no_alloc!(v.push(5));
+
+    // Even though we remove an item, it doesn't trigger a drop
+    // because it's a scalar
+    assert_no_alloc!({
+        let mut x = v.pop().unwrap();
+        x += 1;
+    });
+}
+```
 
 ## Using function calls
+
+Both the most precise and most tedious method:
 
 ```rust
 use qadapt::enter_protected;
 use qadapt::exit_protected;
+use qadapt::QADAPT;
+
+#[global_allocator]
+static Q: QADAPT = QADAPT;
 
 fn main() {
     // This triggers an allocation (on non-release builds)
@@ -112,43 +174,42 @@ fn main() {
 }
 ```
 
-## Using a procedural macro
+## Caveats
+
+It's important to point out that QADAPT code is synchronous, so please be careful
+when mixing in asynchronous functions:
 
 ```rust
-use qadapt::allocate_panic;
+use futures::future::Future;
+use futures::future::ok;
 
-#[allocate_panic]
-fn push_vec(v: &mut Vec<u8>) {
-    // This triggers a panic if v.len() == v.capacity()
-    v.push(0);
+#[no_alloc]
+fn async_capacity() -> impl Future<Item=Vec<u8>, Error=()> {
+    ok(12).and_then(|e| Ok(Vec::with_capacity(e)))
 }
 
 fn main() {
-    let v = Vec::with_capacity(1);
+    // This doesn't trigger a panic because the `and_then` closure
+    // wasn't run during the function call.
+    async_capacity();
 
-    // This won't trigger a panic
-    push_vec(&v);
+    // Still no panic
+    assert_no_alloc!(async_capacity());
 
-    // This will trigger a panic
-    push_vec(&v);
+    // This will panic because the allocation happens during `unwrap`
+    // in the `assert_no_alloc!` macro
+    assert_no_alloc!(async_capacity().poll().unwrap());
 }
 ```
 
-## Caveats
+# Conclusion
 
-It's important to point out that QADAPT code is synchronous, and you may get
-strange behavior unless you're careful:
+While there's a lot more to writing high-performance code than managing your usage
+of the allocator, it's critical that you do use the allocator correctly.
+QADAPT is here to verify that your code is doing what you expect.
 
-```rust
-// Futures example here
-```
-
-# Looking Forward
-
-Writing blog post about when/where Rust allocates based on practical usage
-
-1. Is this something useful for you?
-2. Different behavior? Just log backtraces instead of panic?
-3. "Allocation explorer" online like compiler explorer?
+I'll be writing more about high-performance code in Rust in the future, and I expect
+that QADAPT will help guide that. If there are topics you're interested in,
+let me know in the comments below!
 
 [qadapt]: https://crates.io/crates/qadapt

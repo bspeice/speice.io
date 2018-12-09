@@ -24,9 +24,7 @@ pre, code {
 pre {
     margin-left: -999em;
     margin-right: -999em;
-    padding-left: 999em;
-    padding-top: 1em;
-    padding-bottom: 1em;
+    padding: 1.5em 999em 1.5em 999em;
 }
 
 .highlight {
@@ -55,7 +53,7 @@ span.lineno {
 .highlight .p { color: #f8f8f2 } /* Punctuation */
 .highlight .ch { color: #75715e } /* Comment.Hashbang */
 .highlight .cm { color: #75715e } /* Comment.Multiline */
-.highlight .cp { color: #75715e } /* Comment.Preproc */
+.highlight .cp { color: #f8f8f2 } /* Comment.Preproc */
 .highlight .cpf { color: #75715e } /* Comment.PreprocFile */
 .highlight .c1 { color: #75715e } /* Comment.Single */
 .highlight .cs { color: #75715e } /* Comment.Special */
@@ -77,7 +75,7 @@ span.lineno {
 .highlight .nb { color: #f8f8f2 } /* Name.Builtin */
 .highlight .nc { color: #a6e22e } /* Name.Class */
 .highlight .no { color: #66d9ef } /* Name.Constant */
-.highlight .nd { color: #a6e22e } /* Name.Decorator */
+.highlight .nd { color: #66d9ef } /* Name.Decorator */
 .highlight .ni { color: #f8f8f2 } /* Name.Entity */
 .highlight .ne { color: #a6e22e } /* Name.Exception */
 .highlight .nf { color: #a6e22e } /* Name.Function */
