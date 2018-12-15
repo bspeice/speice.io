@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "QADAPT - Allocation Safety in Rust"
+title: "QADAPT - debug_assert! for your memory usage"
 description: "...and why you want an allocator that goes 💥."
 category: 
 tags: []
@@ -21,27 +21,30 @@ There's another part of the human condition that derives joy from seeing things 
 
 <iframe src="https://giphy.com/embed/YA6dmVW0gfIw8" width="480" height="336" frameBorder="0"></iframe>
 
-And *that's* the part of the human condition I'm going to focus on.
+And *that's* the part I'm going to focus on.
 
-# Why an Allocator
+# Why an Allocator?
 
-So why, after complaining about allocators, would I want to go back and write one myself?
-There are two reasons for that:
+So why, after complaining about allocators, would I still want to write one?
+There are three reasons for that:
 
-1. **Allocation/dropping is slow**
-2. **It's difficult to know when exactly Rust will allocate/drop, especially when using
-code that you did not write**
+1. Allocation/dropping is slow
+2. It's difficult to know exactly when Rust will allocate or drop, especially when using
+code that you did not write
+3. I want automated tools to verify behavior, instead of inspecting by hand
 
 When I say "slow," it's important to define the terms. If you're writing web applications,
 you'll spend orders of magnitude more time waiting for the database than you will the allocator.
-However, there's still plenty of code where micro- or nano-seconds matter; think finance,
+However, there's still plenty of code where micro- or nano-seconds matter; think
+[finance](https://www.youtube.com/watch?v=NH1Tta7purM),
 [real-time audio](https://www.reddit.com/r/rust/comments/9hg7yj/synthesizer_progress_update/e6c291f),
-[self-driving cars](https://polysync.io/blog/session-types-for-hearty-codecs/), and networking.
+[self-driving cars](https://polysync.io/blog/session-types-for-hearty-codecs/), and 
+[networking](https://carllerche.github.io/bytes/bytes/index.html).
 In these situations it's simply unacceptable for you to spend time doing things
-that are not your program, and waiting on the allocator takes a great deal of time.
+that are not your program, and waiting on the allocator is not cool.
 
-Secondly, it can be difficult to predict where exactly allocations will happen in Rust code. We're going
-to play a quick trivia game: **Does this code trigger an allocation?**
+As I continue to learn Rust, it's difficult for me to predict where exactly allocations will happen.
+So, I propose we play a quick trivia game: **Does this code invoke the allocator?**
 
 ## Example 1
 
@@ -53,8 +56,8 @@ fn my_function() {
 
 **No**: Rust [knows how big](https://doc.rust-lang.org/std/mem/fn.size_of.html)
 the `Vec` type is, and reserves a fixed amount of memory on the stack for the `v` vector.
-If we were to reserve extra space (using `Vec::with_capacity`), this would trigger
-an allocation.
+However, if we wanted to reserve extra space (using `Vec::with_capacity`) the allocator
+would get invoked.
 
 ## Example 2
 
@@ -65,8 +68,9 @@ fn my_function() {
 ```
 
 **Yes**: Because Boxes allow us to work with things that are of unknown size, it has to allocate
-on the heap even though the vector has a known size at compile time. Some release builds may
-optimize out the Box in this specific example, but it's not guaranteed to happen.
+on the heap. While the `Box` is unnecessary in this snippet (release builds will optimize out
+the allocation), reserving heap space more generally is needed to pass a dynamically sized type
+to another function.
 
 ## Example 3
 
@@ -77,25 +81,25 @@ fn my_function(v: Vec<u8>) {
 ```
 
 **Maybe**: Depending on whether the Vector we were given has space available, we may or may not allocate.
-Especially when dealing with code that you did not author, it's helpful to have a system double-check
-that you didn't accidentally introduce an allocation or drop somewhere unintended.
+Especially when dealing with code that you did not author, it's difficult to verify that things behave
+as you expect them to.
 
 # Blowing Things Up
 
-So, how exactly does QADAPT solve these problems? **Whenever an allocation/drop occurs in code marked
+So, how exactly does QADAPT solve these problems? **Whenever an allocation or drop occurs in code marked
 allocation-safe, QADAPT triggers a thread panic.** We don't want to let the program continue as if
 nothing strange happened, *we want things to explode*.
 
 However, you don't want code to panic in production because of circumstances you didn't predict.
 Just like [`debug_assert!`](https://doc.rust-lang.org/std/macro.debug_assert.html),
-QADAPT will strip out its own code when building in release mode to guarantee no panics and
-no performance impact.
+**QADAPT will strip out its own code when building in release mode to guarantee no panics and
+no performance impact.**
 
-Finally, there are three ways to have QADAPT check that your code is allocation-free:
+Finally, there are three ways to have QADAPT check that your code will not invoke the allocator:
 
 ## Using a procedural macro
 
-Easiest method, marks an entire function as not allocating/drop safe:
+The easiest method, watch an entire function for allocator invocation:
 
 ```rust
 use qadapt::no_alloc;
@@ -139,17 +143,17 @@ fn main() {
     assert_no_alloc!(v.push(5));
 
     // Even though we remove an item, it doesn't trigger a drop
-    // because it's a scalar
+    // because it's a scalar. If it were a `Box<_>` type,
+    // a drop would trigger.
     assert_no_alloc!({
-        let mut x = v.pop().unwrap();
-        x += 1;
+        v.pop().unwrap();
     });
 }
 ```
 
 ## Using function calls
 
-Both the most precise and most tedious method:
+Both the most precise and most tedious:
 
 ```rust
 use qadapt::enter_protected;
@@ -206,9 +210,10 @@ fn main() {
 
 While there's a lot more to writing high-performance code than managing your usage
 of the allocator, it's critical that you do use the allocator correctly.
-QADAPT is here to verify that your code is doing what you expect.
+QADAPT will verify that your code is doing what you expect. It's usable even on
+stable Rust from version 1.31 onward, which isn't the case for most allocators.
 
-I'll be writing more about high-performance code in Rust in the future, and I expect
+I'm hoping to write more about high-performance Rust in the future, and I expect
 that QADAPT will help guide that. If there are topics you're interested in,
 let me know in the comments below!
 
