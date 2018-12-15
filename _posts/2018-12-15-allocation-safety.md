@@ -212,6 +212,9 @@ While there's a lot more to writing high-performance code than managing your usa
 of the allocator, it's critical that you do use the allocator correctly.
 QADAPT will verify that your code is doing what you expect. It's usable even on
 stable Rust from version 1.31 onward, which isn't the case for most allocators.
+Version 1.0 was released today, and you can check it out over at
+[crates.io](https://crates.io/crates/qadapt) or on
+[github](https://github.com/bspeice/qadapt).
 
 I'm hoping to write more about high-performance Rust in the future, and I expect
 that QADAPT will help guide that. If there are topics you're interested in,
