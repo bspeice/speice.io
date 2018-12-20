@@ -37,3 +37,31 @@ to assist in easy navigation:
 - Summary: When does Rust allocate?
 
 # Distinguishing regions of memory
+
+# Rust and the Stack
+
+Example: Why doesn't `Vec::new()` go to the allocator?
+
+Questions:
+
+1. What is the "Push" instruction? Why do we like the stack?
+2. How does Rust allocate arguments to the function?
+3. How does Rust allocate variables created in the function but never returned?
+4. How does Rust allocate variables created in the function and returned?
+5. How do Option<> or Result<> affect structs?
+6. How are arrays allocated?
+7. Legal to pass an array as an argument?
+
+# Rust and the Heap
+
+Example: How to trigger a heap allocation
+
+Questions:
+
+1. Where do collection types allocate memory?
+2. Does a Box<> always allocate heap?
+3. Passing Box<Trait> vs. genericizing/monomorphization
+
+# Understanding compiler optimizations
+
+Example: Compiler stripping out allocations of Box<>, Vec::push()
