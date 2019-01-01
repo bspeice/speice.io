@@ -16,11 +16,11 @@ type all the time, but there's a rich history of the Rust language itself wrappe
 
 In a similar vein, I want you to look at code and understand memory;
 the complex choreography of processor, operating system, and program that frees you
-to focus on functionality far beyond frivolous book-keeping. The Rust compiler relieves
+to focus on functionality far-flung from frivolous book-keeping. The Rust compiler relieves
 a great deal of the cognitive burden associated with memory management, but let's make time
 to explore what's going on under the hood.
 
-Let's learn a bit about allocating memory in Rust.
+Let's learn a bit about memory in Rust.
 
 # Table of Contents
 
@@ -30,11 +30,11 @@ section for easy citation in the future. To that end, a table of contents is pro
 to assist in easy navigation:
 
 - [Foreword](#foreword)
-- Non-Heap Memory Types
-- Piling On - the Heap in Rust
-- Compiler Optimizations Make Everything Complicated
+- [Non-Heap Memory Types](#non-heap-memory-types)
+- [Piling On - Rust and the Heap](#piling-on-rust-and-the-heap)
+- [Compiler Optimizations Make Everything Complicated](#compiler-optimizations-make-everything-complicated)
 - Summary: When Does Rust Allocate?
-- Appendix and Further Reading
+- [Appendix and Further Reading](#appendix-and-further-reading)
 
 # Foreword
 
@@ -75,9 +75,7 @@ include a warning worth repeating here:
 > Rust does not currently have a rigorously and formally defined memory model.
 > - the [Rust docs](https://doc.rust-lang.org/std/ptr/fn.read_volatile.html)
 
-# Distinguishing regions of memory
-
-# Rust and the Stack
+# Non-Heap Memory Types
 
 Example: Why doesn't `Vec::new()` go to the allocator?
 
@@ -91,7 +89,7 @@ Questions:
 6. How are arrays allocated?
 7. Legal to pass an array as an argument?
 
-# Rust and the Heap
+# Piling On - Rust and the Heap
 
 Example: How to trigger a heap allocation
 
@@ -99,12 +97,19 @@ Questions:
 
 1. Where do collection types allocate memory?
 2. Does a Box<> always allocate heap?
+    - Yes, with exception of compiler optimizations
 3. Passing Box<Trait> vs. genericizing/monomorphization
+    - If it uses `dyn Trait`, it's on the heap.
 4. Other pointer types? Do Rc<>/Arc<> force heap allocation?
+    - Maybe? Part of the alloc crate, but should use qadapt to check
 
-# Understanding compiler optimizations
+# Compiler Optimizations Make Everything Complicated
 
 Example: Compiler stripping out allocations of Box<>, Vec::push()
+
+# Appendix and Further Reading
+
+[Embedonomicon]: 
 
 [embedonomicon]: https://docs.rust-embedded.org/embedonomicon/
 [libc]: CRATES.IO LINK
