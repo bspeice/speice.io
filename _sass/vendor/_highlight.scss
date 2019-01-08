@@ -27,6 +27,11 @@ pre {
     padding: 1.5em 999em 1.5em 999em;
 }
 
+// Forces inline single ticks to stay together
+code.highlighter-rouge {
+    white-space: nowrap;
+}
+
 .highlight {
     border: 1px solid #E8E8EB;
 

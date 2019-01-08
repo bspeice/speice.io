@@ -1,7 +1,7 @@
 ---
 layout: post
-title: "Understanding Heap Allocations in Rust"
-description: "An introduction to the Rust memory model"
+title: "Allocations in Rust"
+description: "An introduction to the memory model"
 category: 
 tags: [rust]
 ---
@@ -58,43 +58,92 @@ would struggle without access to [`std::vector`](https://en.cppreference.com/w/c
 [`std::vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html). But in this scenario,
 `std::vec` is actually part of the [`alloc` crate](https://doc.rust-lang.org/alloc/vec/struct.Vec.html),
 and thus off-limits (because the `alloc` crate requires `#![feature(alloc)]`).
-Or how would you use trait objects? There's no
-[`Box<dyn Trait>`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html)
-available to use for dynamic dispatch.
+Also, `Box` is right out for the same reason.
 
 Whether writing code for embedded devices or not, the important thing in both situations
-is how much you know *before your application starts* about what your memory usage looks like.
-In the embedded device example, there's a small, fixed amount of memory you can possibly use.
-In a browser, however, you have no idea how large [google.com's home page] is until you start
+is how much you know *before your application starts* about what its memory usage will look like.
+In embedded devices, there's a small, fixed amount of memory to use.
+In a browser, you have no idea how large [google.com](https://www.google.com)'s home page is until you start
 trying to download it. The compiler uses this information (or lack thereof) to optimize
 how memory is used; put simply, your code runs faster when the compiler can guarantee exactly
 how much memory your program needs while it's running. This post is all about understanding
 the optimization tricks the compiler uses, and how you can help the compiler and make
 your programs more efficient.
 
-Now let's address some conditions and caveats before going much further.
-This article will focus on "safe" Rust only; `unsafe` mode allows you
-to make use of platform-specific allocation API's (think the [libc] and [winapi]
-implementations of [malloc]) that we'll ignore. We'll also assume a "debug"
-build of libraries and applications (what you get with `cargo run` and `cargo test`)
-and address (hehe) "release" mode at the end (`cargo run --release` and `cargo test --release`).
+Now let's address some conditions and caveats before going much further:
 
-Finally, while the details are unlikely to change, the Rust docs
-include a warning worth repeating here:
+- We'll focus on "safe" Rust only; `unsafe` lets you use platform-specific allocation API's
+  (think the [libc] and [winapi] implementations of [malloc]) that we'll ignore.
+- We'll assume a "debug" build of Rust code (what you get with `cargo run` and `cargo test`)
+  and address (hehe) "release" mode at the end (`cargo run --release` and `cargo test --release`).
+- Because of the nature of the content, some (very simple) assembly-level code is involved.
+  We'll keep this to a minimum, but I [needed](https://stackoverflow.com/a/4584131/1454178)
+  a [refresher](https://stackoverflow.com/a/26026278/1454178) on the `push` and `pop`
+  [instructions](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
+  while writing this post.
+
+And a final warning worth repeating:
 
 > Rust does not currently have a rigorously and formally defined memory model.
-> - the [Rust docs](https://doc.rust-lang.org/std/ptr/fn.read_volatile.html)
+>  
+> -- [the docs](https://doc.rust-lang.org/std/ptr/fn.read_volatile.html)
 
 # Stacking Up: Non-Heap Memory Types
 
-Languages like Java and Python do an amazing job of simplifying the memory model
-needed for programmers. You can essentially treat 
+We'll start with the ["happy path"](https://en.wikipedia.org/wiki/Happy_path):
+what happens when Rust is able to figure out *at compile time* how much memory
+will be used in your program.
 
-Most of the reason this post was written is because I 
-Everyone's agreed that [compilers](https://www.youtube.com/watch?v=bSkpMdDe4g4) are
-[smart](https://www.youtube.com/watch?v=nAbCKa0FzjQ), and Rust is no exception.
+This is important because of the extra optimizations Rust uses when it can predict
+how much memory is needed! Let's go over a quick example:
 
+```rust
+const MICROS_PER_MILLI: u32 = 1000;
+const NANOS_PER_MICRO: u32 = 1000;
 
+pub fn millis_to_nanos(millis: u32) -> u32 {
+    let micros = millis * MICROS_PER_MILLI;
+    let nanos = micros * NANOS_PER_MICRO;
+
+    return nanos;
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/tOwngk)
+
+Forgive the overly simple code, but this shows off what the compiler can figure out
+about your program:
+
+1. There's one `u32` passed to the function, and two `u32`'s used in the function body.
+Each one is 4 bytes, for a total of 12 bytes. We can temporarily reserve space for all
+variables because we know exactly how much space is needed.
+    - If you're looking at the assembly: `millis` is stored in `edi`,
+    `micros` is stored in `eax`, and `nanos` is stored in `ecx`.
+2. Because `MICROS_PER_MILLI` and `NANOS_PER_MICRO` are constants, the compiler never
+allocates memory, and just burns the constants into the final program.
+    - Look for the `mov edi, 1000` and `mov ecx, 1000`.
+
+Given this information, the compiler can efficiently lay out your memory usage so
+that the program never needs to ask the kernel/allocator for memory! This example
+was a bit silly though, so let's talk about the more interesting details.
+
+## **static** and **const**: Program Allocations
+
+The first memory type we'll look at is pretty special; when Rust can prove that
+certain *references* are valid for the lifetime of the program (`static`,
+not specifically `'static`), and when certain *values* are the same for the lifetime
+of the program (`const`). Understanding the distinction between reference and value
+is important; **`static` forces the Rust compiler to guarantee a unique reference
+to the declared expression, while `const` allows the compiler to make copies of the
+expression wherever it chooses.**
+
+You can take a look at [the specification](https://github.com/rust-lang/rfcs/blob/master/text/0246-const-vs-static.md)
+if you want, but I'd rather take a hands-on approach to the topic.
+
+Final note: `thread_local!()` is always a heap allocation.
+
+## **push** and **pop**: Stack Allocations
+
+The first 
 Example: Why doesn't `Vec::new()` go to the allocator?
 
 Questions:
