@@ -121,7 +121,7 @@ variables because we know exactly how much space is needed.
       The `eax` register is re-used to store the final result.
 2. Because `MICROS_PER_MILLI` and `NANOS_PER_MICRO` are constants, the compiler never
 allocates memory, and just burns the constants into the final program.
-    - Look for the `mov edi, 1000` and `mov ecx, 1000`.
+    - Look for the instructions `mov edi, 1000` and `mov ecx, 1000`.
 
 Given this information, the compiler can efficiently lay out your memory usage so
 that the program never needs to ask the kernel/allocator for memory! This example
