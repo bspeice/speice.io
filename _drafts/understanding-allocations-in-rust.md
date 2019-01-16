@@ -117,7 +117,8 @@ about your program:
 Each one is 4 bytes, for a total of 12 bytes. We can temporarily reserve space for all
 variables because we know exactly how much space is needed.
     - If you're looking at the assembly: `millis` is stored in `edi`,
-    `micros` is stored in `eax`, and `nanos` is stored in `ecx`.
+      `micros` is stored in `eax`, and `nanos` is stored in `ecx`.
+      The `eax` register is re-used to store the final result.
 2. Because `MICROS_PER_MILLI` and `NANOS_PER_MICRO` are constants, the compiler never
 allocates memory, and just burns the constants into the final program.
     - Look for the `mov edi, 1000` and `mov ecx, 1000`.
@@ -128,22 +129,142 @@ was a bit silly though, so let's talk about the more interesting details.
 
 ## **static** and **const**: Program Allocations
 
-The first memory type we'll look at is pretty special; when Rust can prove that
-certain *references* are valid for the lifetime of the program (`static`,
-not specifically `'static`), and when certain *values* are the same for the lifetime
-of the program (`const`). Understanding the distinction between reference and value
-is important; **`static` forces the Rust compiler to guarantee a unique reference
-to the declared expression, while `const` allows the compiler to make copies of the
-expression wherever it chooses.**
+The first memory type we'll look at is pretty special: when Rust can prove that
+a *reference* is valid for the lifetime of the program (`static`, not specifically
+`'static`), and when a *value* is the same for the lifetime of the program (`const`).
+Understanding the distinction between reference and value is important for reasons
+we'll go into below. The
+[full specification](https://github.com/rust-lang/rfcs/blob/master/text/0246-const-vs-static.md)
+for these two memory types is available, but I'd rather take a hands-on approach to the topic.
 
-You can take a look at [the specification](https://github.com/rust-lang/rfcs/blob/master/text/0246-const-vs-static.md)
-if you want, but I'd rather take a hands-on approach to the topic.
+### **const**
+
+The quick summary is this: `const` declares a read-only block of memory that is loaded
+as part of your program binary (during the call to [exec(3)](https://linux.die.net/man/3/exec)).
+Any `const` value resulting from calling a `const fn` is guaranteed to be materialized
+at compile-time (meaning that access at runtime will not invoke the `const fn`),
+even though the function is available at run-time as well. The compiler can choose to
+copy the constant value wherever it is deemed practical. Getting the address of a `const`
+value is legal, but not guaranteed to be the same even when referring to the same
+named identifier.
+
+The first point is a bit strange - "read-only memory". *Typically* in Rust you can use
+"inner mutability" to modify things that aren't declared `mut`.
+[`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html) provides an API
+to guarantee at runtime that some consistency rules are enforced:
+
+```rust
+use std::cell::RefCell;
+
+fn my_mutator(cell: &RefCell<u8>) {
+    // Even though we're given an immutable reference,
+    // the `replace` method allows us to modify the inner value.
+    cell.replace(14);
+}
+
+fn main() {
+    let cell = RefCell::new(25);
+    // Prints out 25
+    println!("Cell: {:?}", cell);
+    my_mutator(&cell);
+    // Prints out 14
+    println!("Cell: {:?}", cell);
+}
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=8e4bea1a718edaff4507944e825a54b2)
+
+When `const` is involved though, modifications are silently ignored:
+
+```rust
+use std::cell::RefCell;
+
+const CELL: RefCell<u8> = RefCell::new(25);
+
+fn my_mutator(cell: &RefCell<u8>) {
+    cell.replace(14);
+}
+
+fn main() {
+    // First line prints 25 as expected
+    println!("Cell: {:?}", &CELL);
+    my_mutator(&CELL);
+    // Second line *still* prints 25
+    println!("Cell: {:?}", &CELL);
+}
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=88fe98110c33c1b3a51e341f48b8ae00)
+
+And a second example using [`Once`](https://doc.rust-lang.org/std/sync/struct.Once.html):
+
+```rust
+use std::sync::Once;
+
+const SURPRISE: Once = Once::new();
+
+fn main() {
+    // This is how `Once` is supposed to be used
+    SURPRISE.call_once(|| println!("Initializing..."));
+    // Because `Once` is a `const` value, we never record it
+    // having been initialized the first time, and this closure
+    // will also execute.
+    SURPRISE.call_once(|| println!("Initializing again???"));
+}
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=c3cc5979b5e5434eca0f9ec4a06ee0ed)
+
+[Clippy](https://github.com/rust-lang/rust-clippy) will treat this behavior as an error if attempted,
+but it's still something to be aware of.
+
+The next thing to mention is that `const` values are loaded into memory *as part of your program binary*.
+Because of this, any `const` values declared in your program will be "realized" at compile-time;
+accessing them may trigger a main-memory lookup, but that's it.
+
+```rust
+use std::cell::RefCell;
+
+const CELL: RefCell<u32> = RefCell::new(24);
+
+pub fn multiply(value: u32) -> u32 {
+    value * (*CELL.get_mut())
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/ZMjmdM)
+
+The compiler only creates one `RefCell`, and uses it everywhere. However, that value
+is fully realized at compile time, and is fully stored in the `.L__unnamed_1` section.
+
+If it's helpful though, the compiler can choose to copy `const` values.
+
+```rust
+const FACTOR: u32 = 1000;
+
+pub fn multiply(value: u32) -> u32 {
+    value * FACTOR
+}
+
+pub fn multiply_twice(value: u32) -> u32 {
+    value * FACTOR * FACTOR
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/Qc7tHM)
+
+In this example, the `FACTOR` value is turned into the `mov edi, 1000` instruction
+in both the `multiply` and `multiply_twice` functions; the "1000" value is never
+"stored" anywhere, as it's small enough to use directly.
+
+Finally, getting the address of a `const` value is possible but not guaranteed
+to be unique (given that the compiler can choose to copy values). In my testing
+I was never able to get the compiler to copy a `const` value and get differing pointers,
+but the specifications are clear enough: *don't rely on pointers to `const`
+values being consistent*. To be frank, I have no idea why you'd ever care about
+a pointer to `const`.
+
+### **static**
 
 Final note: `thread_local!()` is always a heap allocation.
 
 ## **push** and **pop**: Stack Allocations
 
-The first 
 Example: Why doesn't `Vec::new()` go to the allocator?
 
 Questions:
