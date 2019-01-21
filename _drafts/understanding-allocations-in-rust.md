@@ -127,15 +127,15 @@ Given this information, the compiler can efficiently lay out your memory usage s
 that the program never needs to ask the kernel/allocator for memory! This example
 was a bit silly though, so let's talk about the more interesting details.
 
-## **static** and **const**: Program Allocations
+## **const** and **static**: Program Allocations
 
 The first memory type we'll look at is pretty special: when Rust can prove that
-a *reference* is valid for the lifetime of the program (`static`, not specifically
-`'static`), and when a *value* is the same for the lifetime of the program (`const`).
-Understanding the distinction between reference and value is important for reasons
+a *value* is fixed for the life of a program, and when a *reference* is valid for
+the duration of the program (`static`, not specifically `'static`).
+Understanding the distinction between value and reference is important for reasons
 we'll go into below. The
 [full specification](https://github.com/rust-lang/rfcs/blob/master/text/0246-const-vs-static.md)
-for these two memory types is available, but I'd rather take a hands-on approach to the topic.
+for these two memory types is available, but we'll take a hands-on approach to the topic.
 
 ### **const**
 
@@ -143,13 +143,16 @@ The quick summary is this: `const` declares a read-only block of memory that is 
 as part of your program binary (during the call to [exec(3)](https://linux.die.net/man/3/exec)).
 Any `const` value resulting from calling a `const fn` is guaranteed to be materialized
 at compile-time (meaning that access at runtime will not invoke the `const fn`),
-even though the function is available at run-time as well. The compiler can choose to
-copy the constant value wherever it is deemed practical. Getting the address of a `const`
-value is legal, but not guaranteed to be the same even when referring to the same
-named identifier.
+even though the `const fn` functions are available at run-time as well. The compiler
+can choose to copy the constant value wherever it is deemed practical. Getting the address
+of a `const` value is legal, but not guaranteed to be the same even when referring to the
+same named identifier.
 
-The first point is a bit strange - "read-only memory". *Typically* in Rust you can use
-"inner mutability" to modify things that aren't declared `mut`.
+The first point is a bit strange - "read-only memory".
+[The Rust book](https://doc.rust-lang.org/book/ch03-01-variables-and-mutability.html#differences-between-variables-and-constants)
+mentions in a couple places that using `mut` with constants is illegal,
+but it's also important to demonstrate just how immutable they are. *Typically* in Rust
+you can use "inner mutability" to modify things that aren't declared `mut`.
 [`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html) provides an API
 to guarantee at runtime that some consistency rules are enforced:
 
@@ -212,12 +215,15 @@ fn main() {
 ```
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=c3cc5979b5e5434eca0f9ec4a06ee0ed)
 
-[Clippy](https://github.com/rust-lang/rust-clippy) will treat this behavior as an error if attempted,
+When the [`const` specification](https://github.com/rust-lang/rfcs/blob/26197104b7bb9a5a35db243d639aee6e46d35d75/text/0246-const-vs-static.md)
+refers to ["rvalues"](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3055.pdf), this is
+what they mean. [Clippy](https://github.com/rust-lang/rust-clippy) will treat this as an error,
 but it's still something to be aware of.
 
 The next thing to mention is that `const` values are loaded into memory *as part of your program binary*.
 Because of this, any `const` values declared in your program will be "realized" at compile-time;
-accessing them may trigger a main-memory lookup, but that's it.
+accessing them may trigger a main-memory lookup (with a fixed address, so your CPU may
+be able to prefetch the value), but that's it.
 
 ```rust
 use std::cell::RefCell;
@@ -250,18 +256,19 @@ pub fn multiply_twice(value: u32) -> u32 {
 
 In this example, the `FACTOR` value is turned into the `mov edi, 1000` instruction
 in both the `multiply` and `multiply_twice` functions; the "1000" value is never
-"stored" anywhere, as it's small enough to use directly.
+"stored" anywhere, as it's small enough to inline into the assembly instructions.
 
 Finally, getting the address of a `const` value is possible but not guaranteed
 to be unique (given that the compiler can choose to copy values). In my testing
 I was never able to get the compiler to copy a `const` value and get differing pointers,
 but the specifications are clear enough: *don't rely on pointers to `const`
-values being consistent*. To be frank, I have no idea why you'd ever care about
-a pointer to `const`.
+values being consistent*. To be frank, caring about locations for `const` values
+is almost certainly a code smell.
 
 ### **static**
 
-Final note: `thread_local!()` is always a heap allocation.
+1. What's going on with `lazy_static!()`?
+2. What's going on with `thread_local!()`?
 
 ## **push** and **pop**: Stack Allocations
 
@@ -276,6 +283,8 @@ Questions:
 5. How do Option<> or Result<> affect structs?
 6. How are arrays allocated?
 7. Legal to pass an array as an argument?
+8. Can you force a heap allocation with arrays that are larger than stack size?
+    - Check `ulimit -s`
 
 # Piling On - Rust and the Heap
 
@@ -290,14 +299,13 @@ Questions:
     - If it uses `dyn Trait`, it's on the heap.
 4. Other pointer types? Do Rc<>/Arc<> force heap allocation?
     - Maybe? Part of the alloc crate, but should use qadapt to check
+5. How many allocations happen before `main()` is called?
 
 # Compiler Optimizations Make Everything Complicated
 
 Example: Compiler stripping out allocations of Box<>, Vec::push()
 
 # Appendix and Further Reading
-
-[Embedonomicon]: 
 
 [embedonomicon]: https://docs.rust-embedded.org/embedonomicon/
 [libc]: CRATES.IO LINK
