@@ -75,7 +75,7 @@ Now let's address some conditions and caveats before going much further:
 - We'll focus on "safe" Rust only; `unsafe` lets you use platform-specific allocation API's
   (think the [libc] and [winapi] implementations of [malloc]) that we'll ignore.
 - We'll assume a "debug" build of Rust code (what you get with `cargo run` and `cargo test`)
-  and address (hehe) "release" mode at the end (`cargo run --release` and `cargo test --release`).
+  and address (pun intended) "release" mode at the end (`cargo run --release` and `cargo test --release`).
 - All content will be run using Rust 1.31, as that's the highest currently supported in the
   [Compiler Exporer](https://godbolt.org/). As such, we'll avoid talking about things like
   [compile-time evaluation of `static`](https://github.com/rust-lang/rfcs/blob/master/text/0911-const-fn.md)
@@ -257,7 +257,7 @@ pub fn multiply_twice(value: u32) -> u32 {
     value * FACTOR * FACTOR
 }
 ```
--- [Compiler Explorer](https://godbolt.org/z/Qc7tHM)
+-- [Compiler Explorer](https://odbolt.org/z/Qc7tHM)
 
 In this example, the `FACTOR` value is turned into the `mov edi, 1000` instruction
 in both the `multiply` and `multiply_twice` functions; the "1000" value is never
@@ -282,14 +282,214 @@ and `thread_local!()` macros later.
 
 More generally, `static` variables are globally unique locations in memory,
 the contents of which are loaded as part of your program being read into main memory.
-They allow initialization with both raw values and (most) `const fn` calls, and must
-implement the [`Sync`](https://doc.rust-lang.org/std/marker/trait.Sync.html)
-marker trait. The initial value is loaded along with the program/library binary,
-though it can change during the time your program is running. While `static mut`
-variables are allowed, mutating a static is considered an `unsafe` operation.
-Unlike `const` though, interior mutability is accepted, and can be done with `safe` code.
+They allow initialization with both raw values and `const fn` calls, and the initial
+value is loaded along with the program/library binary. All static variables must
+be of a type that implements the [`Sync`](https://doc.rust-lang.org/std/marker/trait.Sync.html)
+marker trait. And while `static mut` variables are allowed, mutating a static is considered
+an `unsafe` operation.
+
+The single biggest difference between `const` and `static` is the guarantees
+provided about uniqueness. Where `const` variables may or may not be copied
+in code, `static` variables are guarantee to be unique. If we take a previous
+`const` example and change it to `static`, the difference should be clear:
+
+```rust
+static FACTOR: u32 = 1000;
+
+pub fn multiply(value: u32) -> u32 {
+    value * FACTOR
+}
+
+pub fn multiply_twice(value: u32) -> u32 {
+    value * FACTOR * FACTOR
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/MGBr5Y)
+
+Where [previously](https://godbolt.org/z/MGBr5Y) there were plenty of
+references to multiplying by 1000, the new assembly refers to `FACTOR`
+as a named memory location instead. No initialization work needs to be done,
+but the compiler can no longer prove the value never changes during execution.
+
+Next, let's talk about initialization. The simplest case is initializing
+static variables with either scalar or struct notation:
+
+```rust
+#[derive(Debug)]
+struct MyStruct {
+    x: u32
+}
+
+static MY_STRUCT: MyStruct = MyStruct {
+    // You can even reference other statics
+    // declared later
+    x: MY_VAL
+};
+
+static MY_VAL: u32 = 24;
+
+fn main() {
+    println!("Static MyStruct: {:?}", MY_STRUCT);
+}
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=b538dbc46076f12db047af4f4403ee6e)
+
+Things get a bit weirder when using `const fn`. In most cases, things just work:
+
+```rust
+#[derive(Debug)]
+struct MyStruct {
+    x: u32
+}
+
+impl MyStruct {
+    const fn new() -> MyStruct {
+        MyStruct { x: 24 }
+    }
+}
+
+static MY_STRUCT: MyStruct = MyStruct::new();
+
+fn main() {
+    println!("const fn Static MyStruct: {:?}", MY_STRUCT);
+}
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=8c796a6e7fc273c12115091b707b0255)
+
+However, there's a caveat: you're currently not allowed to use `const fn` to initialize
+static variables of types that aren't marked `Sync`. As an example, even though
+[`RefCell::new()`](https://doc.rust-lang.org/std/cell/struct.RefCell.html#method.new)
+is `const fn`, because [`RefCell` isn't `Sync`](https://doc.rust-lang.org/std/cell/struct.RefCell.html#impl-Sync),
+you'll get an error at compile time:
+
+```rust
+use std::cell::RefCell;
+
+// error[E0277]: `std::cell::RefCell<u8>` cannot be shared between threads safely
+static MY_LOCK: RefCell<u8> = RefCell::new(0);
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=c76ef86e473d07117a1700e21fd45560)
+
+It's likely that this will [change in the future](https://github.com/rust-lang/rfcs/blob/master/text/0911-const-fn.md) though,
+so be on the lookout.
+
+Which leads well to the next point: static variable types must implement the
+[`Sync` marker](https://doc.rust-lang.org/std/marker/trait.Sync.html).
+Because they're globally unique, it must be safe for you to access static variables
+from any thread at any time. Most `struct` definitions automatically implement the
+`Sync` trait because they contain only elements which themselves
+implement `Sync`. This is why earlier examples could get away with initializing
+statics, even though we never included an `impl Sync for MyStruct` in the code.
+For more on the `Sync` trait, the [Nomicon](https://doc.rust-lang.org/nomicon/send-and-sync.html)
+has a much more thorough treatment. But as an example, Rust refuses to compile
+our earlier example if we add a non-`Sync` element to the `struct` definition:
+
+```rust
+use std::cell::RefCell;
+
+struct MyStruct {
+    x: u32,
+    y: RefCell<u8>,
+}
+
+// error[E0277]: `std::cell::RefCell<u8>` cannot be shared between threads safely
+static MY_STRUCT: MyStruct = MyStruct {
+    x: 8,
+    y: RefCell::new(8)
+};
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=40074d0248f056c296b662dbbff97cfc)
+
+Finally, while `static mut` variables are allowed, mutating them is an `unsafe` operation.
+Unlike `const` however, interior mutability is acceptable. To demonstrate:
+
+```rust
+use std::sync::Once;
+
+// This example adapted from https://doc.rust-lang.org/std/sync/struct.Once.html#method.call_once
+static INIT: Once = Once::new();
+
+fn main() {
+    // Note that while `INIT` is declared immutable, we're still allowed
+    // to mutate its interior
+    INIT.call_once(|| println!("Initializing..."));
+    // This code won't panic, as the interior of INIT was modified
+    // as part of the previous `call_once`
+    INIT.call_once(|| panic!("INIT was called twice!"));
+}
+```
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=3ba003a981a7ed7400240caadd384d59)
 
 ## **push** and **pop**: Stack Allocations
+
+**const** and **static** are perfectly fine, but it's very rare that we know
+at compile-time about either references or values that will be the same for the entire
+time our program is running. Put another way, it's not often the case that either you
+or your compiler know how much memory your entire program will need.
+
+However, there are still some optimizations the compiler can do if it knows how much
+memory individual functions will need. Specifically, the compiler can make use of
+"stack" memory (as opposed to "heap" memory) which can be managed far faster in
+both the short- and long-term. When requesting memory, the
+[`push` instruction](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
+can typically complete in [1 or 2 cycles](https://agner.org/optimize/instruction_tables.ods)
+(<1 nanosecond on modern CPUs). Heap memory instead requires using an allocator
+(specialized software to track what memory is in use) to reserve space.
+And when you're finished with memory, the `pop` instruction likewise runs in
+1-3 cycles, as opposed to an allocator needing to worry about memory fragmentation
+and other issues. All sorts of incredibly sophisticated techniques have been used
+to design allocators:
+- [Garbage Collection](https://en.wikipedia.org/wiki/Garbage_collection_(computer_science))
+  strategies like [Tracing](https://en.wikipedia.org/wiki/Tracing_garbage_collection)
+  (used in [Java](https://www.oracle.com/technetwork/java/javase/tech/g1-intro-jsp-135488.html))
+  and [Reference counting](https://en.wikipedia.org/wiki/Reference_counting)
+  (used in [Python](https://docs.python.org/3/extending/extending.html#reference-counts))
+- Thread-local structures to prevent locking the allocator in [tcmalloc](https://jamesgolick.com/2013/5/19/how-tcmalloc-works.html)
+- Arena structures used in [jemalloc](http://jemalloc.net/), which until recently
+  was the primary allocator for Rust programs!
+
+But no matter how sophisticated your allocator is, the principle remains: the
+fastest allocator is the one you never use. As such, we're not going to go
+in detail on how exactly the
+[`push` and `pop` instructions work](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html),
+and we'll focus instead on the conditions that enable the Rust compiler to use
+stack-based allocation for variables.
+
+Now, one question I hope you're asking is "how do we distinguish stack- and
+heap-based allocations in Rust code?" There are three strategies I'm going
+to use for this:
+
+1. Any time the `push` or `pop` instructions are used, or the `rsp` register is modified,
+   this is a stack allocation:
+   ```rust
+   pub fn stack_alloc(x: u32) -> u32 {
+       // Space for `y` is allocated by subtracting from `rsp`,
+       // and then populated
+       let y = [1u8, 2, 3, 4];
+       // Space for `y` is deallocated by adding back to `rsp`
+       x
+   }
+   ```
+   -- [Compiler Explorer](https://godbolt.org/z/gKFOgB)
+2. Any time `call core::ptr::drop_in_place` occurs, a heap allocation has occurred
+   sometime in the past and it is now time for us to de-allocate the memory:
+   ```rust
+   pub fn heap_alloc(x: usize) -> usize {
+       // Space for elements in a vector has to be allocated
+       // on the heap, and is then de-allocated once the
+       // vector goes out of scope
+       let y: Vec<u8> = Vec::with_capacity(x);
+       x
+   }
+   ```
+   -- [Compiler Explorer](https://godbolt.org/z/T2xoh8) (`drop_in_place` happens on line 1321)
+3. Using a special [`GlobalAlloc`](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html)
+   implementation to track when heap allocations occur. For this post, I'll be using
+   [qadapt](https://crates.io/crates/qadapt) to trigger a panic if heap allocations
+   occur; code that doesn't panic doesn't use heap allocations, and by necessity
+   uses stack allocation instead.
+
+With all that in mind, let's talk about how to use the stack in Rust.
 
 Example: Why doesn't `Vec::new()` go to the allocator?
 
@@ -304,6 +504,8 @@ Questions:
 7. Legal to pass an array as an argument?
 8. Can you force a heap allocation with arrays that are larger than stack size?
     - Check `ulimit -s`
+9. Can you force heap allocation by returning something that escapes the stack?
+    - Will `#[inline(always)]` move this back to a stack allocation?
 
 # Piling On - Rust and the Heap
 
@@ -322,7 +524,9 @@ Questions:
 
 # Compiler Optimizations Make Everything Complicated
 
-Example: Compiler stripping out allocations of Box<>, Vec::push()
+1. Box<> getting inlined into stack allocations
+2. Vec::push() === Vec::with_capacity() for fixed/predictable capacities
+3. Inlining statics that don't change value
 
 # Appendix and Further Reading
 
