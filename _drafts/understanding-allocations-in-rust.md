@@ -274,13 +274,20 @@ is almost certainly a code smell.
 
 Static variables are related to `const` variables, but take a slightly different approach.
 When the compiler can guarantee that a *reference* is fixed for the life of a program,
-you end up with a `static` variable. Where `const` variables can never change value
-(because the value may have been copied to random pieces of code), `static` variables
-uniquely identify a location in memory. This allows them to change value under specific
-circumstances.
+you end up with a `static` variable (as opposed to *values* that are fixed for the
+duration a program is running). Because of this reference/value distinction, 
+static variables behave much more like what people expect from "global" variables.
+We'll look at regular static variables first, and then address the `lazy_static!()`
+and `thread_local!()` macros later.
 
-1. What's going on with `lazy_static!()`?
-2. What's going on with `thread_local!()`?
+More generally, `static` variables are globally unique locations in memory,
+the contents of which are loaded as part of your program being read into main memory.
+They allow initialization with both raw values and (most) `const fn` calls, and must
+implement the [`Sync`](https://doc.rust-lang.org/std/marker/trait.Sync.html)
+marker trait. The initial value is loaded along with the program/library binary,
+though it can change during the time your program is running. While `static mut`
+variables are allowed, mutating a static is considered an `unsafe` operation.
+Unlike `const` though, interior mutability is accepted, and can be done with `safe` code.
 
 ## **push** and **pop**: Stack Allocations
 
