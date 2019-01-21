@@ -76,13 +76,18 @@ Now let's address some conditions and caveats before going much further:
   (think the [libc] and [winapi] implementations of [malloc]) that we'll ignore.
 - We'll assume a "debug" build of Rust code (what you get with `cargo run` and `cargo test`)
   and address (hehe) "release" mode at the end (`cargo run --release` and `cargo test --release`).
+- All content will be run using Rust 1.31, as that's the highest currently supported in the
+  [Compiler Exporer](https://godbolt.org/). As such, we'll avoid talking about things like
+  [compile-time evaluation of `static`](https://github.com/rust-lang/rfcs/blob/master/text/0911-const-fn.md)
+  that are available in nightly.
 - Because of the nature of the content, some (very simple) assembly-level code is involved.
   We'll keep this to a minimum, but I [needed](https://stackoverflow.com/a/4584131/1454178)
   a [refresher](https://stackoverflow.com/a/26026278/1454178) on the `push` and `pop`
   [instructions](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
   while writing this post.
 
-And a final warning worth repeating:
+And finally, I'll do what I can to flag potential future changes, but the Rust docs
+have a notice worth repeating:
 
 > Rust does not currently have a rigorously and formally defined memory model.
 >  
@@ -266,6 +271,13 @@ values being consistent*. To be frank, caring about locations for `const` values
 is almost certainly a code smell.
 
 ### **static**
+
+Static variables are related to `const` variables, but take a slightly different approach.
+When the compiler can guarantee that a *reference* is fixed for the life of a program,
+you end up with a `static` variable. Where `const` variables can never change value
+(because the value may have been copied to random pieces of code), `static` variables
+uniquely identify a location in memory. This allows them to change value under specific
+circumstances.
 
 1. What's going on with `lazy_static!()`?
 2. What's going on with `thread_local!()`?
