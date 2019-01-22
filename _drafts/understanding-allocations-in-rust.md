@@ -489,7 +489,47 @@ to use for this:
    occur; code that doesn't panic doesn't use heap allocations, and by necessity
    uses stack allocation instead.
 
-With all that in mind, let's talk about how to use the stack in Rust.
+With all that in mind, let's get into the details. The unfortunate thing about stack allocations
+in Rust is that there's not a good
+way to glance at code and figure out where allocations on the heap happen. Looking at
+other languages, Java mostly cares about `new MyObject()` (yes, I'm conveniently ignoring
+autoboxing). C makes things clear with calls to [malloc(3)](https://linux.die.net/man/3/malloc).
+C++ has the [new](https://stackoverflow.com/a/655086/1454178) keyword,
+[`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique), and
+[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared)
+(though things are admittedly more complex with [RAII](https://en.cppreference.com/w/cpp/language/raii)).
+All languages exist on a memory management spectrum, from [Zig](https://ziglang.org/)
+forcing you to provide an [allocator](https://ziglang.org/documentation/master/#Memory),
+to Python/Ruby/JavaScript assuming you generally never worry about those details.
+
+So what can be done to make sure your program is using stack allocations? A couple of
+guidelines are in order:
+
+**For code you control**:
+
+- Never using types in the [`alloc` crate](https://doc.rust-lang.org/stable/alloc/index.html)
+  is sufficient. While you should always review its contents, the most notable members are
+  [`Box`](https://doc.rust-lang.org/stable/alloc/boxed/struct.Box.html),
+  refcount types ([`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html), 
+  [`Arc`](https://doc.rust-lang.org/stable/alloc/sync/struct.Arc.html))
+- Dynamically resizable types need to be treated with care; we'll go into detail later,
+  but pay attention to [`String`](https://doc.rust-lang.org/stable/alloc/string/struct.String.html),
+  [`Vec`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html), and
+  [`HashMap`](https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html)
+- Enums and other wrapper types will not trigger heap allocations unless
+  the underlying type also needs heap allocation. You can use
+  [`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html),
+  [`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html)
+  with reckless abandon.
+- [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are guaranteed
+  to be stack-allocated in all circumstances.
+
+**For code outside your control**:
+
+- Review the code to make sure it abides by the guidelines above
+- Use a custom allocator like [qadapt](https://crates.io/crates/qadapt) as an automated check
+  to make sure that stack allocations are used in code you care about.
+
 
 Example: Why doesn't `Vec::new()` go to the allocator?
 
@@ -517,7 +557,8 @@ Questions:
 2. Does a Box<> always allocate heap?
     - Yes, with exception of compiler optimizations
 3. Passing Box<Trait> vs. genericizing/monomorphization
-    - If it uses `dyn Trait`, it's on the heap.
+    - If it uses `dyn Trait`, it's on the heap?
+    - What if the trait implements `Sized`?
 4. Other pointer types? Do Rc<>/Arc<> force heap allocation?
     - Maybe? Part of the alloc crate, but should use qadapt to check
 5. How many allocations happen before `main()` is called?
