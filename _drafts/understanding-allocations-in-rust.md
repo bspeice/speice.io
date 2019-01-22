@@ -523,6 +523,8 @@ guidelines are in order:
   with reckless abandon.
 - [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are guaranteed
   to be stack-allocated in all circumstances.
+- Note to self: Do I need to mention generics or trait objects? I think this
+  may be handled by the other points, and can be addressed later.
 
 **For code outside your control**:
 
@@ -544,8 +546,10 @@ Questions:
 7. Legal to pass an array as an argument?
 8. Can you force a heap allocation with arrays that are larger than stack size?
     - Check `ulimit -s`
+    - Are array implementations larger than 32 needed? 32 x u64 == 256 bytes
 9. Can you force heap allocation by returning something that escapes the stack?
     - Will `#[inline(always)]` move this back to a stack allocation?
+    - Will `#[inline(never)]` force a heap allocation?
 
 # Piling On - Rust and the Heap
 
