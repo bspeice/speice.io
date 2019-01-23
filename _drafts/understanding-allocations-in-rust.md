@@ -518,8 +518,9 @@ guidelines are in order:
   [`HashMap`](https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html)
 - Enums and other wrapper types will not trigger heap allocations unless
   the underlying type also needs heap allocation. You can use
-  [`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html) and
-  [`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html)
+  [`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html),
+  [`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html), and
+  [`RefCell`](https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html)
   with reckless abandon.
 - [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are guaranteed
   to be stack-allocated in all circumstances.
