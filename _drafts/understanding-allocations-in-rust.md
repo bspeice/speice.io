@@ -493,41 +493,41 @@ With all that in mind, let's get into the details. The unfortunate thing about s
 in Rust is that there's not a good
 way to glance at code and figure out where allocations on the heap happen. Looking at
 other languages, Java mostly cares about `new MyObject()` (yes, I'm conveniently ignoring
-autoboxing). C makes things clear with calls to [malloc(3)](https://linux.die.net/man/3/malloc).
-C++ has the [new](https://stackoverflow.com/a/655086/1454178) keyword,
-[`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique), and
-[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared)
-(though things are admittedly more complex with [RAII](https://en.cppreference.com/w/cpp/language/raii)).
-All languages exist on a memory management spectrum, from [Zig](https://ziglang.org/)
-forcing you to provide an [allocator](https://ziglang.org/documentation/master/#Memory),
-to Python/Ruby/JavaScript assuming you generally never worry about those details.
+autoboxing). C makes things clear with calls to [malloc(3)](https://linux.die.net/man/3/malloc),
+and old C++ has the [new](https://stackoverflow.com/a/655086/1454178) keyword.
+Rust's model most closely aligns with C++11 and [RAII](https://en.cppreference.com/w/cpp/language/raii);
+[`Box`](https://doc.rust-lang.org/stable/alloc/boxed/struct.Box.html)
+is comparable to [`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique),
+and [`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html) behaves like
+[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared).
 
-So what can be done to make sure your program is using stack allocations? A couple of
-guidelines are in order:
+But what can be done to ensure your program is using stack allocations? Some guidelines
+are in order:
 
 **For code you control**:
 
-- Never using types in the [`alloc` crate](https://doc.rust-lang.org/stable/alloc/index.html)
-  is sufficient. While you should always review its contents, the most notable members are
+- Don't use smart pointer types, as they force heap allocation -
   [`Box`](https://doc.rust-lang.org/stable/alloc/boxed/struct.Box.html),
-  refcount types ([`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html), 
-  [`Arc`](https://doc.rust-lang.org/stable/alloc/sync/struct.Arc.html))
-- Dynamically resizable types need to be treated with care; we'll go into detail later,
-  but pay attention to [`String`](https://doc.rust-lang.org/stable/alloc/string/struct.String.html),
-  [`Vec`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html), and
-  [`HashMap`](https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html)
+  [`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html), etc.
+- Cloning or copying stack-allocated objects creates new objects that are
+  stack-allocated.
 - Enums and other wrapper types will not trigger heap allocations unless
-  the underlying type also needs heap allocation. You can use
-  [`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html),
-  [`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html), and
+  their contents need heap allocation. You can use
+  [`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html) and
   [`RefCell`](https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html)
   with reckless abandon.
 - [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are guaranteed
-  to be stack-allocated in all circumstances.
+  to be stack-allocated, but dynamically resizable types (
+  [`String`](https://doc.rust-lang.org/stable/alloc/string/struct.String.html),
+  [`Vec`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html),
+  [`HashMap`](https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html))
+  will store their contents in the heap
 - Note to self: Do I need to mention generics or trait objects? I think this
-  may be handled by the other points, and can be addressed later.
+  may be handled by the other points, and can be addressed later. Also, is it
+  obvious that cloning stack-allocated data puts things on the stack? Is there
+  a way to address that without it being a unique point?
 
-**For code outside your control**:
+**For code outside your control**: (crates you rely on)
 
 - Review the code to make sure it abides by the guidelines above
 - Use a custom allocator like [qadapt](https://crates.io/crates/qadapt) as an automated check
