@@ -567,6 +567,9 @@ Questions:
 4. Other pointer types? Do Rc<>/Arc<> force heap allocation?
     - Maybe? Part of the alloc crate, but should use qadapt to check
 5. How many allocations happen before `main()` is called?
+6. How can you use the heap well?
+    - Know when collections resizing happens
+    - Use `Borrow` to abstract over Pointer/Box/Rc/Arc/CoW
 
 # Compiler Optimizations Make Everything Complicated
 
