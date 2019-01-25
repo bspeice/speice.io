@@ -570,6 +570,7 @@ Questions:
 6. How can you use the heap well?
     - Know when collections resizing happens
     - Use `Borrow` to abstract over Pointer/Box/Rc/Arc/CoW
+7. How expensive is move? Vs. C++ std::move?
 
 # Compiler Optimizations Make Everything Complicated
 
