@@ -30,35 +30,47 @@ section for easy citation in the future. To that end, a table of contents is pro
 to assist in easy navigation:
 
 - [Foreword](#foreword)
-- [Stacking Up: Non-Heap Memory Types](#non-heap-memory-types)
-- [Piling On: Rust and the Heap](#piling-on-rust-and-the-heap)
-- [Compiler Optimizations Make Everything Complicated](#compiler-optimizations-make-everything-complicated)
+- [The Whole World: Global Memory Usage](#the-whole-world-global-memory-usage)
+- [Stacking Up: Non-Heap Memory](#stacking-up-non-heap-memory)
+- [A Heaping Helping: Rust and Dynamic Memory](#a-heaping-helping-rust-and-dynamic-memory)
+- [Compiler Optimizations: What It's Done For You Lately](#compiler-optimizations-what-its-done-for-you-lately)
 - Summary: When Does Rust Allocate?
-- [Appendix and Further Reading](#appendix-and-further-reading)
 
 # Foreword
 
-There's a simple checklist to see if you can skip over reading this article. You must:
+Rust's three defining features of [Performance, Reliability, and Productivity](https://www.rust-lang.org/)
+are all driven to a great degree by the how the Rust compiler understands
+[memory ownership](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html). Unlike managed memory
+languages (Java, Python), Rust [doesn't really](https://words.steveklabnik.com/borrow-checking-escape-analysis-and-the-generational-hypothesis)
+garbage collect, leading to fast code when [dynamic (heap) memory](https://en.wikipedia.org/wiki/Memory_management#Dynamic_memory_allocation)
+isn't necessary. When heap memory is necessary, Rust ensures you can't accidentally mis-manage it.
+And because the compiler handles memory "ownership" for you, developers never need to worry about
+accidentally deleting data that was needed somewhere else.
 
-1. Only write `#![no_std]` crates
-2. Never use `unsafe`
-3. Never use `#![feature(alloc)]`
+That said, there are situations where you won't benefit from work the Rust compiler is doing.
+If you:
+
+1. Never use `unsafe`
+2. Never use `#![feature(alloc)]` or the [`alloc` crate](https://doc.rust-lang.org/alloc/index.html)
+
+...then it's not possible for you to use dynamic memory! 
 
 For some uses of Rust, typically embedded devices, these constraints make sense.
-They're working with very limited memory, and the program binary size itself may
-significantly affect what's available! There's no operating system able to manage
-this "virtual memory" junk, but that's not an issue because there's only one
-running application. The [embedonomicon] is ever in mind, and interacting with the
-"real world" through extra peripherals is accomplished by reading and writing to
-exact memory addresses.
+They have very limited memory, and the program binary size itself may significantly
+affect what's available! There's no operating system able to manage
+this ["virtual memory"](https://en.wikipedia.org/wiki/Virtual_memory) junk, but that's
+not an issue because there's only one running application. The
+[embedonomicon](https://docs.rust-embedded.org/embedonomicon/preface.html) is ever in mind,
+and interacting with the "real world" through extra peripherals is accomplished by
+reading and writing to [specific memory addresses](https://bob.cs.sonoma.edu/IntroCompOrg-RPi/sec-gpio-mem.html).
 
 Most Rust programs find these requirements overly burdensome though. C++ developers
 would struggle without access to [`std::vector`](https://en.cppreference.com/w/cpp/container/vector)
-(except those hardcore no-STL guys), and Rust developers would struggle without
+(except those hardcore no-STL people), and Rust developers would struggle without
 [`std::vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html). But in this scenario,
-`std::vec` is actually part of the [`alloc` crate](https://doc.rust-lang.org/alloc/vec/struct.Vec.html),
-and thus off-limits (because the `alloc` crate requires `#![feature(alloc)]`).
-Also, `Box` is right out for the same reason.
+`std::vec` is actually aliased to a part of the
+[`alloc` crate](https://doc.rust-lang.org/alloc/vec/struct.Vec.html), and thus off-limits.
+`Box`, `Rc`, etc., are also unusable for the same reason.
 
 Whether writing code for embedded devices or not, the important thing in both situations
 is how much you know *before your application starts* about what its memory usage will look like.
@@ -67,82 +79,45 @@ In a browser, you have no idea how large [google.com](https://www.google.com)'s 
 trying to download it. The compiler uses this information (or lack thereof) to optimize
 how memory is used; put simply, your code runs faster when the compiler can guarantee exactly
 how much memory your program needs while it's running. This post is all about understanding
-the optimization tricks the compiler uses, and how you can help the compiler and make
-your programs more efficient.
+how the compiler reasons about your program, with an emphasis on how to design your programs
+for performance.
 
 Now let's address some conditions and caveats before going much further:
 
 - We'll focus on "safe" Rust only; `unsafe` lets you use platform-specific allocation API's
-  (think the [libc] and [winapi] implementations of [malloc]) that we'll ignore.
+  ([`malloc`](https://www.tutorialspoint.com/c_standard_library/c_function_malloc.htm)) that we'll ignore.
 - We'll assume a "debug" build of Rust code (what you get with `cargo run` and `cargo test`)
-  and address (pun intended) "release" mode at the end (`cargo run --release` and `cargo test --release`).
+  and address (pun intended) release mode at the end (`cargo run --release` and `cargo test --release`).
 - All content will be run using Rust 1.31, as that's the highest currently supported in the
-  [Compiler Exporer](https://godbolt.org/). As such, we'll avoid talking about things like
+  [Compiler Exporer](https://godbolt.org/). As such, we'll avoid upcoming innovations like
   [compile-time evaluation of `static`](https://github.com/rust-lang/rfcs/blob/master/text/0911-const-fn.md)
   that are available in nightly.
 - Because of the nature of the content, some (very simple) assembly-level code is involved.
-  We'll keep this to a minimum, but I [needed](https://stackoverflow.com/a/4584131/1454178)
+  We'll keep this simple, but I [found](https://stackoverflow.com/a/4584131/1454178)
   a [refresher](https://stackoverflow.com/a/26026278/1454178) on the `push` and `pop`
   [instructions](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
-  while writing this post.
+  was helpful while writing this post.
 
-And finally, I'll do what I can to flag potential future changes, but the Rust docs
+Finally, I'll do what I can to flag potential future changes but the Rust docs
 have a notice worth repeating:
 
 > Rust does not currently have a rigorously and formally defined memory model.
 >  
 > -- [the docs](https://doc.rust-lang.org/std/ptr/fn.read_volatile.html)
 
-# Stacking Up: Non-Heap Memory Types
-
-We'll start with the ["happy path"](https://en.wikipedia.org/wiki/Happy_path):
-what happens when Rust is able to figure out *at compile time* how much memory
-will be used in your program.
-
-This is important because of the extra optimizations Rust uses when it can predict
-how much memory is needed! Let's go over a quick example:
-
-```rust
-const MICROS_PER_MILLI: u32 = 1000;
-const NANOS_PER_MICRO: u32 = 1000;
-
-pub fn millis_to_nanos(millis: u32) -> u32 {
-    let micros = millis * MICROS_PER_MILLI;
-    let nanos = micros * NANOS_PER_MICRO;
-
-    return nanos;
-}
-```
--- [Compiler Explorer](https://godbolt.org/z/tOwngk)
-
-Forgive the overly simple code, but this shows off what the compiler can figure out
-about your program:
-
-1. There's one `u32` passed to the function, and two `u32`'s used in the function body.
-Each one is 4 bytes, for a total of 12 bytes. We can temporarily reserve space for all
-variables because we know exactly how much space is needed.
-    - If you're looking at the assembly: `millis` is stored in `edi`,
-      `micros` is stored in `eax`, and `nanos` is stored in `ecx`.
-      The `eax` register is re-used to store the final result.
-2. Because `MICROS_PER_MILLI` and `NANOS_PER_MICRO` are constants, the compiler never
-allocates memory, and just burns the constants into the final program.
-    - Look for the instructions `mov edi, 1000` and `mov ecx, 1000`.
-
-Given this information, the compiler can efficiently lay out your memory usage so
-that the program never needs to ask the kernel/allocator for memory! This example
-was a bit silly though, so let's talk about the more interesting details.
-
-## **const** and **static**: Program Allocations
+# The Whole World: Global Memory Usage
 
 The first memory type we'll look at is pretty special: when Rust can prove that
-a *value* is fixed for the life of a program, and when a *reference* is valid for
-the duration of the program (`static`, not specifically `'static`).
+a *value* is fixed for the life of a program (`const`), and when a *reference* is valid for
+the duration of the program (`static` as a declaration, not
+[`'static`](https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html#the-static-lifetime)
+as a lifetime).
 Understanding the distinction between value and reference is important for reasons
 we'll go into below. The
 [full specification](https://github.com/rust-lang/rfcs/blob/master/text/0246-const-vs-static.md)
 for these two memory types is available, but we'll take a hands-on approach to the topic.
 
-### **const**
+## **const**
 
 The quick summary is this: `const` declares a read-only block of memory that is loaded
 as part of your program binary (during the call to [exec(3)](https://linux.die.net/man/3/exec)).
@@ -270,7 +245,7 @@ but the specifications are clear enough: *don't rely on pointers to `const`
 values being consistent*. To be frank, caring about locations for `const` values
 is almost certainly a code smell.
 
-### **static**
+## **static**
 
 Static variables are related to `const` variables, but take a slightly different approach.
 When the compiler can guarantee that a *reference* is fixed for the life of a program,
@@ -420,10 +395,10 @@ fn main() {
 ```
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=3ba003a981a7ed7400240caadd384d59)
 
-## **push** and **pop**: Stack Allocations
+# Stacking Up: Non-Heap Memory 
 
-**const** and **static** are perfectly fine, but it's very rare that we know
-at compile-time about either references or values that will be the same for the entire
+`const` and `static` are perfectly fine, but it's very rare that we know
+at compile-time about either values or references that will be the same for the entire
 time our program is running. Put another way, it's not often the case that either you
 or your compiler know how much memory your entire program will need.
 
@@ -435,7 +410,7 @@ both the short- and long-term. When requesting memory, the
 can typically complete in [1 or 2 cycles](https://agner.org/optimize/instruction_tables.ods)
 (<1 nanosecond on modern CPUs). Heap memory instead requires using an allocator
 (specialized software to track what memory is in use) to reserve space.
-And when you're finished with memory, the `pop` instruction likewise runs in
+And when you're finished with your memory, the `pop` instruction likewise runs in
 1-3 cycles, as opposed to an allocator needing to worry about memory fragmentation
 and other issues. All sorts of incredibly sophisticated techniques have been used
 to design allocators:
@@ -448,7 +423,7 @@ to design allocators:
 - Arena structures used in [jemalloc](http://jemalloc.net/), which until recently
   was the primary allocator for Rust programs!
 
-But no matter how sophisticated your allocator is, the principle remains: the
+But no matter how fast your allocator is, the principle remains: the
 fastest allocator is the one you never use. As such, we're not going to go
 in detail on how exactly the
 [`push` and `pop` instructions work](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html),
@@ -459,7 +434,8 @@ Now, one question I hope you're asking is "how do we distinguish stack- and
 heap-based allocations in Rust code?" There are three strategies I'm going
 to use for this:
 
-1. Any time the `push` or `pop` instructions are used, or the `rsp` register is modified,
+1. When the stack pointer is modified to initialize a variable (done through either
+   `push`/`pop` instructions or the `rsp` register being modified),
    this is a stack allocation:
    ```rust
    pub fn stack_alloc(x: u32) -> u32 {
@@ -471,8 +447,11 @@ to use for this:
    }
    ```
    -- [Compiler Explorer](https://godbolt.org/z/gKFOgB)
-2. Any time `call core::ptr::drop_in_place` occurs, a heap allocation has occurred
-   sometime in the past and it is now time for us to de-allocate the memory:
+2. Because there's a good deal of setup before heap allocations actually happen,
+   it's typically easier to watch for
+   ["dropping"](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#ownership-rules)
+   variables instead. Any time `call core::ptr::drop_in_place` occurs, we can infer
+   a heap allocation has occurred sometime in the past related to our variable:
    ```rust
    pub fn heap_alloc(x: usize) -> usize {
        // Space for elements in a vector has to be allocated
@@ -483,76 +462,129 @@ to use for this:
    }
    ```
    -- [Compiler Explorer](https://godbolt.org/z/T2xoh8) (`drop_in_place` happens on line 1321)
+
+   <span style="font-size: .8em">Note: While the [`Drop` trait](https://doc.rust-lang.org/std/ops/trait.Drop.html) is run
+   for stack-allocated objects, the Rust standard library only defines `Drop` implementations
+   for types that involve heap allocation.</span>
 3. Using a special [`GlobalAlloc`](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html)
    implementation to track when heap allocations occur. For this post, I'll be using
-   [qadapt](https://crates.io/crates/qadapt) to trigger a panic if heap allocations
-   occur; code that doesn't panic doesn't use heap allocations, and by necessity
-   uses stack allocation instead.
+   [qadapt](https://crates.io/crates/qadapt) to [trigger a panic](https://speice.io/2018/12/allocation-safety.html)
+   if heap allocations occur; code that doesn't panic doesn't use heap allocations.
 
-With all that in mind, let's get into the details. The unfortunate thing about stack allocations
-in Rust is that there's not a good
-way to glance at code and figure out where allocations on the heap happen. Looking at
-other languages, Java mostly cares about `new MyObject()` (yes, I'm conveniently ignoring
+With all that in mind, let's get into the details. How do we know when Rust will or will not use
+stack allocation for objects we create? Looking at other languages, it's often easy to identify
+when this happens: Java only cares about `new MyObject()` (yes, I'm conveniently ignoring
 autoboxing). C makes things clear with calls to [malloc(3)](https://linux.die.net/man/3/malloc),
-and old C++ has the [new](https://stackoverflow.com/a/655086/1454178) keyword.
-Rust's model most closely aligns with C++11 and [RAII](https://en.cppreference.com/w/cpp/language/raii);
-[`Box`](https://doc.rust-lang.org/stable/alloc/boxed/struct.Box.html)
-is comparable to [`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique),
-and [`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html) behaves like
-[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared).
+and old C++ has the [`new`](https://stackoverflow.com/a/655086/1454178) keyword.
+Modern C++ is a bit more complicated with C++11 and [RAII](https://en.cppreference.com/w/cpp/language/raii);
+[`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique) and
+[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared) are
+used most often in this context (and are equivalent to [`Box`](https://doc.rust-lang.org/stable/alloc/boxed/struct.Box.html)
+and [`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html) in Rust!).
 
-But what can be done to ensure your program is using stack allocations? Some guidelines
-are in order:
+For Rust specifically, the principle is this: *stack allocation will be used for all types
+that don't use "smart pointers" and collections.* We're going to expand on this to clarify
+some common questions though:
 
 **For code you control**:
 
-- Don't use smart pointer types, as they force heap allocation -
-  [`Box`](https://doc.rust-lang.org/stable/alloc/boxed/struct.Box.html),
-  [`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html), etc.
-- Cloning or copying stack-allocated objects creates new objects that are
-  stack-allocated.
+- Smart pointer types (`Box`, `Rc`) and collections (`String`, `Vec`, `HashMap`)
+  force heap allocation for the data they manage.
 - Enums and other wrapper types will not trigger heap allocations unless
-  their contents need heap allocation. You can use
-  [`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html) and
-  [`RefCell`](https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html)
-  with reckless abandon.
-- [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are guaranteed
-  to be stack-allocated, but dynamically resizable types (
-  [`String`](https://doc.rust-lang.org/stable/alloc/string/struct.String.html),
-  [`Vec`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html),
-  [`HashMap`](https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html))
-  will store their contents in the heap
-- Note to self: Do I need to mention generics or trait objects? I think this
-  may be handled by the other points, and can be addressed later. Also, is it
-  obvious that cloning stack-allocated data puts things on the stack? Is there
-  a way to address that without it being a unique point?
+  their contents need heap allocation.
+- [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are guaranteed to be
+  stack-allocated, even if their size overflows available stack memory.
+- Using the [`#[inline]` attribute](https://doc.rust-lang.org/reference/attributes.html#inline-attribute)
+  will not change the memory region used.
+- [Closures](https://doc.rust-lang.org/reference/types/closure.html) obey the same
+  rules as `struct` and `enum` types; only closures wrapped in smart pointers
+  trigger an allocation.
 
 **For code outside your control**: (crates you rely on)
 
 - Review the code to make sure it abides by the guidelines above
-- Use a custom allocator like [qadapt](https://crates.io/crates/qadapt) as an automated check
+- Use an allocator like [qadapt](https://crates.io/crates/qadapt) as an automated check
   to make sure that stack allocations are used in code you care about.
 
+## Smart pointers and collections
 
-Example: Why doesn't `Vec::new()` go to the allocator?
+The first thing to note are the "smart pointer" and collections types.
+When you have data that must outlive the scope in which it is declared,
+or your data is of unknown or dynamic size, you'll make use of these types.
 
-Questions:
+The term [smart pointer](https://en.wikipedia.org/wiki/Smart_pointer)
+comes from C++, and is used to describe objects that are responsible for managing
+ownership of data allocated on the heap. In Rust, the smart pointers types are:
+- [`Box`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html)
+- [`Rc`](https://doc.rust-lang.org/alloc/rc/struct.Rc.html)
+- [`Arc`](https://doc.rust-lang.org/alloc/sync/struct.Arc.html)
+- [`Cow`](https://doc.rust-lang.org/alloc/borrow/enum.Cow.html)
 
-1. What is the "Push" instruction? Why do we like the stack?
-2. How does Rust allocate arguments to the function?
-3. How does Rust allocate variables created in the function but never returned?
-4. How does Rust allocate variables created in the function and returned?
-5. How do Option<> or Result<> affect structs?
-6. How are arrays allocated?
-7. Legal to pass an array as an argument?
-8. Can you force a heap allocation with arrays that are larger than stack size?
-    - Check `ulimit -s`
-    - Are array implementations larger than 32 needed? 32 x u64 == 256 bytes
-9. Can you force heap allocation by returning something that escapes the stack?
-    - Will `#[inline(always)]` move this back to a stack allocation?
-    - Will `#[inline(never)]` force a heap allocation?
+When a smart pointer is created, the data it is given is placed in heap memory and
+the location of that data is recorded in the smart pointer. Once the smart pointer
+has determined it's safe to deallocate that memory (when a `Box` has
+[gone out of scope](https://doc.rust-lang.org/stable/std/boxed/index.html) or when
+the [last reference](https://doc.rust-lang.org/alloc/rc/index.html) to an object
+is lost) the heap space is reclaimed. We can prove these types use heap memory by
+looking at some quick code:
 
-# Piling On - Rust and the Heap
+```rust
+use std::rc::Rc;
+use std::sync::Arc;
+use std::borrow::Cow;
+
+pub fn my_box() {
+    // Drop at line 1674
+    Box::new(0);
+}
+
+pub fn my_rc() {
+    // Drop at line 1684
+    Rc::new(0);
+}
+
+pub fn my_arc() {
+    // Drop at line 1694
+    Arc::new(0);
+}
+
+pub fn my_cow() {
+    // Drop at line 1707
+    Cow::from("drop");
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/QOPR4V)
+
+Collections types use heap memory because they have dynamic size; they will
+request more memory
+[when they need it](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.reserve),
+and can be [asked to release memory](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.shrink_to_fit)
+when it's no longer necessary. This dynamic memory usage forces Rust to use
+heap allocations for everything they contain. In a way, collections are smart pointers
+for many objects at once. Common types that fall under this umbrella
+are `Vec`, `HashMap`, and `String` (not [`&str`](https://doc.rust-lang.org/std/primitive.str.html)).
+
+There's an interesting caveat worth addressing though: *creating empty collections
+will not allocate on the heap*. This is a bit weird, because if we call `Vec::new()` the
+assembly shows a corresponding call to `drop_in_place`:
+
+```rust
+pub fn my_vec() {
+    // Drop in place at line 481
+    Vec::<u8>::new();
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/3-Gjqz)
+
+But because the vector has no elements it is managing, no calls to the allocator
+will ever be dispatched. A couple of places to look at for confirming this behavior:
+[`Vec::new()`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.new),
+[`HashMap::new()`](https://doc.rust-lang.org/std/collections/hash_map/struct.HashMap.html#method.new),
+and [`String::new()`](https://doc.rust-lang.org/std/string/struct.String.html#method.new).
+
+## Enums and Wrappers
+
+# A Heaping Helping: Rust and Dynamic Memory
 
 Example: How to trigger a heap allocation
 
@@ -572,7 +604,7 @@ Questions:
     - Use `Borrow` to abstract over Pointer/Box/Rc/Arc/CoW
 7. How expensive is move? Vs. C++ std::move?
 
-# Compiler Optimizations Make Everything Complicated
+# Compiler Optimizations: What It's Done For You Lately
 
 1. Box<> getting inlined into stack allocations
 2. Vec::push() === Vec::with_capacity() for fixed/predictable capacities
