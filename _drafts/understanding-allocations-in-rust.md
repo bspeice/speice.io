@@ -428,15 +428,27 @@ fastest allocator is the one you never use. As such, we're not going to go
 in detail on how exactly the
 [`push` and `pop` instructions work](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html),
 and we'll focus instead on the conditions that enable the Rust compiler to use
-stack-based allocation for variables.
+the faster stack-based allocation for variables.
 
-Now, one question I hope you're asking is "how do we distinguish stack- and
-heap-based allocations in Rust code?" There are three strategies I'm going
-to use for this:
+With that in mind, let's get into the details. How do we know when Rust will or will not use
+stack allocation for objects we create? Looking at other languages, it's often easy to delineate
+between stack and heap. Managed memory languages (Python, Java,
+[C#](https://blogs.msdn.microsoft.com/ericlippert/2010/09/30/the-truth-about-value-types/)) assume
+everything is on the heap. JIT compilers ([PyPy](https://www.pypy.org/),
+[HotSpot](https://www.oracle.com/technetwork/java/javase/tech/index-jsp-136373.html)) may
+optimize some heap allocations away, but you should never assume it will happen.
+C makes things clear with calls to special functions ([malloc(3)](https://linux.die.net/man/3/malloc)
+is one) being the way to use heap memory. Old C++ has the [`new`](https://stackoverflow.com/a/655086/1454178)
+keyword, though modern C++/C++11 is more complicated with [RAII](https://en.cppreference.com/w/cpp/language/raii)
+([`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique) and
+[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared))
 
-1. When the stack pointer is modified to initialize a variable (done through either
-   `push`/`pop` instructions or the `rsp` register being modified),
-   this is a stack allocation:
+For Rust specifically, the principle is this: *stack allocation will be used for everything
+that doesn't involve "smart pointers" and collections.* If we're interested in proving
+it though, there are three things to watch for:
+
+1. Stack manipulation instructions (`push`, `pop`, and `add`/`sub` of the `rsp` register)
+   indicate allocation of stack memory:
    ```rust
    pub fn stack_alloc(x: u32) -> u32 {
        // Space for `y` is allocated by subtracting from `rsp`,
@@ -447,11 +459,10 @@ to use for this:
    }
    ```
    -- [Compiler Explorer](https://godbolt.org/z/gKFOgB)
-2. Because there's a good deal of setup before heap allocations actually happen,
-   it's typically easier to watch for
-   ["dropping"](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#ownership-rules)
-   variables instead. Any time `call core::ptr::drop_in_place` occurs, we can infer
-   a heap allocation has occurred sometime in the past related to our variable:
+
+2. Tracking when heap allocation calls happen is difficult. It's typically easier to
+   watch for `call core::ptr::drop_in_place`, and infer that a heap allocation happened
+   in the recent past:
    ```rust
    pub fn heap_alloc(x: usize) -> usize {
        // Space for elements in a vector has to be allocated
@@ -462,49 +473,55 @@ to use for this:
    }
    ```
    -- [Compiler Explorer](https://godbolt.org/z/T2xoh8) (`drop_in_place` happens on line 1321)
+   <span style="font-size: .8em">Note: While the [`Drop` trait](https://doc.rust-lang.org/std/ops/trait.Drop.html)
+   is called for stack-allocated objects, the Rust standard library only defines `Drop` implementations
+   for types that involve heap allocation.</span> 
 
-   <span style="font-size: .8em">Note: While the [`Drop` trait](https://doc.rust-lang.org/std/ops/trait.Drop.html) is run
-   for stack-allocated objects, the Rust standard library only defines `Drop` implementations
-   for types that involve heap allocation.</span>
-3. Using a special [`GlobalAlloc`](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html)
-   implementation to track when heap allocations occur. For this post, I'll be using
-   [qadapt](https://crates.io/crates/qadapt) to [trigger a panic](https://speice.io/2018/12/allocation-safety.html)
-   if heap allocations occur; code that doesn't panic doesn't use heap allocations.
+3. If you don't want to inspect the assembly, use a custom allocator that's able to track
+   and alert when heap allocations occur. As an unashamed plug, [qadapt](https://crates.io/crates/qadapt)
+   was designed for exactly this purpose.
 
-With all that in mind, let's get into the details. How do we know when Rust will or will not use
-stack allocation for objects we create? Looking at other languages, it's often easy to identify
-when this happens: Java only cares about `new MyObject()` (yes, I'm conveniently ignoring
-autoboxing). C makes things clear with calls to [malloc(3)](https://linux.die.net/man/3/malloc),
-and old C++ has the [`new`](https://stackoverflow.com/a/655086/1454178) keyword.
-Modern C++ is a bit more complicated with C++11 and [RAII](https://en.cppreference.com/w/cpp/language/raii);
-[`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique) and
-[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared) are
-used most often in this context (and are equivalent to [`Box`](https://doc.rust-lang.org/stable/alloc/boxed/struct.Box.html)
-and [`Rc`](https://doc.rust-lang.org/stable/alloc/rc/struct.Rc.html) in Rust!).
+With all that in mind, let's talk about situations in which we're guaranteed to use stack memory:
 
-For Rust specifically, the principle is this: *stack allocation will be used for all types
-that don't use "smart pointers" and collections.* We're going to expand on this to clarify
-some common questions though:
-
-**For code you control**:
-
-- Smart pointer types (`Box`, `Rc`) and collections (`String`, `Vec`, `HashMap`)
-  force heap allocation for the data they manage.
-- Enums and other wrapper types will not trigger heap allocations unless
-  their contents need heap allocation.
-- [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are guaranteed to be
-  stack-allocated, even if their size overflows available stack memory.
+- Structs not wrapped by smart pointers are created on the stack.
+- Enums and unions are stack-allocated.
+- [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are always stack-allocated.
 - Using the [`#[inline]` attribute](https://doc.rust-lang.org/reference/attributes.html#inline-attribute)
   will not change the memory region used.
-- [Closures](https://doc.rust-lang.org/reference/types/closure.html) obey the same
-  rules as `struct` and `enum` types; only closures wrapped in smart pointers
-  trigger an allocation.
+- Generics will use stack allocation, even with dynamic dispatch.
 
-**For code outside your control**: (crates you rely on)
+## Enums
 
-- Review the code to make sure it abides by the guidelines above
-- Use an allocator like [qadapt](https://crates.io/crates/qadapt) as an automated check
-  to make sure that stack allocations are used in code you care about.
+It's been a worry of mine that I'd manage to trigger a heap allocation because
+of wrapping an underlying type in 
+Given that you're not using smart pointers, `enum` and other wrapper types will never use
+heap allocations. This shows up most often with
+[`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html) and
+[`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html) types,
+but generalizes to any other types as well.
+
+Because the size of an `enum` is the size of its largest element plus the size of a
+discriminator, the compiler can predict how much memory is used. If enums were
+sized as tightly as possible, heap allocations would be needed to handle the fact
+that enum variants were of dynamic size!
+
+# A Heaping Helping: Rust and Dynamic Memory
+
+Opening question: How many allocations happen before `fn main()` is called?
+
+Now, one question I hope you're asking is "how do we distinguish stack- and
+heap-based allocations in Rust code?" There are two strategies I'm going
+to use for this:
+
+Summary section:
+
+- Smart pointers hold their contents in the heap
+- Collections are smart pointers for many objects at a time, and reallocate
+  when they need to grow
+- Boxed closures (FnBox, others?) are heap allocated
+- "Move" semantics don't trigger new allocation; just a change of ownership,
+  so are incredibly fast
+- Stack-based alternatives to standard library types should be preferred (spin, parking_lot)
 
 ## Smart pointers and collections
 
@@ -514,18 +531,28 @@ or your data is of unknown or dynamic size, you'll make use of these types.
 
 The term [smart pointer](https://en.wikipedia.org/wiki/Smart_pointer)
 comes from C++, and is used to describe objects that are responsible for managing
-ownership of data allocated on the heap. In Rust, the smart pointers types are:
+ownership of data allocated on the heap. Some familiar smart pointers come from the
+low-level `alloc` crate:
 - [`Box`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html)
 - [`Rc`](https://doc.rust-lang.org/alloc/rc/struct.Rc.html)
 - [`Arc`](https://doc.rust-lang.org/alloc/sync/struct.Arc.html)
 - [`Cow`](https://doc.rust-lang.org/alloc/borrow/enum.Cow.html)
 
+The [standard library](https://doc.rust-lang.org/std/) also defines some smart pointers,
+though more than can be covered in this article. Some examples:
+- [`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html)
+- [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)
+
+Finally, there is one [gotcha](https://www.merriam-webster.com/dictionary/gotcha):
+[`RefCell`](https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html) looks like
+and behaves like a smart pointer, but doesn't actually require heap allocation.
+
 When a smart pointer is created, the data it is given is placed in heap memory and
 the location of that data is recorded in the smart pointer. Once the smart pointer
 has determined it's safe to deallocate that memory (when a `Box` has
 [gone out of scope](https://doc.rust-lang.org/stable/std/boxed/index.html) or when
-the [last reference](https://doc.rust-lang.org/alloc/rc/index.html) to an object
-is lost) the heap space is reclaimed. We can prove these types use heap memory by
+reference count for an object [goes to zero](https://doc.rust-lang.org/alloc/rc/index.html)),
+the heap space is reclaimed. We can prove these types use heap memory by
 looking at some quick code:
 
 ```rust
@@ -555,8 +582,7 @@ pub fn my_cow() {
 ```
 -- [Compiler Explorer](https://godbolt.org/z/QOPR4V)
 
-Collections types use heap memory because they have dynamic size; they will
-request more memory
+Collections types use heap memory because they have dynamic size; they will request more memory
 [when they need it](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.reserve),
 and can be [asked to release memory](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.shrink_to_fit)
 when it's no longer necessary. This dynamic memory usage forces Rust to use
@@ -581,28 +607,6 @@ will ever be dispatched. A couple of places to look at for confirming this behav
 [`Vec::new()`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.new),
 [`HashMap::new()`](https://doc.rust-lang.org/std/collections/hash_map/struct.HashMap.html#method.new),
 and [`String::new()`](https://doc.rust-lang.org/std/string/struct.String.html#method.new).
-
-## Enums and Wrappers
-
-# A Heaping Helping: Rust and Dynamic Memory
-
-Example: How to trigger a heap allocation
-
-Questions:
-
-1. Where do collection types allocate memory?
-2. Does a Box<> always allocate heap?
-    - Yes, with exception of compiler optimizations
-3. Passing Box<Trait> vs. genericizing/monomorphization
-    - If it uses `dyn Trait`, it's on the heap?
-    - What if the trait implements `Sized`?
-4. Other pointer types? Do Rc<>/Arc<> force heap allocation?
-    - Maybe? Part of the alloc crate, but should use qadapt to check
-5. How many allocations happen before `main()` is called?
-6. How can you use the heap well?
-    - Know when collections resizing happens
-    - Use `Borrow` to abstract over Pointer/Box/Rc/Arc/CoW
-7. How expensive is move? Vs. C++ std::move?
 
 # Compiler Optimizations: What It's Done For You Lately
 
