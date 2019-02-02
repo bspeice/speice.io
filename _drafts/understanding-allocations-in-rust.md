@@ -88,7 +88,7 @@ Now let's address some conditions and caveats before going much further:
   ([`malloc`](https://www.tutorialspoint.com/c_standard_library/c_function_malloc.htm)) that we'll ignore.
 - We'll assume a "debug" build of Rust code (what you get with `cargo run` and `cargo test`)
   and address (pun intended) release mode at the end (`cargo run --release` and `cargo test --release`).
-- All content will be run using Rust 1.31, as that's the highest currently supported in the
+- All content will be run using Rust 1.32, as that's the highest currently supported in the
   [Compiler Exporer](https://godbolt.org/). As such, we'll avoid upcoming innovations like
   [compile-time evaluation of `static`](https://github.com/rust-lang/rfcs/blob/master/text/0911-const-fn.md)
   that are available in nightly.
@@ -214,7 +214,7 @@ pub fn multiply(value: u32) -> u32 {
     value * (*CELL.get_mut())
 }
 ```
--- [Compiler Explorer](https://godbolt.org/z/ZMjmdM)
+-- [Compiler Explorer](https://godbolt.org/z/2KXUcN)
 
 The compiler only creates one `RefCell`, and uses it everywhere. However, that value
 is fully realized at compile time, and is fully stored in the `.L__unnamed_1` section.
@@ -232,7 +232,7 @@ pub fn multiply_twice(value: u32) -> u32 {
     value * FACTOR * FACTOR
 }
 ```
--- [Compiler Explorer](https://odbolt.org/z/Qc7tHM)
+-- [Compiler Explorer](https://godbolt.org/z/_JiT9O)
 
 In this example, the `FACTOR` value is turned into the `mov edi, 1000` instruction
 in both the `multiply` and `multiply_twice` functions; the "1000" value is never
@@ -279,9 +279,9 @@ pub fn multiply_twice(value: u32) -> u32 {
     value * FACTOR * FACTOR
 }
 ```
--- [Compiler Explorer](https://godbolt.org/z/MGBr5Y)
+-- [Compiler Explorer](https://godbolt.org/z/bSfBxn)
 
-Where [previously](https://godbolt.org/z/MGBr5Y) there were plenty of
+Where [previously](https://godbolt.org/z/_JiT90) there were plenty of
 references to multiplying by 1000, the new assembly refers to `FACTOR`
 as a named memory location instead. No initialization work needs to be done,
 but the compiler can no longer prove the value never changes during execution.
@@ -439,9 +439,7 @@ everything is on the heap. JIT compilers ([PyPy](https://www.pypy.org/),
 optimize some heap allocations away, but you should never assume it will happen.
 C makes things clear with calls to special functions ([malloc(3)](https://linux.die.net/man/3/malloc)
 is one) being the way to use heap memory. Old C++ has the [`new`](https://stackoverflow.com/a/655086/1454178)
-keyword, though modern C++/C++11 is more complicated with [RAII](https://en.cppreference.com/w/cpp/language/raii)
-([`std::make_unique()`](https://en.cppreference.com/w/cpp/memory/unique_ptr/make_unique) and
-[`std::make_shared()`](https://en.cppreference.com/w/cpp/memory/shared_ptr/make_shared))
+keyword, though modern C++/C++11 is more complicated with [RAII](https://en.cppreference.com/w/cpp/language/raii).
 
 For Rust specifically, the principle is this: *stack allocation will be used for everything
 that doesn't involve "smart pointers" and collections.* If we're interested in proving
@@ -458,9 +456,9 @@ it though, there are three things to watch for:
        x
    }
    ```
-   -- [Compiler Explorer](https://godbolt.org/z/gKFOgB)
+   -- [Compiler Explorer](https://godbolt.org/z/5WSgc9)
 
-2. Tracking when heap allocation calls happen is difficult. It's typically easier to
+2. Tracking when exactly heap allocation calls happen is difficult. It's typically easier to
    watch for `call core::ptr::drop_in_place`, and infer that a heap allocation happened
    in the recent past:
    ```rust
@@ -472,7 +470,7 @@ it though, there are three things to watch for:
        x
    }
    ```
-   -- [Compiler Explorer](https://godbolt.org/z/T2xoh8) (`drop_in_place` happens on line 1321)
+   -- [Compiler Explorer](https://godbolt.org/z/epfgoQ) (`drop_in_place` happens on line 1317)
    <span style="font-size: .8em">Note: While the [`Drop` trait](https://doc.rust-lang.org/std/ops/trait.Drop.html)
    is called for stack-allocated objects, the Rust standard library only defines `Drop` implementations
    for types that involve heap allocation.</span> 
@@ -531,8 +529,8 @@ or your data is of unknown or dynamic size, you'll make use of these types.
 
 The term [smart pointer](https://en.wikipedia.org/wiki/Smart_pointer)
 comes from C++, and is used to describe objects that are responsible for managing
-ownership of data allocated on the heap. Some familiar smart pointers come from the
-low-level `alloc` crate:
+ownership of data allocated on the heap. The smart pointers available in the `alloc`
+crate should look rather familiar:
 - [`Box`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html)
 - [`Rc`](https://doc.rust-lang.org/alloc/rc/struct.Rc.html)
 - [`Arc`](https://doc.rust-lang.org/alloc/sync/struct.Arc.html)
@@ -561,26 +559,26 @@ use std::sync::Arc;
 use std::borrow::Cow;
 
 pub fn my_box() {
-    // Drop at line 1674
+    // Drop at line 1640
     Box::new(0);
 }
 
 pub fn my_rc() {
-    // Drop at line 1684
+    // Drop at line 1650
     Rc::new(0);
 }
 
 pub fn my_arc() {
-    // Drop at line 1694
+    // Drop at line 1660
     Arc::new(0);
 }
 
 pub fn my_cow() {
-    // Drop at line 1707
+    // Drop at line 1672
     Cow::from("drop");
 }
 ```
--- [Compiler Explorer](https://godbolt.org/z/QOPR4V)
+-- [Compiler Explorer](https://godbolt.org/z/SaDpWg)
 
 Collections types use heap memory because they have dynamic size; they will request more memory
 [when they need it](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.reserve),
@@ -600,7 +598,7 @@ pub fn my_vec() {
     Vec::<u8>::new();
 }
 ```
--- [Compiler Explorer](https://godbolt.org/z/3-Gjqz)
+-- [Compiler Explorer](https://godbolt.org/z/1WkNtC)
 
 But because the vector has no elements it is managing, no calls to the allocator
 will ever be dispatched. A couple of places to look at for confirming this behavior:
