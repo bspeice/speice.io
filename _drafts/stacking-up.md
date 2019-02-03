@@ -91,32 +91,184 @@ there are three things we pay attention to:
 With all that in mind, let's talk about situations in which we're guaranteed to use stack memory:
 
 - Structs are created on the stack.
-- Function arguments are passed on the stack.
+- Function arguments are passed on the stack, meaning the
+  [`#[inline]` attribute](https://doc.rust-lang.org/reference/attributes.html#inline-attribute)
+  will not change the memory region used.
 - Enums and unions are stack-allocated.
 - [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are always stack-allocated.
-- Using the [`#[inline]` attribute](https://doc.rust-lang.org/reference/attributes.html#inline-attribute)
-  will not change the memory region used.
 - Closures capture their arguments on the stack
 - Generics will use stack allocation, even with dynamic dispatch.
 
 ## Structs
 
+The simplest case comes first. When creating vanilla `struct` objects, we use stack memory
+to hold their contents:
 
+```rust
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+struct Line {
+    a: Point,
+    b: Point,
+}
+
+pub fn make_line() {
+    let origin = Point { x: 0., y: 0. };
+    let point = Point { x: 1., y: 2. };
+
+    let ray = Line { a: origin, b: point };
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/WZRa1D)
+
+Note that while some extra-fancy instructions are used for memory manipulation in the assembly,
+the `sub rsp, 64` instruction indicates we're still working with the stack.
+
+## Function arguments
+
+Have you ever wondered how functions communicate with each other? Like, once the variables are
+given to you, everything's fine. But how do you "give" those variables to another function?
+How do you get the results back afterward? The answer: the compiler arranges memory and
+assembly instructions using a pre-determined
+[calling convention](http://llvm.org/docs/LangRef.html#calling-conventions).
+This convention governs the rules around where arguments needed by a function will be located
+(either in memory offsets relative to the stack pointer `rsp`, or in other registers), and
+where the results can be found once the function has finished. And when multiple languages
+agree on what the calling conventions are, you can do things like having
+[Go call Rust code](https://blog.filippo.io/rustgo/)!
+
+Put simply: it's the compiler's job to figure out how to call other functions, and you can assume
+that the compiler is good at its job.
+
+We can see this in action using a simple example:
+
+```rust
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+// We use integer division operations to keep
+// the assembly clean, understanding the result
+// isn't accurate.
+fn distance(a: &Point, b: &Point) -> i64 {
+    // Immediately subtract from `rsp` the bytes needed
+    // to hold all the intermediate results - this is
+    // the stack allocation step
+
+    // The compiler used the `rdi` and `rsi` registers
+    // to pass our arguments, so read them in
+    let x1 = a.x;
+    let x2 = b.x;
+    let y1 = a.y;
+    let y2 = b.y;
+
+    // Do the actual math work
+    let x_pow = (x1 - x2) * (x1 - x2);
+    let y_pow = (y1 - y2) * (y1 - y2);
+    let squared = x_pow + y_pow;
+    squared / squared
+    
+    // Our final result will be stored in the `rax` register
+    // so that our caller knows where to retrieve it.
+    // Finally, add back to `rsp` the stack memory that is
+    // now ready to be used by other functions.
+}
+
+pub fn total_distance() {
+    let start = Point { x: 1, y: 2 };
+    let middle = Point { x: 3, y: 4 };
+    let end = Point { x: 5, y: 6 };
+
+    let _dist_1 = distance(&start, &middle);
+    let _dist_2 = distance(&middle, &end);
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/Qmx4ST)
+
+As a consequence of function arguments never using heap memory, we can also
+infer that functions using the `#[inline]` attributes also do not heap-allocate.
+But better than inferring, we can look at the assembly to prove it:
+
+```rust
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+// Note that there is no `distance` function in the assembly output,
+// and the total line count goes from 229 with inlining off
+// to 306 with inline on. Even still, no heap allocations occur.
+#[inline(always)]
+fn distance(a: &Point, b: &Point) -> i64 {
+    let x1 = a.x;
+    let x2 = b.x;
+    let y1 = a.y;
+    let y2 = b.y;
+
+    let x_pow = (a.x - b.x) * (a.x - b.x);
+    let y_pow = (a.y - b.y) * (a.y - b.y);
+    let squared = x_pow + y_pow;
+    squared / squared
+}
+
+pub fn total_distance() {
+    let start = Point { x: 1, y: 2 };
+    let middle = Point { x: 3, y: 4 };
+    let end = Point { x: 5, y: 6 };
+
+    let _dist_1 = distance(&start, &middle);
+    let _dist_2 = distance(&middle, &end);
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/30Sh66)
+
+Finally, passing by value (arguments with type
+[`Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html))
+and passing by reference (either moving ownership or passing a pointer) may have
+[slightly different layouts in assembly](https://godbolt.org/z/sKi_kl), but will
+still use either stack memory or CPU registers.
 
 ## Enums
 
-It's been a worry of mine that I'd manage to trigger a heap allocation because
-of wrapping an underlying type in 
-Given that you're not using smart pointers, `enum` and other wrapper types will never use
-heap allocations. This shows up most often with
-[`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html) and
-[`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html) types,
-but generalizes to any other types as well.
+If you've ever worried that wrapping your types in
+[`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html) or
+[`Result`](https://doc.rust-lang.org/stable/core/result/enum.Result.html) would
+finally make them large enough that Rust decides to use heap allocation instead,
+fear no longer: `enum` and union types don't use heap allocation:
 
-Because the size of an `enum` is the size of its largest element plus the size of a
-discriminator, the compiler can predict how much memory is used. If enums were
-sized as tightly as possible, heap allocations would be needed to handle the fact
-that enum variants were of dynamic size!
+```rust
+enum MyEnum {
+    Small(u8),
+    Large(u64)
+}
+
+struct MyStruct {
+    x: MyEnum,
+    y: MyEnum,
+}
+
+pub fn enum_compare() {
+    let x = MyEnum::Small(0);
+    let y = MyEnum::Large(0);
+
+    let z = MyStruct { x, y };
+
+    let opt = Option::Some(z);
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/HK7zBx)
+
+Because the size of an `enum` is the size of its largest element plus a flag,
+the compiler can predict how much memory is used no matter which variant
+of an enum is currently stored in a variable. Thus, enums and unions have no
+need of heap allocation. There's unfortunately not a great way to show this
+in assembly, so I'll instead point you to the
+[`core::mem::size_of`](https://doc.rust-lang.org/stable/core/mem/fn.size_of.html#size-of-enums)
+documentation. 
 
 ## Arrays
 
@@ -152,19 +304,16 @@ struct EightM {
 
 fn main() {
     // Because we already have things in stack memory
-    // (like the current function), allocating another
+    // (like the current function call stack), allocating another
     // eight megabytes of stack memory crashes the program
     let _x = EightM::default();
 }
 ```
--- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=137893e3ae05c2f32fe07d6f6f754709)
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=587a6380a4914bcbcef4192c90c01dc4)
 
-There aren't any security implications of this (no memory corruption occurs,
-just running out of memory), but it's good to note that the Rust compiler
-won't move arrays into heap memory even if they can be reasonably expected
-to overflow the stack.
-
-## **inline** attributes
+There aren't any security implications of this (no memory corruption occurs),
+but it's good to note that the Rust compiler won't move arrays into heap memory
+even if they can be reasonably expected to overflow the stack.
 
 ## Closures
 
@@ -232,21 +381,3 @@ pub fn complex() {
 In every circumstance though, the compiler ensured that no heap allocations were necessary.
 
 ## Generics
-
-# A Heaping Helping: Rust and Dynamic Memory
-
-Opening question: How many allocations happen before `fn main()` is called?
-
-Now, one question I hope you're asking is "how do we distinguish stack- and
-heap-based allocations in Rust code?" There are two strategies I'm going
-to use for this:
-
-Summary section:
-
-- Smart pointers hold their contents in the heap
-- Collections are smart pointers for many objects at a time, and reallocate
-  when they need to grow
-- Boxed closures (FnBox, others?) are heap allocated
-- "Move" semantics don't trigger new allocation; just a change of ownership,
-  so are incredibly fast
-- Stack-based alternatives to standard library types should be preferred (spin, parking_lot)
