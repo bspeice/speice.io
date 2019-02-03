@@ -66,8 +66,8 @@ fn main() {
 As of the time of writing, there are five allocations that happen before `main`
 is ever called.
 
-But when we want to understand more practical situations where heap allocation
-happens, we'll follow this guide:
+But when we want to understand more practically where heap allocation happens,
+we'll follow this guide:
 
 - Smart pointers hold their contents in the heap
 - Collections are smart pointers for many objects at a time, and reallocate
