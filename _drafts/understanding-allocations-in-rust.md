@@ -641,16 +641,16 @@ Summary section:
   so are incredibly fast
 - Stack-based alternatives to standard library types should be preferred (spin, parking_lot)
 
-## Smart pointers and collections
+## Smart pointers
 
-The first thing to note are the "smart pointer" and collections types.
+The first thing to note are the "smart pointer" types.
 When you have data that must outlive the scope in which it is declared,
 or your data is of unknown or dynamic size, you'll make use of these types.
 
 The term [smart pointer](https://en.wikipedia.org/wiki/Smart_pointer)
 comes from C++, and is used to describe objects that are responsible for managing
 ownership of data allocated on the heap. The smart pointers available in the `alloc`
-crate should look rather familiar:
+crate should look mostly familiar:
 - [`Box`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html)
 - [`Rc`](https://doc.rust-lang.org/alloc/rc/struct.Rc.html)
 - [`Arc`](https://doc.rust-lang.org/alloc/sync/struct.Arc.html)
@@ -662,8 +662,10 @@ though more than can be covered in this article. Some examples:
 - [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)
 
 Finally, there is one [gotcha](https://www.merriam-webster.com/dictionary/gotcha):
-[`RefCell`](https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html) looks like
-and behaves like a smart pointer, but doesn't actually require heap allocation.
+cell types (like [`RefCell`](https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html))
+look and behave like smart pointers, but don't actually require heap allocation.
+Check out the [`core::cell` docs](https://doc.rust-lang.org/stable/core/cell/index.html)
+for more information.
 
 When a smart pointer is created, the data it is given is placed in heap memory and
 the location of that data is recorded in the smart pointer. Once the smart pointer
@@ -671,7 +673,7 @@ has determined it's safe to deallocate that memory (when a `Box` has
 [gone out of scope](https://doc.rust-lang.org/stable/std/boxed/index.html) or when
 reference count for an object [goes to zero](https://doc.rust-lang.org/alloc/rc/index.html)),
 the heap space is reclaimed. We can prove these types use heap memory by
-looking at some quick code:
+looking at code:
 
 ```rust
 use std::rc::Rc;
@@ -700,15 +702,17 @@ pub fn my_cow() {
 ```
 -- [Compiler Explorer](https://godbolt.org/z/SaDpWg)
 
-Collections types use heap memory because they have dynamic size; they will request more memory
-[when they need it](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.reserve),
-and can be [asked to release memory](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.shrink_to_fit)
-when it's no longer necessary. This dynamic memory usage forces Rust to use
-heap allocations for everything they contain. In a way, collections are smart pointers
-for many objects at once. Common types that fall under this umbrella
-are `Vec`, `HashMap`, and `String` (not [`&str`](https://doc.rust-lang.org/std/primitive.str.html)).
+## Collections
 
-There's an interesting caveat worth addressing though: *creating empty collections
+Collections types use heap memory because they have dynamic size; they will request more memory
+[when needed](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.reserve),
+and can [release memory](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.shrink_to_fit)
+when it's no longer necessary. This dynamic memory usage forces Rust to heap allocate
+everything they contain. In a way, **collections are smart pointers for many objects at once.**
+Common types that fall under this umbrella are `Vec`, `HashMap`, and `String`
+(not [`&str`](https://doc.rust-lang.org/std/primitive.str.html)).
+
+But while collections store the objects they own in heap memory, *creating new collections
 will not allocate on the heap*. This is a bit weird, because if we call `Vec::new()` the
 assembly shows a corresponding call to `drop_in_place`:
 
