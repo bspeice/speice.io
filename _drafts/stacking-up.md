@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Stacking Up: Fixed Memory"
-description: "Going fast in Rust"
+description: "We don't need no allocator"
 category: 
 tags: [rust, understanding-allocations]
 ---
