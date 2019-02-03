@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "The Whole World: Global Memory Usage"
-description: "Static considered slightly less harmful"
+description: "Static considered slightly less harmful."
 category: 
 tags: [rust, understanding-allocations]
 ---

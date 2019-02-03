@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Allocations in Rust"
-description: "An introduction to the memory model"
+description: "An introduction to the memory model."
 category: 
 tags: [rust, understanding-allocations]
 ---
