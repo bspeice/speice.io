@@ -29,14 +29,14 @@ to design allocators:
   and [Reference counting](https://en.wikipedia.org/wiki/Reference_counting)
   (used in [Python](https://docs.python.org/3/extending/extending.html#reference-counts))
 - Thread-local structures to prevent locking the allocator in [tcmalloc](https://jamesgolick.com/2013/5/19/how-tcmalloc-works.html)
-- Arena structures used in [jemalloc](http://jemalloc.net/), which until recently
+- Arena structures used in [jemalloc](http://jemalloc.net/), which
+  [until recently](https://blog.rust-lang.org/2019/01/17/Rust-1.32.0.html#jemalloc-is-removed-by-default)
   was the primary allocator for Rust programs!
 
 But no matter how fast your allocator is, the principle remains: the
-fastest allocator is the one you never use. As such, we're not going to go
-in detail on how exactly the
+fastest allocator is the one you never use. As such, we're not going to discuss how exactly the
 [`push` and `pop` instructions work](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html),
-and we'll focus instead on the conditions that enable the Rust compiler to use
+but we'll focus instead on the conditions that enable the Rust compiler to use
 the faster stack-based allocation for variables.
 
 With that in mind, let's get into the details. How do we know when Rust will or will not use
@@ -106,8 +106,8 @@ to hold their contents:
 
 ```rust
 struct Point {
-    x: f64,
-    y: f64,
+    x: u64,
+    y: u64,
 }
 
 struct Line {
@@ -116,13 +116,18 @@ struct Line {
 }
 
 pub fn make_line() {
-    let origin = Point { x: 0., y: 0. };
-    let point = Point { x: 1., y: 2. };
+    // `origin` is stored in the first 16 bytes of memory
+    // starting at location `rsp`
+    let origin = Point { x: 0, y: 0 };
+    // `point` makes up the next 16 bytes of memory
+    let point = Point { x: 1, y: 2 };
 
+    // When creating `ray`, we just move the content out of
+    // `origin` and `point` into the next 32 bytes of memory
     let ray = Line { a: origin, b: point };
 }
 ```
--- [Compiler Explorer](https://godbolt.org/z/WZRa1D)
+-- [Compiler Explorer](https://godbolt.org/z/vri9BE)
 
 Note that while some extra-fancy instructions are used for memory manipulation in the assembly,
 the `sub rsp, 64` instruction indicates we're still working with the stack.
