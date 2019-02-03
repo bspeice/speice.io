@@ -7,9 +7,9 @@ tags: [rust, understanding-allocations]
 ---
 
 `const` and `static` are perfectly fine, but it's very rare that we know
-at compile-time about either values or references that will be the same for the entire
-time our program is running. Put another way, it's not often the case that either you
-or your compiler know how much memory your entire program will need.
+at compile-time about either values or references that will be the same for the
+duration of our program. Put another way, it's not often the case that either you
+or your compiler knows how much memory your entire program will need.
 
 However, there are still some optimizations the compiler can do if it knows how much
 memory individual functions will need. Specifically, the compiler can make use of
@@ -17,7 +17,7 @@ memory individual functions will need. Specifically, the compiler can make use o
 both the short- and long-term. When requesting memory, the
 [`push` instruction](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
 can typically complete in [1 or 2 cycles](https://agner.org/optimize/instruction_tables.ods)
-(<1 nanosecond on modern CPUs). Heap memory instead requires using an allocator
+(<1 nanosecond on modern CPUs). Contrast that to heap memory which requires an allocator
 (specialized software to track what memory is in use) to reserve space.
 And when you're finished with your memory, the `pop` instruction likewise runs in
 1-3 cycles, as opposed to an allocator needing to worry about memory fragmentation
@@ -358,8 +358,10 @@ pub fn immediate() {
 ```
 -- [Compiler Explorer](https://godbolt.org/z/mgJ2zl), 25 total assembly instructions
 
-If we store a reference to the bound closure though, the Rust compiler has to
-work a bit harder to make sure everything is correctly laid out in stack memory:
+If we store a reference to the closure, the Rust compiler keeps values it needs
+in the stack memory of the original function. Getting the details right is a bit harder,
+so the instruction count goes up even though this code is functionally equivalent
+to our original example:
 
 ```rust
 pub fn simple_reference() {
@@ -371,7 +373,7 @@ pub fn simple_reference() {
 ```
 -- [Compiler Explorer](https://godbolt.org/z/K_dj5n), 55 total assembly instructions
 
-In more complex cases, even things like variable order matter:
+Even things like variable order can make a difference in instruction count:
 
 ```rust
 pub fn complex() {
@@ -386,3 +388,61 @@ pub fn complex() {
 In every circumstance though, the compiler ensured that no heap allocations were necessary.
 
 ## Generics
+
+Traits in Rust come in two broad forms: static dispatch (monomorphization, `impl Trait`)
+and dynamic dispatch (trait objects, `dyn Trait`). While dynamic dispatch is often
+*associated* with trait objects being stored in the heap, dynamic dispatch can be used
+with stack allocated objects as well:
+
+```rust
+trait GetInt {
+    fn get_int(&self) -> u64;
+}
+
+// vtable stored at section L__unnamed_1
+struct WhyNotU8 {
+    x: u8
+}
+impl GetInt for WhyNotU8 {
+    fn get_int(&self) -> u64 {
+        self.x as u64
+    } 
+}
+
+// vtable stored at section L__unnamed_2
+struct ActualU64 {
+    x: u64
+}
+impl GetInt for ActualU64 {
+    fn get_int(&self) -> u64 {
+        self.x
+    }
+}
+
+// `&dyn` declares that we want to use dynamic dispatch
+// rather than monomorphization, so there is only one
+// `retrieve_int` function that shows up in the final assembly.
+// If we used generics, there would be one implementation of
+// `retrieve_int` for each type that implements `GetInt`.
+pub fn retrieve_int(u: &dyn GetInt) {
+    // In the assembly, we just call an address given to us
+    // in the `rsi` register and hope that it was set up
+    // correctly when this function was invoked.
+    let x = u.get_int();
+}
+
+pub fn do_call() {
+    // Note that even though the vtable for `WhyNotU8` and
+    // `ActualU64` includes a pointer to
+    // `core::ptr::real_drop_in_place`, it is never invoked.
+    let a = WhyNotU8 { x: 0 };
+    let b = ActualU64 { x: 0 };
+
+    retrieve_int(&a);
+    retrieve_int(&b);
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/u_yguS)
+
+It's hard to imagine practical situations where dynamic dispatch
+would be used for objects that aren't heap allocated, but it can be done.
