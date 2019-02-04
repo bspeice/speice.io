@@ -75,16 +75,20 @@ we'll follow this guide:
 - Boxed closures (FnBox, others?) are heap allocated
 - "Move" semantics don't trigger new allocation; just a change of ownership,
   so are incredibly fast
+  - In examples, is address of data before and after the same?
+  - Can `Copy` trigger allocation?
 - Stack-based alternatives to standard library types should be preferred (spin, parking_lot)
 
-## Smart pointers
+# Smart pointers
 
 The first thing to note are the "smart pointer" types.
 When you have data that must outlive the scope in which it is declared,
 or your data is of unknown or dynamic size, you'll make use of these types.
 
 The term [smart pointer](https://en.wikipedia.org/wiki/Smart_pointer)
-comes from C++, and is used to describe objects that are responsible for managing
+comes from C++, and while it's closely linked to a general design pattern of
+["Resource Acquisition Is Initialization"](https://en.cppreference.com/w/cpp/language/raii),
+we'll use it here specifically to describe objects that are responsible for managing
 ownership of data allocated on the heap. The smart pointers available in the `alloc`
 crate should look mostly familiar:
 - [`Box`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html)
@@ -97,10 +101,10 @@ though more than can be covered in this article. Some examples:
 - [`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html)
 - [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)
 
-Finally, there is one [gotcha](https://www.merriam-webster.com/dictionary/gotcha):
+Finally, there is one ["gotcha"](https://www.merriam-webster.com/dictionary/gotcha):
 cell types (like [`RefCell`](https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html))
-look and behave like smart pointers, but don't actually require heap allocation.
-Check out the [`core::cell` docs](https://doc.rust-lang.org/stable/core/cell/index.html)
+follow the RAII pattern, but don't involve heap allocation. Check out the
+[`core::cell` docs](https://doc.rust-lang.org/stable/core/cell/index.html)
 for more information.
 
 When a smart pointer is created, the data it is given is placed in heap memory and
@@ -138,7 +142,7 @@ pub fn my_cow() {
 ```
 -- [Compiler Explorer](https://godbolt.org/z/SaDpWg)
 
-## Collections
+# Collections
 
 Collections types use heap memory because they have dynamic size; they will request more memory
 [when needed](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.reserve),

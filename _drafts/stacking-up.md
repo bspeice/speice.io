@@ -99,7 +99,7 @@ With all that in mind, let's talk about situations in which we're guaranteed to 
 - Closures capture their arguments on the stack
 - Generics will use stack allocation, even with dynamic dispatch.
 
-## Structs
+# Structs
 
 The simplest case comes first. When creating vanilla `struct` objects, we use stack memory
 to hold their contents:
@@ -132,7 +132,7 @@ pub fn make_line() {
 Note that while some extra-fancy instructions are used for memory manipulation in the assembly,
 the `sub rsp, 64` instruction indicates we're still working with the stack.
 
-## Function arguments
+# Function arguments
 
 Have you ever wondered how functions communicate with each other? Like, once the variables are
 given to you, everything's fine. But how do you "give" those variables to another function?
@@ -237,7 +237,7 @@ and passing by reference (either moving ownership or passing a pointer) may have
 [slightly different layouts in assembly](https://godbolt.org/z/sKi_kl), but will
 still use either stack memory or CPU registers.
 
-## Enums
+# Enums
 
 If you've ever worried that wrapping your types in
 [`Option`](https://doc.rust-lang.org/stable/core/option/enum.Option.html) or
@@ -275,7 +275,7 @@ in assembly, so I'll instead point you to the
 [`core::mem::size_of`](https://doc.rust-lang.org/stable/core/mem/fn.size_of.html#size-of-enums)
 documentation. 
 
-## Arrays
+# Arrays
 
 The array type is guaranteed to be stack allocated, which is why the array size must
 be declared. Interestingly enough, this can be used to cause safe Rust programs to crash:
@@ -320,7 +320,7 @@ There aren't any security implications of this (no memory corruption occurs),
 but it's good to note that the Rust compiler won't move arrays into heap memory
 even if they can be reasonably expected to overflow the stack.
 
-## Closures
+# Closures
 
 Rules for how anonymous functions capture their arguments are typically language-specific.
 In Java, [Lambda Expressions](https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html)
@@ -387,7 +387,7 @@ pub fn complex() {
 
 In every circumstance though, the compiler ensured that no heap allocations were necessary.
 
-## Generics
+# Generics
 
 Traits in Rust come in two broad forms: static dispatch (monomorphization, `impl Trait`)
 and dynamic dispatch (trait objects, `dyn Trait`). While dynamic dispatch is often
@@ -444,5 +444,5 @@ pub fn do_call() {
 ```
 -- [Compiler Explorer](https://godbolt.org/z/u_yguS)
 
-It's hard to imagine practical situations where dynamic dispatch
-would be used for objects that aren't heap allocated, but it can be done.
+It's hard to imagine practical situations where dynamic dispatch would be
+used for objects that aren't heap allocated, but it technically can be done.

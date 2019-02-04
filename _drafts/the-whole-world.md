@@ -16,7 +16,7 @@ we'll go into below. The
 [full specification](https://github.com/rust-lang/rfcs/blob/master/text/0246-const-vs-static.md)
 for these two memory types is available, but we'll take a hands-on approach to the topic.
 
-## **const**
+# **const**
 
 The quick summary is this: `const` declares a read-only block of memory that is loaded
 as part of your program binary (during the call to [exec(3)](https://linux.die.net/man/3/exec)).
@@ -144,7 +144,7 @@ but the specifications are clear enough: *don't rely on pointers to `const`
 values being consistent*. To be frank, caring about locations for `const` values
 is almost certainly a code smell.
 
-## **static**
+# **static**
 
 Static variables are related to `const` variables, but take a slightly different approach.
 When the compiler can guarantee that a *reference* is fixed for the life of a program,

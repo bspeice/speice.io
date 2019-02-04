@@ -30,7 +30,7 @@ we're just focused on interesting things the Rust language can do.
 The guiding principal as we move forward is this: *optimizing compilers
 won't produce worse assembly than we started with.* There won't be any
 situations where stack allocations get moved to heap allocations.
-There will, however,  be an opera of optimization.
+There will, however, be an opera of optimization.
 
 # The Case of the Disappearing Box
 
