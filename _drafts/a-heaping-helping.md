@@ -72,11 +72,7 @@ we'll follow this guide:
 - Smart pointers hold their contents in the heap
 - Collections are smart pointers for many objects at a time, and reallocate
   when they need to grow
-- Boxed closures (FnBox, others?) are heap allocated
-- "Move" semantics don't trigger new allocation; just a change of ownership,
-  so are incredibly fast
-  - In examples, is address of data before and after the same?
-  - Can `Copy` trigger allocation?
+- `lazy_static!` and `thread_local!` force heap allocation
 - Stack-based alternatives to standard library types should be preferred (spin, parking_lot)
 
 # Smart pointers
@@ -96,8 +92,8 @@ crate should look mostly familiar:
 - [`Arc`](https://doc.rust-lang.org/alloc/sync/struct.Arc.html)
 - [`Cow`](https://doc.rust-lang.org/alloc/borrow/enum.Cow.html)
 
-The [standard library](https://doc.rust-lang.org/std/) also defines some smart pointers,
-though more than can be covered in this article. Some examples:
+The [standard library](https://doc.rust-lang.org/std/) also defines some smart pointers
+to manage heap objects, though more than can be covered here. Some examples:
 - [`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html)
 - [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)
 
@@ -169,3 +165,28 @@ will ever be dispatched. A couple of places to look at for confirming this behav
 [`Vec::new()`](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.new),
 [`HashMap::new()`](https://doc.rust-lang.org/std/collections/hash_map/struct.HashMap.html#method.new),
 and [`String::new()`](https://doc.rust-lang.org/std/string/struct.String.html#method.new).
+
+# **thread_local!** and **lazy_static!**
+
+# Heap Alternatives
+
+While it is a bit strange for us to talk of the stack after spending so much time with the heap,
+it's worth pointing out that some heap-allocated objects in Rust have stack-based counterparts
+provided by other crates. There are a number of cases where this may be helpful, so it's useful
+to know that alternatives exist if you need them.
+
+When it comes to some of the standard library smart pointers
+([`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html) and
+[`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)), stack-based alternatives
+are provided in crates like [spin](https://crates.io/crates/spin) and
+[parking_lot](https://crates.io/crates/parking_lot). You can check out
+[`lock_api::RwLock`](https://docs.rs/lock_api/0.1.5/lock_api/struct.RwLock.html),
+[`lock_api::Mutex`](https://docs.rs/lock_api/0.1.5/lock_api/struct.Mutex.html), and
+[`spin::Once`](https://mvdnes.github.io/rust-docs/spin-rs/spin/struct.Once.html)
+if you're in need of synchronization primitives.
+
+[thread_id](https://crates.io/crates/thread-id)
+may still be necessary if you're implementing an allocator (*cough cough* the author *cough cough*)
+because [`thread::current().id()`](https://doc.rust-lang.org/std/thread/struct.ThreadId.html)
+[uses a `thread_local!` structure](https://doc.rust-lang.org/stable/src/std/sys_common/thread_info.rs.html#22-40)
+that needs heap allocation.

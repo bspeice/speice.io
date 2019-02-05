@@ -34,6 +34,44 @@ There will, however, be an opera of optimization.
 
 # The Case of the Disappearing Box
 
+```rust
+// Currently doesn't work, not sure why.
+use std::alloc::{GlobalAlloc, Layout, System};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+fn allocate_box() {
+    let x = Box::new(0);
+}
+
+pub fn main() {
+    // Turn on panicking if we allocate on the heap
+    DO_PANIC.store(true, Ordering::SeqCst);
+    
+    allocate_box();
+}
+
+#[global_allocator]
+static A: PanicAllocator = PanicAllocator;
+static DO_PANIC: AtomicBool = AtomicBool::new(false);
+struct PanicAllocator;
+
+unsafe impl GlobalAlloc for PanicAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        if DO_PANIC.load(Ordering::SeqCst) {
+            panic!("Unexpected allocation.");
+        }
+        System.alloc(layout)
+    }
+    
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        if DO_PANIC.load(Ordering::SeqCst) {
+            panic!("Unexpected deallocation.");
+        }
+        System.dealloc(ptr, layout);
+    }
+}
+```
+
 # Vectors of Usual Size
 
 # Dr. Array or: How I Learned to Love the Optimizer

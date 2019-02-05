@@ -98,6 +98,8 @@ With all that in mind, let's talk about situations in which we're guaranteed to 
 - [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are always stack-allocated.
 - Closures capture their arguments on the stack
 - Generics will use stack allocation, even with dynamic dispatch.
+- [`Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html) types are guaranteed to be
+  stack-allocated, and copying them will be done in stack memory.
 
 # Structs
 
@@ -446,3 +448,27 @@ pub fn do_call() {
 
 It's hard to imagine practical situations where dynamic dispatch would be
 used for objects that aren't heap allocated, but it technically can be done.
+
+# Copy types
+
+Understanding move semantics and copy semantics in Rust is hard. The Rust docs
+[go into detail](https://doc.rust-lang.org/stable/core/marker/trait.Copy.html)
+far better than can be addressed here, so I'll leave them to do the job.
+Their guideline is reasonable though:
+[if your type can implemement `Copy`, it should](https://doc.rust-lang.org/stable/core/marker/trait.Copy.html#when-should-my-type-be-copy).
+While there are potential speed tradeoffs to benchmark when discussing `Copy`
+(move semantics for stack objects vs. copying stack pointers vs. copying stack `struct`s), 
+*it's impossible for `Copy` to introduce a heap allocation*.
+
+But why is this the case? Fundamentally, it's because the language controls
+what `Copy` means -
+["the behavior of `Copy` is not overloadable"](https://doc.rust-lang.org/std/marker/trait.Copy.html#whats-the-difference-between-copy-and-clone)
+because it's a marker trait. From there we'll note that a type
+[can implement `Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html#when-can-my-type-be-copy)
+if (and only if) its components implement `Copy`, and that
+[no heap-allocated types implement `Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html#implementors).
+Thus, assignments involving heap types are always move semantics, and new heap
+allocations won't occur without explicit calls to
+[`clone()`](https://doc.rust-lang.org/std/clone/trait.Clone.html#tymethod.clone).
+
+TODO: Some examples. Maybe just need to show compiler errors?
