@@ -72,7 +72,7 @@ we'll follow this guide:
 - Smart pointers hold their contents in the heap
 - Collections are smart pointers for many objects at a time, and reallocate
   when they need to grow
-- `lazy_static!` and `thread_local!` force heap allocation
+- `lazy_static!` and `thread_local!` force heap allocation for everything.
 - Stack-based alternatives to standard library types should be preferred (spin, parking_lot)
 
 # Smart pointers
@@ -166,7 +166,15 @@ will ever be dispatched. A couple of places to look at for confirming this behav
 [`HashMap::new()`](https://doc.rust-lang.org/std/collections/hash_map/struct.HashMap.html#method.new),
 and [`String::new()`](https://doc.rust-lang.org/std/string/struct.String.html#method.new).
 
-# **thread_local!** and **lazy_static!**
+# **lazy_static!** and **thread_local!**
+
+There are two macros worth addressing in a conversation about heap memory. The first isn't part
+of the standard library, but it's the [5th most downloaded crate](https://crates.io/crates/lazy_static)
+in Rust. The second
+
+TODO: Not so sure about lazy_static anymore. Is thread_local possibly heap-allocated too?
+- Think it may actually be that lazy_static has a no_std mode that uses `spin`, std-mode uses std::Once.
+- Reasonably confident thread_local always allocates
 
 # Heap Alternatives
 
@@ -178,8 +186,8 @@ to know that alternatives exist if you need them.
 When it comes to some of the standard library smart pointers
 ([`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html) and
 [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)), stack-based alternatives
-are provided in crates like [spin](https://crates.io/crates/spin) and
-[parking_lot](https://crates.io/crates/parking_lot). You can check out
+are provided in crates like [parking_lot](https://crates.io/crates/parking_lot) and
+[spin](https://crates.io/crates/spin). You can check out
 [`lock_api::RwLock`](https://docs.rs/lock_api/0.1.5/lock_api/struct.RwLock.html),
 [`lock_api::Mutex`](https://docs.rs/lock_api/0.1.5/lock_api/struct.Mutex.html), and
 [`spin::Once`](https://mvdnes.github.io/rust-docs/spin-rs/spin/struct.Once.html)

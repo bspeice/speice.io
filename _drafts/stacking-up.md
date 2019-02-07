@@ -100,6 +100,10 @@ With all that in mind, let's talk about situations in which we're guaranteed to 
 - Generics will use stack allocation, even with dynamic dispatch.
 - [`Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html) types are guaranteed to be
   stack-allocated, and copying them will be done in stack memory.
+- [`Iterator`s](https://doc.rust-lang.org/std/iter/trait.Iterator.html) in the standard library
+  are stack-allocated. No worrying about some
+  ["managed languages"](https://www.youtube.com/watch?v=bSkpMdDe4g4&feature=youtu.be&t=357)
+  creating garbage.
 
 # Structs
 
@@ -451,12 +455,12 @@ used for objects that aren't heap allocated, but it technically can be done.
 
 # Copy types
 
-Understanding move semantics and copy semantics in Rust is hard. The Rust docs
+Understanding move semantics and copy semantics in Rust is weird at first. The Rust docs
 [go into detail](https://doc.rust-lang.org/stable/core/marker/trait.Copy.html)
 far better than can be addressed here, so I'll leave them to do the job.
-Their guideline is reasonable though:
+Even from a memory perspective though, their guideline is reasonable:
 [if your type can implemement `Copy`, it should](https://doc.rust-lang.org/stable/core/marker/trait.Copy.html#when-should-my-type-be-copy).
-While there are potential speed tradeoffs to benchmark when discussing `Copy`
+While there are potential speed tradeoffs to *benchmark* when discussing `Copy`
 (move semantics for stack objects vs. copying stack pointers vs. copying stack `struct`s), 
 *it's impossible for `Copy` to introduce a heap allocation*.
 
@@ -471,4 +475,19 @@ Thus, assignments involving heap types are always move semantics, and new heap
 allocations won't occur without explicit calls to
 [`clone()`](https://doc.rust-lang.org/std/clone/trait.Clone.html#tymethod.clone).
 
-TODO: Some examples. Maybe just need to show compiler errors?
+```rust
+#[derive(Clone)]
+struct Cloneable {
+    x: Box<u64>
+}
+
+// error[E0204]: the trait `Copy` may not be implemented for this type
+#[derive(Copy, Clone)]
+struct NotCopyable {
+    x: Box<u64>
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/VToRuK)
+
+# Iterators
+
