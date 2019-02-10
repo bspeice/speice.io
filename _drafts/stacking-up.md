@@ -39,8 +39,8 @@ fastest allocator is the one you never use. As such, we're not going to discuss 
 but we'll focus instead on the conditions that enable the Rust compiler to use
 the faster stack-based allocation for variables.
 
-With that in mind, let's get into the details. How do we know when Rust will or will not use
-stack allocation for objects we create? Looking at other languages, it's often easy to delineate
+So, **how do we know when Rust will or will not use stack allocation for objects we create?**
+Looking at other languages, it's often easy to delineate
 between stack and heap. Managed memory languages (Python, Java,
 [C#](https://blogs.msdn.microsoft.com/ericlippert/2010/09/30/the-truth-about-value-types/))
 place everything on the heap. JIT compilers ([PyPy](https://www.pypy.org/),
@@ -51,8 +51,9 @@ is one) being the way to use heap memory. Old C++ has the [`new`](https://stacko
 keyword, though modern C++/C++11 is more complicated with [RAII](https://en.cppreference.com/w/cpp/language/raii).
 
 For Rust specifically, the principle is this: **stack allocation will be used for everything
-that doesn't involve "smart pointers" and collections.** If we're interested in dissecting it though,
-there are three things we pay attention to:
+that doesn't involve "smart pointers" and collections.** We'll skip over a precise definition
+of the term "smart pointer" for now, and instead discuss what we should watch for when talking
+about the memory region used for allocation:
 
 1. Stack manipulation instructions (`push`, `pop`, and `add`/`sub` of the `rsp` register)
    indicate allocation of stack memory:
@@ -85,8 +86,8 @@ there are three things we pay attention to:
    the Rust standard library only defines `Drop` implementations for types that involve heap allocation.</span> 
 
 3. If you don't want to inspect the assembly, use a custom allocator that's able to track
-   and alert when heap allocations occur. As an unashamed plug, [qadapt](https://crates.io/crates/qadapt)
-   was designed for exactly this purpose.
+   and alert when heap allocations occur. Crates like [`alloc_counter`](https://crates.io/crates/alloc_counter)
+   are designed for exactly this purpose.
 
 With all that in mind, let's talk about situations in which we're guaranteed to use stack memory:
 
@@ -96,7 +97,7 @@ With all that in mind, let's talk about situations in which we're guaranteed to 
   will not change the memory region used.
 - Enums and unions are stack-allocated.
 - [Arrays](https://doc.rust-lang.org/std/primitive.array.html) are always stack-allocated.
-- Closures capture their arguments on the stack
+- Closures capture their arguments on the stack.
 - Generics will use stack allocation, even with dynamic dispatch.
 - [`Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html) types are guaranteed to be
   stack-allocated, and copying them will be done in stack memory.

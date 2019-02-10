@@ -242,8 +242,10 @@ that needs heap allocation.
 # Tracing Allocators
 
 When writing performance-sensitive code, there's no alternative to measuring your code.
-[Measure first](https://youtu.be/nXaxk27zwlk?t=583), because you should never rely on
-your instincts when [a microsecond is an eternity](https://www.youtube.com/watch?v=NH1Tta7purM).
+If you didn't write a benchmark,
+[you don't care about it's performance](https://www.youtube.com/watch?v=2EWejmkKlxs&feature=youtu.be&t=263)
+You should never rely on your instincts when
+[a microsecond is an eternity](https://www.youtube.com/watch?v=NH1Tta7purM).
 
 Similarly, there's great work going on in Rust with allocators that keep track of what
 they're doing. [`alloc_counter`](https://crates.io/crates/alloc_counter) was designed

@@ -32,8 +32,8 @@ section at the end for easy future citation. To that end, a table of contents is
 - [The Whole World: Global Memory Usage](/2019/02/the-whole-world)
 - [Stacking Up: Fixed Memory](/2019/02/stacking-up)
 - [A Heaping Helping: Dynamic Memory](/2019/02/a-heaping-helping)
-- [Compiler Optimizations: What It's Done For You Lately](#compiler-optimizations-what-its-done-for-you-lately)
-- Summary: When Does Rust Allocate?
+- [Compiler Optimizations: What It's Done For You Lately](/2019/02/compiler-optimizations)
+- [Summary: What Are the Rules?](/2019/02/summary)
 
 # Foreword
 
@@ -96,6 +96,9 @@ Now let's address some conditions and caveats before going much further:
   a [refresher](https://stackoverflow.com/a/26026278/1454178) on the `push` and `pop`
   [instructions](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
   was helpful while writing this post.
+- I've tried to be precise in saying only what I can prove using the tools (ASM, docs)
+  that are available. That said, if there's something said in error, please reach out
+  and let me know - [bradlee@speice.io](mailto:bradlee@speice.io)
 
 Finally, I'll do what I can to flag potential future changes but the Rust docs
 have a notice worth repeating:
@@ -103,9 +106,3 @@ have a notice worth repeating:
 > Rust does not currently have a rigorously and formally defined memory model.
 >  
 > -- [the docs](https://doc.rust-lang.org/std/ptr/fn.read_volatile.html)
-
-# Compiler Optimizations: What It's Done For You Lately
-
-1. Box<> getting inlined into stack allocations
-2. Vec::push() === Vec::with_capacity() for fixed/predictable capacities
-3. Inlining statics that don't change value
