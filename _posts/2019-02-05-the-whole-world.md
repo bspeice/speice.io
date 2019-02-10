@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The Whole World: Global Memory Usage"
+title: "Global Memory Usage: The Whole World"
 description: "Static considered slightly less harmful."
 category: 
 tags: [rust, understanding-allocations]
@@ -292,4 +292,3 @@ fn main() {
 }
 ```
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=3ba003a981a7ed7400240caadd384d59)
-

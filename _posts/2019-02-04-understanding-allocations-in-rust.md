@@ -29,9 +29,9 @@ an understanding of the different memory types Rust makes use of, then summarize
 section at the end for easy future citation. To that end, a table of contents is in order:
 
 - Foreword
-- [The Whole World: Global Memory Usage](/2019/02/the-whole-world)
-- [Stacking Up: Fixed Memory](/2019/02/stacking-up)
-- [A Heaping Helping: Dynamic Memory](/2019/02/a-heaping-helping)
+- [Global Memory Usage: The Whole World](/2019/02/the-whole-world)
+- [Fixed Memory: Stacking Up](/2019/02/stacking-up)
+- [Dynamic Memory: A Heaping Helping](/2019/02/a-heaping-helping)
 - [Compiler Optimizations: What It's Done For You Lately](/2019/02/compiler-optimizations)
 - [Summary: What Are the Rules?](/2019/02/summary)
 

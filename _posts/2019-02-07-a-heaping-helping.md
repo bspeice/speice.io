@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "A Heaping Helping: Dynamic Memory"
+title: "Dynamic Memory: A Heaping Helping"
 description: "The reason Rust exists."
 category: 
 tags: [rust, understanding-allocations]

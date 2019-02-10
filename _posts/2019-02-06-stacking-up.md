@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Stacking Up: Fixed Memory"
+title: "Fixed Memory: Stacking Up"
 description: "We don't need no allocator."
 category: 
 tags: [rust, understanding-allocations]
