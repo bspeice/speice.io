@@ -42,16 +42,16 @@ the faster stack-based allocation for variables.
 With that in mind, let's get into the details. How do we know when Rust will or will not use
 stack allocation for objects we create? Looking at other languages, it's often easy to delineate
 between stack and heap. Managed memory languages (Python, Java,
-[C#](https://blogs.msdn.microsoft.com/ericlippert/2010/09/30/the-truth-about-value-types/)) assume
-everything is on the heap. JIT compilers ([PyPy](https://www.pypy.org/),
+[C#](https://blogs.msdn.microsoft.com/ericlippert/2010/09/30/the-truth-about-value-types/))
+place everything on the heap. JIT compilers ([PyPy](https://www.pypy.org/),
 [HotSpot](https://www.oracle.com/technetwork/java/javase/tech/index-jsp-136373.html)) may
 optimize some heap allocations away, but you should never assume it will happen.
 C makes things clear with calls to special functions ([malloc(3)](https://linux.die.net/man/3/malloc)
 is one) being the way to use heap memory. Old C++ has the [`new`](https://stackoverflow.com/a/655086/1454178)
 keyword, though modern C++/C++11 is more complicated with [RAII](https://en.cppreference.com/w/cpp/language/raii).
 
-For Rust specifically, the principle is this: *stack allocation will be used for everything
-that doesn't involve "smart pointers" and collections.* If we're interested in dissecting it though,
+For Rust specifically, the principle is this: **stack allocation will be used for everything
+that doesn't involve "smart pointers" and collections.** If we're interested in dissecting it though,
 there are three things we pay attention to:
 
 1. Stack manipulation instructions (`push`, `pop`, and `add`/`sub` of the `rsp` register)
@@ -101,9 +101,7 @@ With all that in mind, let's talk about situations in which we're guaranteed to 
 - [`Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html) types are guaranteed to be
   stack-allocated, and copying them will be done in stack memory.
 - [`Iterator`s](https://doc.rust-lang.org/std/iter/trait.Iterator.html) in the standard library
-  are stack-allocated. No worrying about some
-  ["managed languages"](https://www.youtube.com/watch?v=bSkpMdDe4g4&feature=youtu.be&t=357)
-  creating garbage.
+  are stack-allocated even when iterating over heap-based collections.
 
 # Structs
 
@@ -491,3 +489,69 @@ struct NotCopyable {
 
 # Iterators
 
+In [managed memory languages](https://www.youtube.com/watch?v=bSkpMdDe4g4&feature=youtu.be&t=357)
+(like Java), there's a subtle difference between these two code samples:
+
+```java
+public static int sum_for(List<Long> vals) {
+    long sum = 0;
+    // Regular for loop
+    for (int i = 0; i < vals.length; i++) {
+        sum += vals[i];
+    }
+    return sum;
+}
+
+public static int sum_foreach(List<Long> vals) {
+    long sum = 0;
+    // "Foreach" loop - uses iteration
+    for (Long l : vals) {
+        sum += l;
+    }
+    return sum;
+}
+```
+
+In the `sum_for` function, nothing terribly interesting happens. In `sum_foreach`,
+an object of type [`Iterator`](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Iterator.html)
+is allocated on the heap, and will eventually be garbage-collected. This isn't a great design;
+iterators are often transient objects that you need during a function and can discard
+once the function ends. Sounds exactly like the issue stack-allocated objects address, no?
+
+In Rust, iterators are allocated on the stack. The objects to iterate over are almost
+certainly in heap memory, but the iterator itself
+([`Iter`](https://doc.rust-lang.org/std/slice/struct.Iter.html)) doesn't need to use the heap.
+In each of the examples below we iterate over a collection, but will never need to allocate
+a object on the heap to clean up:
+
+```rust
+use std::collections::HashMap;
+// There's a lot of assembly generated, but if you search in the text,
+// there are no references to `real_drop_in_place` anywhere.
+
+pub fn sum_vec(x: &Vec<u32>) {
+    let mut s = 0;
+    // Basic iteration over vectors doesn't need allocation
+    for y in x {
+        s += y;
+    }
+}
+
+pub fn sum_enumerate(x: &Vec<u32>) {
+    let mut s = 0;
+    // More complex iterators are just fine too
+    for (_i, y) in x.iter().enumerate() {
+        s += y;
+    }
+}
+
+pub fn sum_hm(x: &HashMap<u32, u32>) {
+    let mut s = 0;
+    // And it's not just Vec, all types will allocate the iterator
+    // on stack memory
+    for y in x.values() {
+        s += y;
+    }
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/FTT3CT)
