@@ -12,25 +12,25 @@ We've spent time showing how those rules work themselves out in practice,
 and become familiar with reading the assembly code needed to see each memory
 type (global, stack, heap) in action.
 
-But throughout the content so far, we've put a handicap on the code.
+But throughout the series so far, we've put a handicap on the code.
 In the name of consistent and understandable results, we've asked the
 compiler to pretty please leave the training wheels on. Now is the time
-where we throw out all the rules and take the kid gloves off. As it turns out,
+where we throw out all the rules and take off the kid gloves. As it turns out,
 both the Rust compiler and the LLVM optimizers are incredibly sophisticated,
 and we'll step back and let them do their job.
 
 Similar to ["What Has My Compiler Done For Me Lately?"](https://www.youtube.com/watch?v=bSkpMdDe4g4),
 we're focusing on interesting things the Rust language (and LLVM!) can do
-as regards memory management. We'll still be looking at assembly code to
+with memory management. We'll still be looking at assembly code to
 understand what's going on, but it's important to mention again:
 **please use automated tools like
 [alloc-counter](https://crates.io/crates/alloc_counter) to double-check 
 memory behavior if it's something you care about**. 
 It's far too easy to mis-read assembly in large code sections, you should
-always have an automated tool verify behavior if you care about memory usage.
+always verify behavior if you care about memory usage.
 
 The guiding principal as we move forward is this: *optimizing compilers
-won't produce worse assembly than we started with.* There won't be any
+won't produce worse programs than we started with.* There won't be any
 situations where stack allocations get moved to heap allocations.
 There will, however, be an opera of optimization.
 
@@ -40,7 +40,7 @@ Our first optimization comes when LLVM can reason that the lifetime of an object
 is sufficiently short that heap allocations aren't necessary. In these cases,
 LLVM will move the allocation to the stack instead! The way this interacts
 with `#[inline]` attributes is a bit opaque, but the important part is that LLVM
-can sometimes do better than the baseline Rust language.
+can sometimes do better than the baseline Rust language:
 
 ```rust
 use std::alloc::{GlobalAlloc, Layout, System};
@@ -87,13 +87,13 @@ unsafe impl GlobalAlloc for PanicAllocator {
 
 With some collections, LLVM can predict how large they will become
 and allocate the entire size on the stack instead of the heap.
-This works whether with both the pre-allocation (`Vec::with_capacity`)
-*and re-allocation* (`Vec::push`) methods for collections types.
-Not only can LLVM predict sizing if you reserve the fully size up front,
+This works with both the pre-allocation (`Vec::with_capacity`)
+*and re-allocation* (`Vec::push`) methods for collection types.
+Not only can LLVM predict sizing if you reserve everything up front,
 it can see through the resizing operations and find the total size.
 While this specific optimization is unlikely to come up in production
 usage, it's cool to note that LLVM does a considerable amount of work
-to understand what code actually does.
+to understand what the code will do:
 
 ```rust
 use std::alloc::{GlobalAlloc, Layout, System};
@@ -104,13 +104,16 @@ fn main() {
     DO_PANIC.store(true, Ordering::SeqCst);
     
     // If the compiler can predict how large a vector will be,
-    // it can optimize out the heap storage needed. This also
-    // works with `Vec::with_capacity()`, but the push case
-    // is a bit more interesting.
+    // it can optimize out the heap storage needed.
     let mut x: Vec<u64> = Vec::new();
     x.push(12);
-    assert_eq!(x[0], 12);
+    
+    let mut y: Vec<u64> = Vec::with_capacity(1);
+    y.push(12);
+    
+    assert_eq!(x[0], y[0]);
     drop(x);
+    drop(y);
     
     // Turn off panicking, as there are some deallocations
     // when we exit main.
@@ -138,21 +141,21 @@ unsafe impl GlobalAlloc for PanicAllocator {
     }
 }
 ```
--- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=1dfccfcf63d8800e644a3b948f1eeb7b)
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=release&edition=2018&gist=af660a87b2cd94213afb906beeb32c15)
 
 # Dr. Array or: How I Learned to Love the Optimizer
 
 Finally, this isn't so much about LLVM figuring out different memory behavior,
-but LLVM totally stripping out code that has no side effects. Optimizations of
+but LLVM stripping out code that doesn't do anything. Optimizations of
 this type have a lot of nuance to them; if you're not careful, they can
 make your benchmarks look
 [impossibly good](https://www.youtube.com/watch?v=nXaxk27zwlk&feature=youtu.be&t=1199).
-In Rust, the `black_box` function (in both
+In Rust, the `black_box` function (implemented in both
 [`libtest`](https://doc.rust-lang.org/1.1.0/test/fn.black_box.html) and
 [`criterion`](https://docs.rs/criterion/0.2.10/criterion/fn.black_box.html))
 will tell the compiler to disable this kind of optimization. But if you let
-LLVM remove unnecessary code, you can end up with programs that
-would have previously caused errors running just fine:
+LLVM remove unnecessary code, you can end up running programs that
+previously caused errors:
 
 ```rust
 #[derive(Default)]
@@ -183,5 +186,5 @@ pub fn main() {
     let _x = EightM::default();
 }
 ```
--- [Compiler Explorer](https://godbolt.org/z/daHn7P)
+-- [Compiler Explorer](https://godbolt.org/z/daHn7P)  
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=release&edition=2018&gist=4c253bf26072119896ab93c6ef064dc0)

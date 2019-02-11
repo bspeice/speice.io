@@ -12,11 +12,11 @@ how the language uses dynamic memory (also referred to as the **heap**) is a sys
 And as the docs mention, ownership
 [is Rust's most unique feature](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html).
 
-The heap is used in two situations: when the compiler is unable to predict the *total size
-of memory needed*, or *how long the memory is needed for*, it will allocate space in the heap.
+The heap is used in two situations; when the compiler is unable to predict either the *total size
+of memory needed*, or *how long the memory is needed for*, it allocates space in the heap.
 This happens pretty frequently; if you want to download the Google home page, you won't know
-how large it is until your program runs. And when you're finished with Google, whenever that
-happens to be, we deallocate the memory so it can be used to store other webpages. If you're 
+how large it is until your program runs. And when you're finished with Google, we deallocate
+the memory so it can be used to store other webpages. If you're 
 interested in a slightly longer explanation of the heap, check out
 [The Stack and the Heap](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#the-stack-and-the-heap)
 in Rust's documentation.
@@ -32,8 +32,8 @@ To start off, take a guess for how many allocations happen in the program below:
 fn main() {}
 ```
 
-It's obviously a trick question; while no heap allocations happen as a result of
-the code listed above, the setup needed to call `main` does allocate on the heap.
+It's obviously a trick question; while no heap allocations occur as a result of
+that code, the setup needed to call `main` does allocate on the heap.
 Here's a way to show it:
 
 ```rust
@@ -78,8 +78,8 @@ we'll follow this guide:
 
 Finally, there are two "addendum" issues that are important to address when discussing
 Rust and the heap:
-- Stack-based alternatives to some standard library types are available
-- Special allocators to track memory behavior are available
+- Non-heap alternatives to many standard library types are available.
+- Special allocators to track memory behavior should be used to benchmark code.
 
 # Smart pointers
 
@@ -99,7 +99,7 @@ crate should look mostly familiar:
 - [`Cow`](https://doc.rust-lang.org/alloc/borrow/enum.Cow.html)
 
 The [standard library](https://doc.rust-lang.org/std/) also defines some smart pointers
-to manage heap objects, though more than can be covered here. Some examples:
+to manage heap objects, though more than can be covered here. Some examples are:
 - [`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html)
 - [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)
 
@@ -112,8 +112,8 @@ have more information.
 When a smart pointer is created, the data it is given is placed in heap memory and
 the location of that data is recorded in the smart pointer. Once the smart pointer
 has determined it's safe to deallocate that memory (when a `Box` has
-[gone out of scope](https://doc.rust-lang.org/stable/std/boxed/index.html) or when
-reference count for an object [goes to zero](https://doc.rust-lang.org/alloc/rc/index.html)),
+[gone out of scope](https://doc.rust-lang.org/stable/std/boxed/index.html) or a
+reference count [goes to zero](https://doc.rust-lang.org/alloc/rc/index.html)),
 the heap space is reclaimed. We can prove these types use heap memory by
 looking at code:
 
@@ -146,18 +146,18 @@ pub fn my_cow() {
 
 # Collections
 
-Collections types use heap memory because their contents have dynamic size; they will request
+Collection types use heap memory because their contents have dynamic size; they will request
 more memory [when needed](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.reserve),
 and can [release memory](https://doc.rust-lang.org/std/vec/struct.Vec.html#method.shrink_to_fit)
 when it's no longer necessary. This dynamic property forces Rust to heap allocate
-everything they contain. In a way, **collections are smart pointers for many objects at once.**
+everything they contain. In a way, **collections are smart pointers for many objects at a time**.
 Common types that fall under this umbrella are
 [`Vec`](https://doc.rust-lang.org/stable/alloc/vec/struct.Vec.html),
 [`HashMap`](https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html), and
 [`String`](https://doc.rust-lang.org/stable/alloc/string/struct.String.html)
-(not [`&str`](https://doc.rust-lang.org/std/primitive.str.html)).
+(not [`str`](https://doc.rust-lang.org/std/primitive.str.html)).
 
-But while collections store the objects they own in heap memory, *creating new collections
+While collections store the objects they own in heap memory, *creating new collections
 will not allocate on the heap*. This is a bit weird; if we call `Vec::new()`, the
 assembly shows a corresponding call to `real_drop_in_place`:
 
@@ -169,7 +169,7 @@ pub fn my_vec() {
 ```
 -- [Compiler Explorer](https://godbolt.org/z/1WkNtC)
 
-But because the vector has no elements it is managing, no calls to the allocator
+But because the vector has no elements to manage, no calls to the allocator
 will ever be dispatched:
 
 ```rust
@@ -218,12 +218,12 @@ and [`String::new()`](https://doc.rust-lang.org/std/string/struct.String.html#me
 
 # Heap Alternatives
 
-While it is a bit strange for us to talk of the stack after spending time with the heap,
+While it is a bit strange to speak of the stack after spending time with the heap,
 it's worth pointing out that some heap-allocated objects in Rust have stack-based counterparts
 provided by other crates. If you have need of the functionality, but want to avoid allocating,
-there are some great alternatives.
+there are typically alternatives available.
 
-When it comes to some of the standard library smart pointers
+When it comes to some standard library smart pointers
 ([`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html) and
 [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)), stack-based alternatives
 are provided in crates like [parking_lot](https://crates.io/crates/parking_lot) and
@@ -233,10 +233,9 @@ are provided in crates like [parking_lot](https://crates.io/crates/parking_lot) 
 [`spin::Once`](https://mvdnes.github.io/rust-docs/spin-rs/spin/struct.Once.html)
 if you're in need of synchronization primitives.
 
-[thread_id](https://crates.io/crates/thread-id)
-may still be necessary if you're implementing an allocator (*cough cough* the author *cough cough*)
+[thread_id](https://crates.io/crates/thread-id) may be necessary if you're implementing an allocator
 because [`thread::current().id()`](https://doc.rust-lang.org/std/thread/struct.ThreadId.html)
-[uses a `thread_local!` structure](https://doc.rust-lang.org/stable/src/std/sys_common/thread_info.rs.html#22-40)
+uses a [`thread_local!` structure](https://doc.rust-lang.org/stable/src/std/sys_common/thread_info.rs.html#17-36)
 that needs heap allocation.
 
 # Tracing Allocators
@@ -248,7 +247,6 @@ You should never rely on your instincts when
 [a microsecond is an eternity](https://www.youtube.com/watch?v=NH1Tta7purM).
 
 Similarly, there's great work going on in Rust with allocators that keep track of what
-they're doing. [`alloc_counter`](https://crates.io/crates/alloc_counter) was designed
-for exactly this purpose. When it comes to tracking heap behavior, you shouldn't just
-rely on the language; please measure and make sure that you have tools in place to catch
-any issues that come up.
+they're doing (like [`alloc_counter`](https://crates.io/crates/alloc_counter)).
+When it comes to tracking heap behavior, it's easy to make mistakes;
+please write tests and make sure you have tools to guard against future issues.

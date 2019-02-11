@@ -6,10 +6,10 @@ category:
 tags: [rust, understanding-allocations]
 ---
 
-`const` and `static` are perfectly fine, but it's very rare that we know
+`const` and `static` are perfectly fine, but it's relatively rare that we know
 at compile-time about either values or references that will be the same for the
 duration of our program. Put another way, it's not often the case that either you
-or your compiler knows how much memory your entire program will need.
+or your compiler knows how much memory your entire program will ever need.
 
 However, there are still some optimizations the compiler can do if it knows how much
 memory individual functions will need. Specifically, the compiler can make use of
@@ -19,9 +19,9 @@ both the short- and long-term. When requesting memory, the
 can typically complete in [1 or 2 cycles](https://agner.org/optimize/instruction_tables.ods)
 (<1 nanosecond on modern CPUs). Contrast that to heap memory which requires an allocator
 (specialized software to track what memory is in use) to reserve space.
-And when you're finished with your memory, the `pop` instruction likewise runs in
+When you're finished with stack memory, the `pop` instruction runs in
 1-3 cycles, as opposed to an allocator needing to worry about memory fragmentation
-and other issues. All sorts of incredibly sophisticated techniques have been used
+and other issues with the heap. All sorts of incredibly sophisticated techniques have been used
 to design allocators:
 - [Garbage Collection](https://en.wikipedia.org/wiki/Garbage_collection_(computer_science))
   strategies like [Tracing](https://en.wikipedia.org/wiki/Tracing_garbage_collection)
@@ -37,7 +37,7 @@ But no matter how fast your allocator is, the principle remains: the
 fastest allocator is the one you never use. As such, we're not going to discuss how exactly the
 [`push` and `pop` instructions work](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html),
 but we'll focus instead on the conditions that enable the Rust compiler to use
-the faster stack-based allocation for variables.
+faster stack-based allocation for variables.
 
 So, **how do we know when Rust will or will not use stack allocation for objects we create?**
 Looking at other languages, it's often easy to delineate
@@ -46,14 +46,14 @@ between stack and heap. Managed memory languages (Python, Java,
 place everything on the heap. JIT compilers ([PyPy](https://www.pypy.org/),
 [HotSpot](https://www.oracle.com/technetwork/java/javase/tech/index-jsp-136373.html)) may
 optimize some heap allocations away, but you should never assume it will happen.
-C makes things clear with calls to special functions ([malloc(3)](https://linux.die.net/man/3/malloc)
-is one) being the way to use heap memory. Old C++ has the [`new`](https://stackoverflow.com/a/655086/1454178)
+C makes things clear with calls to special functions (like [malloc(3)](https://linux.die.net/man/3/malloc))
+needed to access heap memory. Old C++ has the [`new`](https://stackoverflow.com/a/655086/1454178)
 keyword, though modern C++/C++11 is more complicated with [RAII](https://en.cppreference.com/w/cpp/language/raii).
 
-For Rust specifically, the principle is this: **stack allocation will be used for everything
-that doesn't involve "smart pointers" and collections.** We'll skip over a precise definition
-of the term "smart pointer" for now, and instead discuss what we should watch for when talking
-about the memory region used for allocation:
+For Rust, we can summarize as follows: **stack allocation will be used for everything
+that doesn't involve "smart pointers" and collections**. We'll skip over a precise definition
+of the term "smart pointer" for now, and instead discuss what we should watch for to understand
+when stack and heap memory regions are used:
 
 1. Stack manipulation instructions (`push`, `pop`, and `add`/`sub` of the `rsp` register)
    indicate allocation of stack memory:
@@ -68,7 +68,7 @@ about the memory region used for allocation:
    ```
    -- [Compiler Explorer](https://godbolt.org/z/5WSgc9)
 
-2. Tracking when exactly heap allocation calls happen is difficult. It's typically easier to
+2. Tracking when exactly heap allocation calls occur is difficult. It's typically easier to
    watch for `call core::ptr::real_drop_in_place`, and infer that a heap allocation happened
    in the recent past:
    ```rust
@@ -200,7 +200,7 @@ pub fn total_distance() {
 -- [Compiler Explorer](https://godbolt.org/z/Qmx4ST)
 
 As a consequence of function arguments never using heap memory, we can also
-infer that functions using the `#[inline]` attributes also do not heap-allocate.
+infer that functions using the `#[inline]` attributes also do not heap allocate.
 But better than inferring, we can look at the assembly to prove it:
 
 ```rust
@@ -239,8 +239,42 @@ pub fn total_distance() {
 Finally, passing by value (arguments with type
 [`Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html))
 and passing by reference (either moving ownership or passing a pointer) may have
-[slightly different layouts in assembly](https://godbolt.org/z/sKi_kl), but will
-still use either stack memory or CPU registers.
+slightly different layouts in assembly, but will still use either stack memory
+or CPU registers:
+
+```rust
+pub struct Point {
+    x: i64,
+    y: i64,
+}
+
+// Moving values
+pub fn distance_moved(a: Point, b: Point) -> i64 {
+    let x1 = a.x;
+    let x2 = b.x;
+    let y1 = a.y;
+    let y2 = b.y;
+
+    let x_pow = (x1 - x2) * (x1 - x2);
+    let y_pow = (y1 - y2) * (y1 - y2);
+    let squared = x_pow + y_pow;
+    squared / squared
+}
+
+// Borrowing values has two extra `mov` instructions on lines 21 and 22
+pub fn distance_borrowed(a: &Point, b: &Point) -> i64 {
+    let x1 = a.x;
+    let x2 = b.x;
+    let y1 = a.y;
+    let y2 = b.y;
+
+    let x_pow = (x1 - x2) * (x1 - x2);
+    let y_pow = (y1 - y2) * (y1 - y2);
+    let squared = x_pow + y_pow;
+    squared / squared
+}
+```
+-- [Compiler Explorer](https://godbolt.org/z/06hGiv)
 
 # Enums
 
@@ -340,9 +374,9 @@ both bind *everything* by reference normally, but Python can also
 In Rust, arguments to closures are the same as arguments to other functions;
 closures are simply functions that don't have a declared name. Some weird ordering
 of the stack may be required to handle them, but it's the compiler's responsiblity
-to figure it out.
+to figure that out.
 
-Each example below has the same effect, but compile to very different programs.
+Each example below has the same effect, but a different assembly implementation.
 In the simplest case, we immediately run a closure returned by another function.
 Because we don't store a reference to the closure, the stack memory needed to
 store the captured values is contiguous:
@@ -457,7 +491,7 @@ used for objects that aren't heap allocated, but it technically can be done.
 Understanding move semantics and copy semantics in Rust is weird at first. The Rust docs
 [go into detail](https://doc.rust-lang.org/stable/core/marker/trait.Copy.html)
 far better than can be addressed here, so I'll leave them to do the job.
-Even from a memory perspective though, their guideline is reasonable:
+From a memory perspective though, their guideline is reasonable:
 [if your type can implemement `Copy`, it should](https://doc.rust-lang.org/stable/core/marker/trait.Copy.html#when-should-my-type-be-copy).
 While there are potential speed tradeoffs to *benchmark* when discussing `Copy`
 (move semantics for stack objects vs. copying stack pointers vs. copying stack `struct`s), 
@@ -471,8 +505,7 @@ because it's a marker trait. From there we'll note that a type
 if (and only if) its components implement `Copy`, and that
 [no heap-allocated types implement `Copy`](https://doc.rust-lang.org/std/marker/trait.Copy.html#implementors).
 Thus, assignments involving heap types are always move semantics, and new heap
-allocations won't occur without explicit calls to
-[`clone()`](https://doc.rust-lang.org/std/clone/trait.Clone.html#tymethod.clone).
+allocations won't occur because of implicit operator behavior.
 
 ```rust
 #[derive(Clone)]
@@ -490,8 +523,8 @@ struct NotCopyable {
 
 # Iterators
 
-In [managed memory languages](https://www.youtube.com/watch?v=bSkpMdDe4g4&feature=youtu.be&t=357)
-(like Java), there's a subtle difference between these two code samples:
+In managed memory languages (like [Java](https://www.youtube.com/watch?v=bSkpMdDe4g4&feature=youtu.be&t=357)),
+there's a subtle difference between these two code samples:
 
 ```java
 public static int sum_for(List<Long> vals) {
@@ -522,8 +555,7 @@ once the function ends. Sounds exactly like the issue stack-allocated objects ad
 In Rust, iterators are allocated on the stack. The objects to iterate over are almost
 certainly in heap memory, but the iterator itself
 ([`Iter`](https://doc.rust-lang.org/std/slice/struct.Iter.html)) doesn't need to use the heap.
-In each of the examples below we iterate over a collection, but will never need to allocate
-a object on the heap to clean up:
+In each of the examples below we iterate over a collection, but never use heap allocation:
 
 ```rust
 use std::collections::HashMap;
