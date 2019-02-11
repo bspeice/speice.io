@@ -30,11 +30,11 @@ a summary will be provided as a cheat sheet for easy future reference. To that e
 a table of contents is in order:
 
 - Foreword
-- [Global Memory Usage: The Whole World](/2019/02/the-whole-world)
-- [Fixed Memory: Stacking Up](/2019/02/stacking-up)
-- [Dynamic Memory: A Heaping Helping](/2019/02/a-heaping-helping)
-- [Compiler Optimizations: What It's Done For You Lately](/2019/02/compiler-optimizations)
-- [Summary: What Are the Rules?](/2019/02/summary)
+- [Global Memory Usage: The Whole World](/2019/02/the-whole-world.html)
+- [Fixed Memory: Stacking Up](/2019/02/stacking-up.html)
+- [Dynamic Memory: A Heaping Helping](/2019/02/a-heaping-helping.html)
+- [Compiler Optimizations: What It's Done For You Lately](/2019/02/compiler-optimizations.html)
+- [Summary: What Are the Rules?](/2019/02/summary.html)
 
 # Foreword
 
