@@ -6,13 +6,21 @@ category:
 tags: [rust, understanding-allocations]
 ---
 
+**Update 2019-02-10**: When debugging a [related issue](https://gitlab.com/sio4/code/alloc-counter/issues/1),
+it was discovered that the original code worked because LLVM optimized out
+the entire function, rather than just the allocation segments.
+The code has been updated with proper use of [`read_volatile`](https://doc.rust-lang.org/std/ptr/fn.read_volatile.html),
+and a previous section on vector capacity has been removed.
+
+---
+
 Up to this point, we've been discussing memory usage in the Rust language
 by focusing on simple rules that are mostly right for small chunks of code.
 We've spent time showing how those rules work themselves out in practice,
 and become familiar with reading the assembly code needed to see each memory
 type (global, stack, heap) in action.
 
-But throughout the series so far, we've put a handicap on the code.
+Throughout the series so far, we've put a handicap on the code.
 In the name of consistent and understandable results, we've asked the
 compiler to pretty please leave the training wheels on. Now is the time
 where we throw out all the rules and take off the kid gloves. As it turns out,
@@ -46,78 +54,30 @@ can sometimes do better than the baseline Rust language:
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-pub fn main() {
+pub fn cmp(x: u32) {
     // Turn on panicking if we allocate on the heap
     DO_PANIC.store(true, Ordering::SeqCst);
     
-    // This code will only run with the mode set to "Release".
-    // If you try running in "Debug", you'll get a panic.
-    let x = Box::new(0);
-    drop(x);
+    // The compiler is able to see through the constant `Box`
+    // and directly compare `x` to 24 - assembly line 73
+    let y = Box::new(24);
+    let equals = x == *y;
+
+    // This call to drop is eliminated
+    drop(y);
+
+    // Need to mark the comparison result as volatile so that
+    // LLVM doesn't strip out all the code. If `y` is marked
+    // volatile instead, allocation will be forced.
+    unsafe { std::ptr::read_volatile(&equals) };
     
     // Turn off panicking, as there are some deallocations
     // when we exit main.
     DO_PANIC.store(false, Ordering::SeqCst);
 }
-
-#[global_allocator]
-static A: PanicAllocator = PanicAllocator;
-static DO_PANIC: AtomicBool = AtomicBool::new(false);
-struct PanicAllocator;
-
-unsafe impl GlobalAlloc for PanicAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        if DO_PANIC.load(Ordering::SeqCst) {
-            panic!("Unexpected allocation.");
-        }
-        System.alloc(layout)
-    }
-    
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        if DO_PANIC.load(Ordering::SeqCst) {
-            panic!("Unexpected deallocation.");
-        }
-        System.dealloc(ptr, layout);
-    }
-}
-```
--- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=release&edition=2018&gist=614994a20e362bf04de868b19daf5ca4)
-
-# Vectors of Usual Size
-
-With some collections, LLVM can predict how large they will become
-and allocate the entire size on the stack instead of the heap.
-This works with both the pre-allocation (`Vec::with_capacity`)
-*and re-allocation* (`Vec::push`) methods for collection types.
-Not only can LLVM predict sizing if you reserve everything up front,
-it can see through the resizing operations and find the total size.
-While this specific optimization is unlikely to come up in production
-usage, it's cool to note that LLVM does a considerable amount of work
-to understand what the code will do:
-
-```rust
-use std::alloc::{GlobalAlloc, Layout, System};
-use std::sync::atomic::{AtomicBool, Ordering};
 
 fn main() {
-    // Turn on panicking if we allocate on the heap
-    DO_PANIC.store(true, Ordering::SeqCst);
-    
-    // If the compiler can predict how large a vector will be,
-    // it can optimize out the heap storage needed.
-    let mut x: Vec<u64> = Vec::new();
-    x.push(12);
-    
-    let mut y: Vec<u64> = Vec::with_capacity(1);
-    y.push(12);
-    
-    assert_eq!(x[0], y[0]);
-    drop(x);
-    drop(y);
-    
-    // Turn off panicking, as there are some deallocations
-    // when we exit main.
-    DO_PANIC.store(false, Ordering::SeqCst);
+    cmp(12)
 }
 
 #[global_allocator]
@@ -141,7 +101,8 @@ unsafe impl GlobalAlloc for PanicAllocator {
     }
 }
 ```
--- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=release&edition=2018&gist=af660a87b2cd94213afb906beeb32c15)
+-- [Compiler Explorer](https://godbolt.org/z/BZ_Yp3)  
+-- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=release&edition=2018&gist=4a765f753183d5b919f62c71d2109d5d)
 
 # Dr. Array or: How I Learned to Love the Optimizer
 
