@@ -97,7 +97,7 @@ Now let's address some conditions and caveats before going much further:
   We'll keep it simple, but I [found](https://stackoverflow.com/a/4584131/1454178)
   a [refresher](https://stackoverflow.com/a/26026278/1454178) on the `push` and `pop`
   [instructions](http://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
-  was helpful while writing thi[Raph Levien](https://docs.google.com/presentation/d/1q-c7UAyrUlM-eZyTo1pd8SZ0qwA_wYxmPZVOQkoDmH4/edit?usp=sharing)s.
+  was helpful while writing this.
 - I've tried to be precise in saying only what I can prove using the tools (ASM, docs)
   that are available, but if there's something said in error it will be corrected
   expeditiously. Please let me know at [bradlee@speice.io](mailto:bradlee@speice.io)
