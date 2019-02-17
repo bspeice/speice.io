@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Insane Allocators: segfaults in safe Rust"
-description: "\"Trusting trust\" with allocators."
+description: "...and what it means to be \"safe.\""
 category: rust, memory
 tags: []
 ---
@@ -63,16 +63,23 @@ pub extern "C" fn malloc(size: usize) -> *mut c_void {
         // for all subsequent allocations, corrupting the location.
         return ALLOC;
     }
+    // Note that we don't ever handle `free`; if the first object
+    // we allocate gets freed, the memory address being given
+    // to everyone becomes a "use-after-free" bug.
 }
 ```
 
+Because this implementation of `malloc` is intentionally broken,
+every program run using this library will crash. And I mean *every*
+program; if you use dynamic memory, you're going down.
+
 So how is it possible to run the Rust compiler in this environment?
-`LD_PRELOAD` applies to all programs, so running `ls` will also
-lead to memory corruption and crashing! The answer is that `sudo`
+`LD_PRELOAD` applies to all programs, so the compiler should also
+encounter memory corruption and crash, right? The answer is that `sudo`
 deletes environment variables like `LD_PRELOAD` and
-`LD_LIBRARY_PATH` when running commands; it's possible to
-crash `sudo` in the same way by using our evil `malloc`
-implementation.
+`LD_LIBRARY_PATH` when running commands. While it is technically possible
+to crash `sudo` in the same way using our evil `malloc` implementation,
+the default policy is to delete these variables because of security concerns.
 
 Finally, why does Rust 1.31 work, and 1.32 fail? The answer is in the
 release notes:
@@ -88,12 +95,12 @@ global allocator. Rust programs prior to 1.28 aren't subject to this
 
 # So what?
 
-It should be made very clear: the code demonstrated here isn't a
-security issue. "Safe" Rust programs are only crashing in these
-circumstances because the memory allocator is intentionally lying to it.
-Even in mission critical systems, there are a lot of concerns beyond memory allocation; the
+I do want to clarify: the code demonstrated here isn't a
+security issue, and doesn't call into question Rust's definition of "safe."
+The code demonstrated here crashes because the memory allocator is lying to it.
+Even in mission critical systems, there are a lot of concerns beyond allocators; the
 [F-35 Joint Strike Fighter coding standards](http://www.stroustrup.com/JSF-AV-rules.pdf)
-don't even give it a full page. 
+give memory allocation about 10 sentences total.
 
 But this example does highlight an assumption of Rust's memory model
 that I haven't seen discussed much: **safe Rust is safe if, and only if,
@@ -101,7 +108,9 @@ the allocator it relies on is "correct"**. And because writing a non-trivial all
 [fundamentally unsafe](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html#unsafety),
 safe Rust will always rely on unsafe Rust somewhere.
 
-That all said, know that "safe" Rust can only claim to be safe because it stands
+That all said, know that "safe" Rust can claim to be safe because it stands
 on the shoulders of incredible developers working on jemalloc,
 [kmalloc](https://linux-kernel-labs.github.io/master/labs/kernel_api.html#memory-allocation),
-and others.
+and others. Without being able to trust the allocators, we wouldn't
+be able to trust the promise of safe Rust. So to all the people
+who make the safety promises of Rust possible - thanks.
