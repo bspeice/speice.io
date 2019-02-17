@@ -22,10 +22,10 @@ it's correct. There's ongoing work to [formalize](https://plv.mpi-sws.org/rustbe
 the rules and *prove* that Rust is safe, but for our purposes it's a reasonable assumption.
 
 Until it isn't. It's totally possible for "safe" Rust programs
-(under contrived circumstances) to encounter memory corruption.
-It's even possible for these programs to
-["segfault"](https://en.wikipedia.org/wiki/Segmentation_fault)
-when using an unmodified compiler:
+(under contrived circumstances) to encounter memory corruption and trigger a
+["segfault"](https://en.wikipedia.org/wiki/Segmentation_fault).
+
+To prove it, this demonstration was run using an unmodified compiler:
 
 <script id="asciicast-ENIpRYpdDazCkppanf3LSCetX" src="https://asciinema.org/a/ENIpRYpdDazCkppanf3LSCetX.js" async></script>
 
@@ -33,7 +33,7 @@ when using an unmodified compiler:
 
 [Wat indeed.](https://www.destroyallsoftware.com/talks/wat)
 
-There are two tricks used to pull this off. First, I'm making
+There are two tricks needed to pull this off. First, I'm making
 use of a special environment variable in Linux called
 [`LD_PRELOAD`](https://blog.fpmurphy.com/2012/09/all-about-ld_preload.html).
 Matt Godbolt goes into [way more detail](https://www.youtube.com/watch?v=dOfucXtyEsU)
@@ -73,24 +73,23 @@ Because this implementation of `malloc` is intentionally broken,
 every program run using this library will crash. And I mean *every*
 program; if you use dynamic memory, you're going down.
 
-So how is it possible to run the Rust compiler in this environment?
-`LD_PRELOAD` applies to all programs, so the compiler should also
-encounter memory corruption and crash, right? The answer is that `sudo`
-deletes environment variables like `LD_PRELOAD` and
-`LD_LIBRARY_PATH` when running commands. While it is technically possible
-to crash `sudo` in the same way using our evil `malloc` implementation,
-the default policy is to delete these variables because of security concerns.
+So how is it possible to even run the compiler in this environment?
+Shouldn't `LD_PRELOAD` cause `rustc` to encounter memory corruption
+and crash too? The answer is that `sudo` deletes environment variables
+like `LD_PRELOAD` and `LD_LIBRARY_PATH` when running commands.
+It's technically possible to crash `sudo` in the same way using
+our evil `malloc` implementation, but the default security policy
+deletes those variables.
 
-Finally, why does Rust 1.31 work, and 1.32 fail? The answer is in the
-release notes:
+Finally, why does the program run when compiled with Rust 1.31, and not 1.32?
+The answer is in the release notes:
 [`jemalloc` is removed by default](https://blog.rust-lang.org/2019/01/17/Rust-1.32.0.html#jemalloc-is-removed-by-default).
-In Rust 1.28 through 1.31, programs were statically compiled against
-[jemalloc](http://jemalloc.net/) by default; our evil `malloc` implementation
-never gets invoked because the program goes straight to the operating
-system to request memory. However, it's still possible to trigger segfaults
-in Rust programs from  1.28 - 1.31 by using the
+In Rust 1.28 through 1.31, programs are statically compiled against
+[jemalloc](http://jemalloc.net/) by default; our dynamically loaded
+evil `malloc` implementation never gets an opportunity to run. However, it's still
+possible to trigger segfaults in Rust programs from  1.28 - 1.31 by using the
 [`System`](https://doc.rust-lang.org/std/alloc/struct.System.html)
-global allocator. Rust programs prior to 1.28 aren't subject to this
+global allocator. Rust programs prior to 1.28 aren't affected by this
 `LD_PRELOAD` trick.
 
 # So what?
@@ -98,13 +97,13 @@ global allocator. Rust programs prior to 1.28 aren't subject to this
 I do want to clarify: the code demonstrated here isn't a
 security issue, and doesn't call into question Rust's definition of "safe."
 The code demonstrated here crashes because the memory allocator is lying to it.
-Even in mission critical systems, there are a lot of concerns beyond allocators; the
+And even in mission critical systems, safety concerns go way beyond allocators; the
 [F-35 Joint Strike Fighter coding standards](http://www.stroustrup.com/JSF-AV-rules.pdf)
 give memory allocation about 10 sentences total.
 
 But this example does highlight an assumption of Rust's memory model
 that I haven't seen discussed much: **safe Rust is safe if, and only if,
-the allocator it relies on is "correct"**. And because writing a non-trivial allocator is
+the allocator it relies on is "correct"**. And because writing an allocator is
 [fundamentally unsafe](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html#unsafety),
 safe Rust will always rely on unsafe Rust somewhere.
 
