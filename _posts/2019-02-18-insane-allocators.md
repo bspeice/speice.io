@@ -21,8 +21,8 @@ break them. See, Rust will go so far as to claim:
 it's correct. There's ongoing work to [formalize](https://plv.mpi-sws.org/rustbelt/popl18/)
 the rules and *prove* that Rust is safe, but for our purposes it's a reasonable assumption.
 
-Until it isn't. It's totally possible for "safe" Rust programs
-(under contrived circumstances) to encounter memory corruption and trigger a
+Until it isn't. Under specific circumstances, it's totally possible for "safe"
+Rust programs to encounter memory corruption and trigger a
 ["segfault"](https://en.wikipedia.org/wiki/Segmentation_fault).
 
 To prove it, this demonstration was run using an unmodified compiler:
@@ -79,17 +79,17 @@ and crash too? The answer is that `sudo` deletes environment variables
 like `LD_PRELOAD` and `LD_LIBRARY_PATH` when running commands.
 It's technically possible to crash `sudo` in the same way using
 our evil `malloc` implementation, but the default security policy
-deletes those variables.
+deletes the variables we need.
 
 Finally, why does the program run when compiled with Rust 1.31, and not 1.32?
 The answer is in the release notes:
 [`jemalloc` is removed by default](https://blog.rust-lang.org/2019/01/17/Rust-1.32.0.html#jemalloc-is-removed-by-default).
-In Rust 1.28 through 1.31, programs are statically compiled against
+In all versions of Rust through 1.31, executables are statically compiled against
 [jemalloc](http://jemalloc.net/) by default; our dynamically loaded
-evil `malloc` implementation never gets an opportunity to run. However, it's still
-possible to trigger segfaults in Rust programs from  1.28 - 1.31 by using the
+evil `malloc` implementation never gets an opportunity to run. It's still
+possible to trigger segfaults in Rust binaries from  1.28 to 1.31 by using the
 [`System`](https://doc.rust-lang.org/std/alloc/struct.System.html)
-global allocator. Rust programs prior to 1.28 aren't affected by this
+global allocator, but programs prior to 1.28 aren't affected by this
 `LD_PRELOAD` trick.
 
 # So what?
@@ -105,11 +105,11 @@ But this example does highlight an assumption of Rust's memory model
 that I haven't seen discussed much: **safe Rust is safe if, and only if,
 the allocator it relies on is "correct"**. And because writing an allocator is
 [fundamentally unsafe](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html#unsafety),
-safe Rust will always rely on unsafe Rust somewhere.
+Rust's promises will always rely on some amount of "unsafe" code.
 
-That all said, know that "safe" Rust can claim to be safe because it stands
-on the shoulders of incredible developers working on jemalloc,
+That all said, know that "safe" Rust can claim to be so only because it stands
+on the shoulders of incredible libraries like jemalloc,
 [kmalloc](https://linux-kernel-labs.github.io/master/labs/kernel_api.html#memory-allocation),
-and others. Without being able to trust the allocators, we wouldn't
-be able to trust the promise of safe Rust. So to all the people
-who make the safety promises of Rust possible - thanks.
+and others. Without being able to trust the allocators, we'd have no reason
+to trust the safety guarantees made by Rust. So to all the people
+who make safe Rust possible - thanks.
