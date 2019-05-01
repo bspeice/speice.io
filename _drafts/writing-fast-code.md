@@ -6,24 +6,19 @@ category:
 tags: []
 ---
 
-Prior to working in the trading industry, my assumption was that High Frequency Trading (HFT) is made up of people who have access to secret techniques the rest of us mortal developers could only dream of. There had to be some secret art that could only be learned if one had an appropriately tragic backstory:
+Prior to working in the trading industry, my assumption was that High Frequency Trading (HFT) is made up of people who have access to secret techniques mortal developers could only dream of. There had to be some secret art that could only be learned if one had an appropriately tragic backstory:
 
 <img src="/assets/images/2019-04-24-kung-fu.webp" alt="kung-fu fight">
 > How I assumed HFT people learn their secret techniques
 
-How else do you explain people working on systems that complete the round trip of market data in to orders out (a.k.a. tick-to-trade) [consistently within 750-800 nanoseconds](https://stackoverflow.com/a/22082528/1454178)?
+How else do you explain people working on systems that complete the round trip of market data in to orders out (a.k.a. tick-to-trade) consistently within [750-800 nanoseconds](https://stackoverflow.com/a/22082528/1454178)?
 In roughly the time it takes other computers to access [main memory 8 times](https://people.eecs.berkeley.edu/~rcs/research/interactive_latency.html), trading systems are capable of reading the market data packets, deciding what orders to send, (presumably) doing risk checks, creating new packets for exchange-specific protocols, and putting those packets on the wire.
 
-Having now worked in the trading industry, I can confirm the developers are mortal; I've made some simple mistakes at the very least. But more to the point, what shows up from reading public discussions is that philosophy, not technique, separates high-performance systems from everything else. Performance-critical systems don't rely on C++ optimization tricks to make code fast (though they're definitely useful); rather, there are two governing principles I want to point out:
+Having now worked in the trading industry, I can confirm the developers are mortal; I've made some simple mistakes at the very least. But more to the point, what shows up from reading public discussions is that philosophy, not technique, separates high-performance systems from everything else. Performance-critical systems don't rely on C++ optimization tricks to make code fast (though they can be useful); there's a lot more to worry about than just the code written for the project. Rather, what shows up time and again is a focus on variance, and reducing the gap between the fastest and slowest runs of the same code.
 
-1. Optimize for variance (average latency) first.
-2. Don't do unnecessary work.
+Don't get me wrong, I'm a much happier person when things are fast. Booting my computer in 10 seconds using SSD's, rather than 20 seconds with spinning plates? Awesome. But if every other day it takes a full 30 seconds to boot up because my computer is feeling temperamental? Not so great. When it comes to code, speeding up a function by an average 10 milliseconds doesn't mean much if there's a 1000ms difference between your fastest and slowest runs; you simply won't know until you call the function how long it takes to complete. **High-performance systems should first optimize for time variance**. Once you're consistent at the time scale you care about, then focus on improving overall time.
 
-# Variance First
-
-Don't get me wrong, I'm a much happier person when things are fast. Computer now boots up in 9 seconds after switching from spinning plates to solid-state? Awesome. But if the computer takes a full 60 seconds to boot up tomorrow? Not so great. When it comes to code, speeding up a function by 10 milliseconds doesn't mean much if the variance of that function is ±1000ms; you simply won't know until you call the function how long it takes to complete. **High-performance systems should first optimize for time variance**. Once you're consistent at the time scale you care about, then you can focus on improving overall time.
-
-But you don't have to take my word for it (emphasis added in all quotes below):
+This focus on variance shows up all the time in public discussions (emphasis added in all quotes below):
 
 - In [marketing materials](https://business.nasdaq.com/market-tech/marketplaces/trading) for NASDAQ's matching engine, they specifically call out variance:
     > Able to consistently sustain an order rate of over 100,000 orders per second at **sub-40 microsecond average latency**
@@ -37,7 +32,7 @@ But you don't have to take my word for it (emphasis added in all quotes below):
 - [Solarflare](https://solarflare.com/), which makes highly-specialized network hardware, points out variance as a big concern for [electronic trading](https://solarflare.com/electronic-trading/):
     > The high stakes world of electronic trading, investment banks, market makers, hedge funds and exchanges demand the **lowest possible latency and jitter** while utilizing the highest bandwidth and return on their investment.
 
-So how exactly does one go about looking for and eliminating performance variance? To tell the truth, I don't think a systematic answer or flow-chart exists. There's no substitute for (A) building a deep understanding of the entire technology stack, and (B) actually measuring performance using benchmarks (or (C) watching a lot of [CppCon](https://www.youtube.com/channel/UCMlGfpWw-RUdWX_JbLCukXg) videos). Even then, each project cares about performance to a different degree; you may need to build an entire [replica production system](https://www.youtube.com/watch?v=NH1Tta7purM&feature=youtu.be&t=3015) to accurately benchmark at nanosecond precision. Alternately, you may be content to simply [avoid garbage collection](https://www.youtube.com/watch?v=BD9cRbxWQx8&feature=youtu.be&t=1335) in your Java code.
+So how exactly does one go about looking for and eliminating performance variance? To tell the truth, I don't think a systematic answer or flow-chart exists. There's no substitute for (A) building a deep understanding of the entire technology stack, and (B) actually measuring system performance (though (C) watching a lot of [CppCon](https://www.youtube.com/channel/UCMlGfpWw-RUdWX_JbLCukXg) videos never hurt). Even then, each project cares about performance to a different degree; you may need to build an entire [replica production system](https://www.youtube.com/watch?v=NH1Tta7purM&feature=youtu.be&t=3015) to accurately benchmark at nanosecond precision. Alternately, you may be content to simply [avoid garbage collection](https://www.youtube.com/watch?v=BD9cRbxWQx8&feature=youtu.be&t=1335) in your Java code.
 
 Even though everyone has different needs, there are still common things to look for when trying to isolate variance. In no particular order, these are places to focus on when building high-performance/low-latency systems:
 
@@ -53,9 +48,11 @@ Even though everyone has different needs, there are still common things to look 
 
 **Just-In-Time Compilation**: Languages that are compiled on the fly (LuaJIT, C#, Java, PyPy) are great because they optimize your program for how it's actually being used. However, there's a variance cost associated with this; the virtual machine may stop executing while it waits for translation from VM bytecode to native code. As a remedy, some languages now support ahead-of-time compilation ([CoreRT](https://github.com/dotnet/corert) in C# and [GraalVM](https://www.graalvm.org/) in Java). On the other hand, LLVM supports [Profile Guided Optimization](https://clang.llvm.org/docs/UsersManual.html#profile-guided-optimization), which should bring JIT-like benefits to non-JIT languages. Benchmarking is incredibly important here.
 
+**Programming Tricks**: These won't make or break performance, but can be useful in specific circumstances. For example, C++ can use [templates instead of branches](https://www.youtube.com/watch?v=NH1Tta7purM&feature=youtu.be&t=1206).
+
 ## Kernel
 
-Code you wrote is likely not the *only* code running on your system. There are many ways the operating system interacts with your program, from system calls to memory allocation, that are important to be aware of.
+Code you wrote is almost certainly not the *only* code running on your system. There are many ways the operating system interacts with your program, from system calls to memory allocation, that are important to watch for.
 
 **Scheduling**: Set the [processor affinity](https://en.wikipedia.org/wiki/Processor_affinity) of your program, and make sure only your program can run on that processor. The kernel, by default, is free to schedule any process on any core, so it's important to reserve CPU cores exclusively for the important programs. Also, turning on [`NO_HZ`](https://github.com/torvalds/linux/blob/master/Documentation/timers/NO_HZ.txt) and turning off hyper-threading are probably good ideas.
 
@@ -75,15 +72,13 @@ Code you wrote is likely not the *only* code running on your system. There are m
 
 **Network Interfaces**: When more than one computer is involved, variance can go up dramatically. Tuning kernel [network parameters](https://github.com/leandromoreira/linux-network-performance-parameters) may be helpful, but modern systems more frequently opt to skip the kernel altogether with a technique called [kernel bypass](https://blog.cloudflare.com/kernel-bypass/). This typically requires specialized hardware and [custom drivers](https://www.openonload.org/), but even industries like [telecom](https://www.bbc.co.uk/rd/blog/2018-04-high-speed-networking-open-source-kernel-bypass) are finding the benefits.
 
-- Networks
-    - Internet routing - no idea what the network path looks like, so financial firms pay big money to make sure they have straight-line connections
-    - Latency within the switch - cut-through vs. store-and-forward routing - https://www.networkworld.com/article/2241573/latency-and-jitter--cut-through-design-pays-off-for-arista--blade.html
+## Networks
 
-# Don't do unnecessary work
+**Routing**: There's a reason financial firms are willing to pay [millions of euros](https://sniperinmahwah.wordpress.com/2019/03/26/4-les-moeres-english-version/) for rights to land and cell towers - having a straight-line connection from point A to point B means the path their data takes is incredibly simple. In contrast, there are currently 6 computers in between me and Google, but that may change at any moment that my ISP decides a more efficient route is available. Whether it's using [research-quality equipment](https://sniperinmahwah.wordpress.com/2018/05/07/shortwave-trading-part-i-the-west-chicago-tower-mystery/) or just making sure there's no data inadvertently going between data centers, routing matters.
 
-- Don't recompute results - see the C++ template trick to go down buy/sell-specific code paths
-- Stack frames are not free; jumping around isn't helpful if you can inline and help out the instruction cache
-- Copies are not free
+**Protocol**: TCP as a network protocol is awesome: guaranteed and in-order delivery, flow control, and congestion control all built in. But these attributes make the most sense when networking infrastructure is reasonably lossy. For systems that expect nearly all packets to be delivered correctly, the setup handshaking and packet acknowledgment are just overhead. Using UDP (unicast or multicast) may make sense in these contexts as it avoids the chatter needed to track connection state, and [gap-fill](https://iextrading.com/docs/IEX%20Transport%20Specification.pdf) [strategies](http://www.nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/moldudp64.pdf) can handle the rest. 
+
+**Switching**: Many routers/switches handle packets by waiting for the whole packet, validating checksums, and then sending to the next device. This behavior is referred to as "store-and-forward." In variance terms, the time needed to move data between two nodes is proportional to the size of that data; the switch must "store" all data before it can calculate checksums and "forward" to the next node. With [cut-through](https://www.networkworld.com/article/2241573/latency-and-jitter--cut-through-design-pays-off-for-arista--blade.html) designs, switches will begin forwarding data as soon as they know where the destination is, checksums be damned. For communications within a datacenter, this can have a huge benefit.
 
 # Miscellaneous
 
