@@ -10,7 +10,9 @@ I'm convinced that WebSockets are a gateway drug. The specification is reasonabl
 
 At least, that's how I'm approaching it. While there are [existing](https://github.com/housleyjk/ws-rs) [implementations](https://github.com/websockets-rs/rust-websocket) of the protocol for Rust, writing a WebSocket library is an opportunity for me to experiment with parser [combinators](https://github.com/Geal/nom) and [generators](https://github.com/kaitai-io/kaitai_struct), and maybe have something to show at the end of it. Recently, I've been adding support for Rust to the [Kaitai Struct](http://kaitai.io/) project so that I can generate the parser from a schema, rather than writing one by hand. But before we can generate a parser using Kaitai, we need a runtime library. This is a typical pattern in code generation; the generated code relies on a "standard library" of functionality similar to how programming languages have their own standard library.
 
-What makes this parser runtime difficult to implement in Rust is the performance concerns; we don't want to allocate new `Vec<u8>` buffers and copy data around when it's not necessary. Especially in networking code, these types of "zero-copy" operations are critical to performance. And because we're not interested in modifying the data stream, references make a lot of sense! However, that means there's a good potential to hit issues with the borrow checker; making sure all the structures being parsed use the stream correctly is difficult. As a result, I hit a lot of issues with the borrow checker, and wanted to detail what I learned about not only how to *avoid* fighting the borrow checker, but how to *work with* the borrow checker.
+What makes this parser runtime difficult to implement in Rust is the performance concerns; we don't want to allocate new `Vec<u8>` buffers and copy data around when it's not necessary. Especially in networking code, these types of "zero-copy" operations are critical to performance. And because we're not interested in modifying the data stream, references make a lot of sense! However, that means there's a good potential to hit issues with the borrow checker; making sure all the structures being parsed use the stream correctly is difficult. As a result, I hit a lot of issues with the borrow checker, and wanted to detail what I learned.
+
+This article will outline how the Rust runtime has evolved to work within the constraints imposed by the language, and hopefully provide guidance on how to *work with* the borrow checker, rather than just trying to avoid it altogether.
 
 # Design Inspiration - C++
 
@@ -51,6 +53,23 @@ The parser will operate like this:
 3. Read a granchild structure by taking a byte slice whose size is the root structure's `slice_size`
 
 So let's start by generating the C++ code corresponding to our specification (edited for clarity):
+
+**kaitaistruct.h** (the runtime header)
+```cpp
+namespace kaitai {
+
+class kstruct {
+public:
+    kstruct(kstream *_io) { m__io = _io; }
+    virtual ~kstruct() {}
+protected:
+    kstream *m__io;
+public:
+    kstream *_io() { return m__io; }
+};
+
+}
+```
 
 **toy.h**
 ```cpp
@@ -142,4 +161,3 @@ Now, let's think about ownership as we look at the code:
 - The root structure (`toy_t`) stores a reference to itself; it's thus unsafe to copy or move.
 
 With all that in mind, let's talk about ownership in the Rust runtime.
-
