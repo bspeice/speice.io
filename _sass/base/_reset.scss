@@ -97,12 +97,6 @@ a {
     padding: 1px 1px;
     transition: color ease 0.3s;
 
-    border-bottom-color: $c-accent__blue;
-    border-bottom-style: dotted;
-    border-bottom-width: 1px;
-    word-wrap: break-word;
-    word-break: break-all;
-
     /* Hover animation effect for all buttons */
     &::after {
       content: '';
