@@ -12,7 +12,7 @@ At least, that's how I'm approaching it. While there are [existing](https://gith
 
 What makes this parser runtime difficult to implement in Rust is the performance concerns; we don't want to allocate new `Vec<u8>` buffers and copy data around when it's not necessary. Especially in networking code, these types of "zero-copy" operations are critical to performance. And because we're not interested in modifying the data stream, references make a lot of sense! However, that means there's a good potential to hit issues with the borrow checker; making sure all the structures being parsed use the stream correctly is difficult. As a result, I hit a lot of issues with the borrow checker, and wanted to detail what I learned.
 
-This article will outline how the Rust runtime has evolved to work within the constraints imposed by the language, and hopefully provide guidance on how to *work with* the borrow checker, rather than just trying to avoid it altogether.
+This article will outline how the Rust runtime has evolved to work within the constraints imposed by the language, and hopefully provide guidance on how to *work with* the borrow checker, rather than just trying to fight it.
 
 # Design Inspiration - C++
 
@@ -154,8 +154,8 @@ void toy_t::grandchild_t::_read() {
 
 Now, let's think about ownership as we look at the code:
 - Each parent structure (`toy_t` and `child_t`) expresses ownership of its children through `std::unique_ptr<>`.
-- Because children can refer to parents through `m__parent` and `m__root`, we have a reference cycle that will be difficult to express in Rust.
-- Everyone stores a reference to `kaitai::kstream`, but nobody owns it.
+- Because children can refer `m__parent` and `m__root`, we have a reference cycle that will be difficult to express in Rust.
+- Everyone stores a reference to `kaitai::kstream`, but nobody owns it; it must outlive all structs that are parsed.
 - Structures own their data using `std::string` ([`read_bytes` implementation](https://github.com/kaitai-io/kaitai_struct_cpp_stl_runtime/blob/1ea056ad053b438e1609fe84e71b1d306777492d/kaitai/kaitaistream.cpp#L347-L361));
   this prevents issues if the stream (`m__io`) gets destroyed, but also introduces an extra allocation and copy that Rust can avoid if we convince the borrow checker that structures won't outlive the stream.
 - The root structure (`toy_t`) stores a reference to itself; it's thus unsafe to copy or move.
