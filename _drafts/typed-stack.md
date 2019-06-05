@@ -1,152 +1,33 @@
 ---
 layout: post
-title: "Representing Hierarchies - The TypedStack Pattern"
+title: "Representing Hierarchies - The Reference Stack Pattern"
 description: ""
 category: 
 tags: [rust]
 ---
 
-# Quick Object-Oriented Review
+Of late, I've been working to add support for Rust to the [Kaitai Struct](https://kaitai.io/) project. The idea is to describe data formats
+using a YAML schema, and then generate all the code needed for parsing them. Kind of like if you replaced packages like `nom` with a YAML
+document instead of macros in code.
 
-TODO: Comment that I'm trying to explain the motivation?
+While the project specifics aren't incredibly important, it did force me to take a look at how hierarchies are represented
+in Rust, something that [many people](https://hackernoon.com/why-im-dropping-rust-fd1c32986c88#37ee) struggle with. The basic
+problem formulation is simple:
 
-Rust is "object oriented" in the sense that structs provide data encapsulation, `impl` blocks provide behavior,
-and trait objects/trait inheritance provide polymorphism. Functions can accept trait objects, and make use of trait bounds
-to specify exactly what behavior is expected. Java provides a remarkably similar pattern where classes encapsulate
-data and behavior, and interfaces can extend each other to provide the same polymorphism. The crucial difference
-in Java is that classes (in addition to interfaces) can inherit, which Rust very explicitly 
-[doesn't do](https://doc.rust-lang.org/stable/book/ch17-01-what-is-oo.html#inheritance-as-a-type-system-and-as-code-sharing).
+- A root/parent object owns some number of child objects
+- Each child needs access to all its parents to do some work
 
-From the perspective of an API designer, the benefit of of class inheritance don't really show up. As a quick example,
-the Rust and Java are basically equivalent:
+The specifics are what make this a bit complicated:
 
-```rust
-trait Quack {
-    fn quack(&self);
-}
-trait Swim {
-    fn swim(&self);
-}
-trait DuckLike: Quack + Swim;
+- Each node in this tree can be of a different (though sometimes predictable) type
+- If possible, we'd like to avoid `Rc` (performance, `no_std`, pick a reason)
 
-fn exercise(duck: &DuckLike) {
-    duck.quack();
-    duck.swim();
-}
-```
+This hierarchical or "DOM-like" structure shows up in two places that I'm familiar with, but is generic enough to be used in a broad range
+of applications. The first example is parser generators (like Kaitai); as an example, describing the [Websocket](https://datatracker.ietf.org/doc/rfc6455/)
+[format](https://github.com/kaitai-io/kaitai_struct_formats/blob/861b2fd048252a8092b8d04c2e9f91d0be3671a9/network/websocket.ksy)
+requires that every dataframe after the initial know the message type of the first (be it text or binary). The second example is in GUIs,
+where you typically describe an application as a collection of widgets.
 
-```java
-class Definitions {
-    interface Quack {
-        void quack();
-    }
-    interface Swim {
-        void swim();
-    }
-    interface DuckLike extends Quack, Swim {}
-
-    static void exercise(Duck d) {
-        d.quack();
-        d.swim();
-    }
-}
-```
-
-However, programmers responsible for actually implementing those definitions have the potential to benefit. In Java,
-child classes inherit all behavior from the parent for free:
-
-```java
-class Implementation {
-    static class GeneralDuck implements DuckLike {
-        void quack() {
-            System.out.println("Quack.");
-        }
-
-        void swim() {
-            System.out.println("*paddles furiously*");
-        }
-    }
-
-    static class Muscovy extends GeneralDuck {}
-    static class Mandarin extends GeneralDuck {}
-
-    public static void main(String[] args) {
-        Muscovy muscovy = new Muscovy();
-        Mandarin mandarin = new Mandarin();
-
-        // Even though the `Muscovy` and `Mandarin` classes never declare
-        // that they implement `DuckLike`, they are able to be exercised
-        // because they inherit behavior from the parent `GeneralDuck`
-        Definitions.exercise(muscovy);
-        Definitions.exercise(mandarin);
-    }
-}
-```
-
-Because Rust has no concept of "struct inheritance", the code looks a bit different. A common pattern
-implementing this example is to have the "child" structures own the "parent", and dispatch methods
-as necessary:
-
-```rust
-struct GeneralDuck;
-impl DuckLike for GeneralDuck {
-    fn quack(&self) {
-        println!("Quack.");
-    }
-
-    fn swim(&self) {
-        println!("*paddles furiously*");
-    }
-}
-
-struct Muscovy {
-    d: GeneralDuck
-}
-
-struct Mandarin {
-    d: GeneralDuck
-}
-
-impl DuckLike for Muscovy {
-    fn quack(&self) {
-        self.d.quack();
-    }
-
-    fn swim(&self) {
-        self.d.swim();
-    }
-}
-
-impl DuckLike for Mandarin {
-    fn quack(&self) {
-        self.d.quack();
-    }
-
-    fn swim(&self) {
-        self.d.swim();
-    }
-}
-```
-
-There are a couple things worth pointing out that this pattern does well, even better than Java:
-1. Avoiding `abstract class` shenanigans; the "parent" struct has no way of influencing or coordinating with
-   the "child" implementations.
-2. Type specificity; Java allows downcasting the more specific type to being less specific, `List<T> myList = new ArrayList<>()` is legal
-
-However, there are two issues with this pattern:
-
-1. Implementations of `DuckLike` are simplistic and repetitive; for more complex hierarchies,
-   writing the forwarding methods by hand is untenable. The Rust book [recommends](https://doc.rust-lang.org/stable/book/ch17-03-oo-design-patterns.html#trade-offs-of-the-state-pattern)
-   macros as a way to generate the necessary code, but might cause issues if, for example,
-   we want to forward only select methods within a trait.
-2. Ownership; there are a couple situations in which we'd rather have the parent own the children.
-   The two cases I'm aware of where this is helpful are [writing GUIs](https://hackernoon.com/why-im-dropping-rust-fd1c32986c88)
-   and parsing binary streams; GUIs want to have a single node that manages the children, and network protocols
-   often have an outer frame that encapsulates the inner (more specific) frames/data.
-
-While issue 1 can be remedied through writing more (admittedly tedious) code, issue 2 poses
-a challenge to how hierarchies are modeled in Rust.
-
-# Inverting Ownership
+We'll develop a toy DOM-like example as motivation, and look at how it can be extended to accommodate more specific situations as necessary.
 
 
