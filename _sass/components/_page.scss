@@ -17,6 +17,10 @@
     p {
         @include fs--meta;
     }
+
+    a {
+        border-bottom-style: none;
+    }
 }
 
 .c-page__footer {
