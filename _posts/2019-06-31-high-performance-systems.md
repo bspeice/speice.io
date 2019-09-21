@@ -6,6 +6,8 @@ category:
 tags: []
 ---
 
+**Update 2019-09-21**: Added notes on `isolcpus` and `systemd` affinity.
+
 Prior to working in the trading industry, my assumption was that High Frequency Trading (HFT) is made up of people who have access to secret techniques mortal developers could only dream of. There had to be some secret art that could only be learned if one had an appropriately tragic backstory:
 
 <img src="/assets/images/2019-04-24-kung-fu.webp" alt="kung-fu fight">
@@ -58,7 +60,7 @@ Even though everyone has different needs, there are still common things to look 
 
 Code you wrote is almost certainly not the *only* code running on your hardware. There are many ways the operating system interacts with your program, from interrupts to system calls, that are important to watch for. These are written from a Linux perspective, but Windows does typically have equivalent functionality.
 
-**Scheduling**: Set the [processor affinity](https://en.wikipedia.org/wiki/Processor_affinity) of your process/thread (typically using [taskset](https://linux.die.net/man/1/taskset)), and make sure only your program can run on that processor. The kernel, by default, is free to schedule any process on any core, so it's important to reserve CPU cores exclusively for the important programs. Also, turning on [`NO_HZ`](https://github.com/torvalds/linux/blob/master/Documentation/timers/NO_HZ.txt) and turning off hyper-threading are probably good ideas.
+**Scheduling**: There are two parts to this: first, limit the CPU cores that non-critical processes are allowed to run on. This can be accomplished by excluding cores from scheduling ([`isolcpus`](https://www.linuxtopia.org/online_books/linux_kernel/kernel_configuration/re46.html) kernel command-line option), or by setting the `init` process CPU affinity ([`systemd` example](https://access.redhat.com/solutions/2884991). Second, allow critical processes to run on the isolated cores by setting the [processor affinity](https://en.wikipedia.org/wiki/Processor_affinity) using [taskset](https://linux.die.net/man/1/taskset). By default, the kernel is free to schedule any process on any core so it's important to reserve CPU cores exclusively for the important programs. Finally, use [`NO_HZ`](https://github.com/torvalds/linux/blob/master/Documentation/timers/NO_HZ.txt) or [`chrt`](https://linux.die.net/man/1/chrt) to disable scheduling interrupts, and turn off hyper-threading.
 
 **System calls**: Reading from a UNIX socket? Writing to a file? In addition to not knowing how long the I/O operation takes, these all trigger expensive [system calls (syscalls)](https://en.wikipedia.org/wiki/System_call). To handle these, the CPU must [context switch](https://en.wikipedia.org/wiki/Context_switch) to the kernel, let the kernel operation complete, then context switch back to your program. We'd rather keep these [to a minimum](https://www.destroyallsoftware.com/talks/the-birth-and-death-of-javascript) (see timestamp 18:20). [Strace](https://linux.die.net/man/1/strace) is your friend for understanding when and where syscalls happen.
 
