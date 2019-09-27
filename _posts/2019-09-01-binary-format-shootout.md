@@ -3,7 +3,7 @@ layout: post
 title: "Binary Format Shootout"
 description: "Making sense of binary streams"
 category: 
-tags: [rust, binary-shootout]
+tags: [rust]
 ---
 
 I've found that in many personal projects, [analysis paralysis](https://en.wikipedia.org/wiki/Analysis_paralysis)
