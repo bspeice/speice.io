@@ -112,6 +112,10 @@
         border-bottom-style: dotted;
         border-bottom-width: 1px;
     }
+
+    td, th {
+        padding-right: 2em;
+    }
 }
 
 .c-article__footer {
