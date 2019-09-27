@@ -140,8 +140,8 @@ NOTE: Need to expand on this, but numbers reported below are from the IEX's 2019
 
 Serialization
 
-|                      | median | 99th Pctl | 99.9th Pctl | Total  |
-|----------------------|--------|-----------|-------------|--------|
+| Schema               | Median | 99th Pctl | 99.9th Pctl | Total  |
+|:---------------------|:-------|:----------|:------------|:-------|
 | Cap'n Proto Packed   | 413ns  | 1751ns    | 2943ns      | 14.80s |
 | Cap'n Proto Unpacked | 273ns  | 1828ns    | 2836ns      | 10.65s |
 | Flatbuffers          | 355ns  | 2185ns    | 3497ns      | 14.31s |
@@ -149,8 +149,8 @@ Serialization
 
 Deserialization
 
-|                      | median | 99th Pctl | 99.9th Pctl | Total  |
-|----------------------|--------|-----------|-------------|--------|
+| Schema               | Median | 99th Pctl | 99.9th Pctl | Total  |
+|:---------------------|:-------|:----------|:------------|:-------|
 | Cap'n Proto Packed   | 539ns  | 1216ns    | 2599ns      | 18.92s |
 | Cap'n Proto Unpacked | 366ns  | 737ns     | 1583ns      | 12.32s |
 | Flatbuffers          | 173ns  | 421ns     | 1007ns      | 6.00s  |
