@@ -121,18 +121,48 @@ content, but because builders [can't be re-used](https://github.com/capnproto/ca
 a new buffer for every single message. I was able to work around this and re-use memory with a
 [special builder](https://github.com/bspeice/speice.io-md_shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/capnp_runner.rs#L17-L51),
 but it required reading through Cap'n Proto's [benchmarks](https://github.com/capnproto/capnproto-rust/blob/master/benchmark/benchmark.rs#L124-L156)
-to find an example usage and using `transmute` to bypass Rust's borrow checker.
+to find an example and using `transmute` to bypass Rust's borrow checker.
 
-Reading messages was similarly problematic. Cap'n Proto has two message encodings: a ["packed"](https://capnproto.org/encoding.html#packing)
-version, and an unpacked version. When reading "packed" messages, we need to unpack the message before we can make use of it.
-This allocates a new buffer for each message, and I wasn't able to find a way to get around this. Unpacked messages, however,
-shouldn't require any allocation or decoding steps. In practice, because of a
-[bounds check](https://github.com/capnproto/capnproto-rust/blob/master/capnp/src/serialize.rs#L60) on the payload size,
-I had to [copy parts](https://github.com/bspeice/speice.io-md_shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/capnp_runner.rs#L255-L340)
-of the Cap'n Proto API to read messages without allocation.
+Reading messages is better, but still had issues. Cap'n Proto has two message encodings: a ["packed"](https://capnproto.org/encoding.html#packing)
+version, and an unpacked version. When reading "packed" messages, we need a buffer to unpack the message into before we can use it;
+Cap'n Proto allocates a new buffer to unpack the message every time, and I wasn't able to figure out a way around that.
+In contrast, the unpacked message format should be where Cap'n Proto shines; its main selling point is that there's [no decoding step](https://capnproto.org/).
+However, accomplishing this required copying code from the private API ([since fixed](https://github.com/capnproto/capnproto-rust/issues/148)),
+and we still allocate a vector on every read for the segment table.
 
-In the end, I put in significant work to make Cap'n Proto as fast as possible, but there were too many issues for me to feel
-comfortable making use of Cap'n Proto.
+In the end, I put in significant work to make Cap'n Proto as fast as possible in the tests, but there were too many issues
+for me to feel comfortable using it long-term.
+
+# Part 2: Flatbuffers
+
+This is the new kid on the block. After a [first attempt](https://github.com/google/flatbuffers/pull/3894) didn't work out,
+official support was [recently added](https://github.com/google/flatbuffers/pull/4898). Flatbuffers is intended to address
+the same problems as Cap'n Proto; have a binary schema to describe the format that can be used from many languages. The difference
+is that Flatbuffers claims to have a simpler wire format and [more flexibility](https://google.github.io/flatbuffers/flatbuffers_benchmarks.html).
+
+On the whole, I enjoyed using Flatbuffers; the [tooling](https://crates.io/crates/flatc-rust) is nice enough, and unlike
+Cap'n Proto, parsing messages was actually zero-copy and zero-allocation. There were some issues though.
+
+First, Flatbuffers (at least in Rust) can't handle nested vectors. This is a problem for formats like the following:
+
+```flatbuffers
+table Message {
+  symbol: string;
+}
+table MultiMessage {
+  messages:[Message];
+}
+```
+
+We want to create a `MultiMessage` that contains a vector of `Message`, but each `Message` has a vector (the `string` type).
+I was able to work around this by [caching `Message` elements](https://github.com/bspeice/speice.io-md_shootout/blob/e9d07d148bf36a211a6f86802b313c4918377d1b/src/flatbuffers_runner.rs#L83)
+in a `SmallVec` before building the final `MultiMessage`, but it was a painful process.
+
+Second, streaming support in Flatbuffers seems to be something of an [afterthought](https://github.com/google/flatbuffers/issues/3898).
+Where Cap'n Proto in Rust handles reading messages from a stream as part of the API, Flatbuffers just puts a `u32` at the front of each
+message to indicate the size. Not specifically a problem, but I would've rather seen message size integrated into the underlying format.
+
+Ultimately, I enjoyed using Flatbuffers, and had to do significantly less work to make it fast.
 
 # Final Results
 
