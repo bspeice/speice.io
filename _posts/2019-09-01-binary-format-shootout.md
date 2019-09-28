@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Binary Format Shootout"
-description: "Making sense of binary streams"
+description: "Cap'n Proto vs. Flatbuffers vs. SBE"
 category: 
 tags: [rust]
 ---
@@ -161,11 +161,40 @@ message to indicate the size. Not specifically a problem, but I would've rather 
 
 Ultimately, I enjoyed using Flatbuffers, and had to do significantly less work to make it perform well.
 
-# Final Results
+# Part 3: Simple Binary Encoding
 
-NOTE: Need to expand on this, but numbers reported below are from the IEX's 2019-09-03 data, took average over 10 runs.
+Support for SBE was added by the author of one of my favorite
+[Rust blog posts](https://web.archive.org/web/20190427124806/https://polysync.io/blog/session-types-for-hearty-codecs/).
+I've [talked previously]({% post_url 2019-06-31-high-performance-systems %}) about how important variance is in
+high-performance systems, so it was encouraging to read about a format that
+[directly addressed](https://github.com/real-logic/simple-binary-encoding/wiki/Why-Low-Latency) my concerns. SBE has by far
+the simplest binary format, but it does make some tradeoffs.
 
-Serialization
+Both Cap'n Proto and Flatbuffers use [pointers in their messages](https://capnproto.org/encoding.html#structs) to handle
+variable-length data, [unions](https://capnproto.org/language.html#unions), and a couple other features. In contrast,
+messages in SBE are essentially [primitive structs](https://github.com/real-logic/simple-binary-encoding/blob/master/sbe-samples/src/main/resources/example-schema.xml);
+variable-length data is supported, but there's no union type.
+
+As mentioned in the beginning, the Rust port of SBE is certainly usable, but is essentially unmaintained. However, if you
+don't need union types, and can accept that schemas are XML documents, it's still worth using.
+
+# Results
+
+After building a test harness [for](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/capnp_runner.rs)
+[each](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/flatbuffers_runner.rs)
+[protocol](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/sbe_runner.rs),
+it was time to actually take them for a spin. I used
+[this script](https://github.com/bspeice/speice.io-md_shootout/blob/master/run_shootout.sh) to manage the test process,
+and the raw results are [here](https://github.com/bspeice/speice.io-md_shootout/blob/master/shootout.csv). All data
+reported below is the average of 10 runs over a single day of IEX data. Data checks were implemented to make sure
+that each format achieved the same results.
+
+## Serialization
+
+Serialization measures on a
+[per-message basis](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/main.rs#L268-L272)
+how long it takes to convert the pre-parsed IEX message into the desired format
+and write to a pre-allocated buffer.
 
 | Schema               | Median | 99th Pctl | 99.9th Pctl | Total  |
 |:---------------------|:-------|:----------|:------------|:-------|
@@ -174,7 +203,13 @@ Serialization
 | Flatbuffers          | 355ns  | 2185ns    | 3497ns      | 14.31s |
 | SBE                  | 91ns   | 1535ns    | 2423ns      | 3.91s  |
 
-Deserialization
+## Deserialization
+
+Deserialization measures on a
+[per-message basis](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/main.rs#L294-L298)
+how long it takes to read the message encoded during deserialization and
+perform some basic aggregation. The aggregation code is the same for each format,
+so any performance differences are due solely to the format implementation.
 
 | Schema               | Median | 99th Pctl | 99.9th Pctl | Total  |
 |:---------------------|:-------|:----------|:------------|:-------|
@@ -182,3 +217,12 @@ Deserialization
 | Cap'n Proto Unpacked | 366ns  | 737ns     | 1583ns      | 12.32s |
 | Flatbuffers          | 173ns  | 421ns     | 1007ns      | 6.00s  |
 | SBE                  | 116ns  | 286ns     | 659ns       | 4.05s  |
+
+# Conclusion
+
+Building a benchmark turned out to be incredibly helpful in making a decision; because a
+"union" type isn't important to me, I'll be using SBE for my personal projects.
+
+And while SBE was the fastest in terms of both median and worst-case performance, its worst case
+performance was proportionately far higher than any other format. Further research is necessary
+to figure out why this is the case. But that's for another time.
