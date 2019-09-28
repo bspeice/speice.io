@@ -8,19 +8,19 @@ tags: [rust]
 
 I've found that in many personal projects, [analysis paralysis](https://en.wikipedia.org/wiki/Analysis_paralysis)
 is particularly deadly. Making good decisions in the beginning avoids pain and suffering later;
-if extra research prevents future problems, I'm happy to continue researching indefinitely.
+if extra research prevents future problems, I'm happy to continue ~~procrastinating~~ researching indefinitely.
 
-So let's say you're in need of a binary serialization schema. Data will be going over the network, not just in memory,
+So let's say you're in need of a binary serialization format. Data will be going over the network, not just in memory,
 so having a schema document and code generation is a must. Performance is crucial; there's no reason to use Protocol Buffers
-when other formats support similar features at faster speeds. And the more languages supported, the better; I use Rust,
-but can't predict what other languages this will interact with.
+when other formats support similar features. And the more languages supported, the better; I use Rust,
+but can't predict what other languages this could interact with.
 
 Given these requirements, the candidates I could find were:
 
 1. [Cap'n Proto](https://capnproto.org/) has been around the longest, and is the most established
 2. [Flatbuffers](https://google.github.io/flatbuffers/) is the newest, and claims to have a simpler encoding
 3. [Simple Binary Encoding](https://github.com/real-logic/simple-binary-encoding) has the simplest encoding,
-   but the Rust implementation is [essentially unmaintained](https://users.rust-lang.org/t/zero-cost-abstraction-frontier-no-copy-low-allocation-ordered-decoding/11515/9)
+   but the Rust implementation is unmaintained
 
 Any one of these will satisfy the project requirements: easy to transmit over a network, reasonably fast,
 and polyglot support. But how do you actually pick one? It's impossible to know what issues will follow that choice,
@@ -32,24 +32,23 @@ proof-of-concept system in each format and pit them against each other. All code
 
 We'll discuss more in detail, but a quick preview of the results:
 
-- Cap'n Proto can theoretically perform incredibly well, but the implementation had performance issues
-- Flatbuffers had some quirks, but largely lived up to its "zero-copy" promises
-- SBE has the best median and worst-case performance, but the message structure has a limited feature set
-  relative to Cap'n Proto and Flatbuffers
+- Cap'n Proto: Theoretically performs incredibly well, the implementation had issues
+- Flatbuffers: Has some quirks, but largely lived up to its "zero-copy" promises
+- SBE: Best median and worst-case performance, but the message structure has a limited feature set
 
-# Prologue: Reading the Data
+# Prologue: Binary Parsing with Nom
 
 Our benchmark system will be a simple data processor; given depth-of-book market data from
 [IEX](https://iextrading.com/trading/market-data/#deep), serialize each message into the schema format,
-then read back the message for some basic aggregation. This test isn't complex, but is representative
-of the project I need a binary format for.
+read it back, and calculate total size of stock traded and the lowest/highest quoted prices. This test
+isn't complex, but is representative of the project I need a binary format for.
 
 But before we make it to that point, we have to actually read in the market data. To do so, I'm using a library
 called [`nom`](https://github.com/Geal/nom). Version 5.0 was recently released and brought some big changes,
-so this was an opportunity to build a non-trivial program and get familiar again.
+so this was an opportunity to build a non-trivial program and get familiar.
 
 If you don't already know about `nom`, it's a "parser generator". By combining different smaller parsers,
-you can build a parser to handle more complex structures without writing all the tedious code by hand.
+you can assemble a parser to handle complex structures without writing tedious code by hand.
 For example, when parsing [PCAP files](https://www.winpcap.org/ntar/draft/PCAP-DumpFileFormat.html#rfc.section.3.3):
 
 ```
@@ -110,7 +109,7 @@ While this example isn't too interesting, more complex formats (like IEX market 
 [`nom` really shines](https://github.com/bspeice/speice.io-md_shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/iex.rs).
 
 Ultimately, because the `nom` code in this shootout was the same for all formats, we're not too interested in its performance.
-Still, it's worth mentioning that building the market data parser was actually fun; I didn't have to write all the boring code by hand.
+Still, it's worth mentioning that building the market data parser was actually fun; I didn't have to write tons of boring code by hand.
 
 # Part 1: Cap'n Proto
 
@@ -132,7 +131,7 @@ representation, and an "unpacked" version. When reading "packed" messages, we ne
 Cap'n Proto allocates a new buffer for each message we unpack, and I wasn't able to figure out a way around that.
 In contrast, the unpacked message format should be where Cap'n Proto shines; its main selling point is that there's [no decoding step](https://capnproto.org/).
 However, accomplishing zero-copy deserialization required code in the private API ([since fixed](https://github.com/capnproto/capnproto-rust/issues/148)),
-and we still allocate a vector on every read for the segment table.
+and we allocate a vector on every read for the segment table.
 
 In the end, I put in significant work to make Cap'n Proto as fast as possible, but there were too many issues for me to feel comfortable
 using it long-term.
@@ -140,12 +139,12 @@ using it long-term.
 # Part 2: Flatbuffers
 
 This is the new kid on the block. After a [first attempt](https://github.com/google/flatbuffers/pull/3894) didn't pan out,
-official support was [recently added](https://github.com/google/flatbuffers/pull/4898). Flatbuffers intends to address
+official support was [recently launched](https://github.com/google/flatbuffers/pull/4898). Flatbuffers intends to address
 the same problems as Cap'n Proto: high-performance, polyglot, binary messaging. The difference is that Flatbuffers claims
 to have a simpler wire format and [more flexibility](https://google.github.io/flatbuffers/flatbuffers_benchmarks.html).
 
-On the whole, I enjoyed using Flatbuffers; the [tooling](https://crates.io/crates/flatc-rust) is nice enough, and unlike
-Cap'n Proto, parsing messages was actually zero-copy and zero-allocation. There were some issues though.
+On the whole, I enjoyed using Flatbuffers; the [tooling](https://crates.io/crates/flatc-rust) is nice, and unlike
+Cap'n Proto, parsing messages was actually zero-copy and zero-allocation. However, there were still some issues.
 
 First, Flatbuffers (at least in Rust) can't handle nested vectors. This is a problem for formats like the following:
 
@@ -160,7 +159,7 @@ table MultiMessage {
 
 We want to create a `MultiMessage` which contains a vector of `Message`, and each `Message` itself contains a vector (the `string` type).
 I was able to work around this by [caching `Message` elements](https://github.com/bspeice/speice.io-md_shootout/blob/e9d07d148bf36a211a6f86802b313c4918377d1b/src/flatbuffers_runner.rs#L83)
-in a `SmallVec` before building the final `MultiMessage`, but it was a painful process.
+in a `SmallVec` before building the final `MultiMessage`, but it was a painful process that I believe contributed to poor serialization performance.
 
 Second, streaming support in Flatbuffers seems to be something of an [afterthought](https://github.com/google/flatbuffers/issues/3898).
 Where Cap'n Proto in Rust handles reading messages from a stream as part of the API, Flatbuffers just sticks a `u32` at the front of each
@@ -182,9 +181,10 @@ variable-length data, [unions](https://capnproto.org/language.html#unions), and 
 messages in SBE are essentially [just structs](https://github.com/real-logic/simple-binary-encoding/blob/master/sbe-samples/src/main/resources/example-schema.xml);
 variable-length data is supported, but there's no union type.
 
-As mentioned in the beginning, the Rust port of SBE works well, but is essentially unmaintained. However, if you
-don't need union types, and can accept that schemas are XML documents, it's still worth using. The implementation
-had the best streaming support of all formats being tested, and doesn't trigger allocation during de/serialization.
+As mentioned in the beginning, the Rust port of SBE works well, but is
+[essentially unmaintained](https://users.rust-lang.org/t/zero-cost-abstraction-frontier-no-copy-low-allocation-ordered-decoding/11515/9).
+However, if you don't need union types, and can accept that schemas are XML documents, it's still worth using. SBE's implementation
+had the best streaming support of all formats I tested, and doesn't trigger allocation during de/serialization.
 
 # Results
 
@@ -192,9 +192,9 @@ After building a test harness [for](https://github.com/bspeice/speice.io-md_shoo
 [each](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/flatbuffers_runner.rs)
 [format](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/sbe_runner.rs),
 it was time to actually take them for a spin. I used
-[this script](https://github.com/bspeice/speice.io-md_shootout/blob/master/run_shootout.sh) to manage the benchmarking,
+[this script](https://github.com/bspeice/speice.io-md_shootout/blob/master/run_shootout.sh) to run the benchmarks,
 and the raw results are [here](https://github.com/bspeice/speice.io-md_shootout/blob/master/shootout.csv). All data
-reported below is the average of 10 runs over a single day of IEX data. Results were validated to make sure
+reported below is the average of 10 runs on a single day of IEX data. Results were validated to make sure
 that each format parsed the data correctly.
 
 ## Serialization
