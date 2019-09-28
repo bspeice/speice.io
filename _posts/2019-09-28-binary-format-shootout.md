@@ -11,8 +11,8 @@ is particularly deadly. Making good decisions in the beginning avoids pain and s
 if extra research prevents future problems, I'm happy to continue ~~procrastinating~~ researching indefinitely.
 
 So let's say you're in need of a binary serialization format. Data will be going over the network, not just in memory,
-so having a schema document and code generation is a must. Performance is crucial; there's no reason to use Protocol Buffers
-when other formats support similar features. And the more languages supported, the better; I use Rust,
+so having a schema document and code generation is a must. Performance is crucial, so formats that support zero-copy
+de/serialization are given priority. And the more languages supported, the better; I use Rust,
 but can't predict what other languages this could interact with.
 
 Given these requirements, the candidates I could find were:
