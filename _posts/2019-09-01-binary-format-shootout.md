@@ -22,9 +22,8 @@ Given these requirements, the formats I could find were:
 
 1. [Cap'n Proto](https://capnproto.org/) has been around the longest, and integrates well with all the build tools
 2. [Flatbuffers](https://google.github.io/flatbuffers/) is the newest, and claims to have a simpler encoding
-3. [Simple Binary Encoding](https://github.com/real-logic/simple-binary-encoding) is being adopted by the
-   [High-performance financial](https://www.fixtrading.org/standards/sbe/) community, but the Rust implementation
-   is essentially unmaintained
+3. [Simple Binary Encoding](https://github.com/real-logic/simple-binary-encoding) has the simplest encoding,
+   but the Rust implementation is essentially unmaintained
 
 Any one of these will satisfy the project requirements: easy to transmit over a network, reasonably fast,
 and support multiple languages. But actually picking one to build a system on is intimidating; it's impossible
@@ -110,11 +109,9 @@ all the boring code by hand.
 # Part 1: Cap'n Proto
 
 Now it's time to get into the meaty part of the story. Cap'n Proto was the first format I tried because of how long
-it has supported Rust. It was a bit tricky to get the compiler installed, but once that was done, the
-[schema document](https://github.com/bspeice/speice.io-md_shootout/blob/369613843d39cfdc728e1003123bf87f79422497/marketdata.capnp)
-wasn't hard to create.
-
-In practice, I had a ton of issues with Cap'n Proto.
+it has supported Rust (thanks to [David Renshaw](https://github.com/dwrensha) for maintaining the Rust port since
+[2014!](https://github.com/capnproto/capnproto-rust/releases/tag/rustc-0.10)). However, I had a ton of performance concerns
+actually using of Cap'n Proto.
 
 To serialize new messages, Cap'n Proto uses a "builder" object. This builder allocates memory on the heap to hold the message
 content, but because builders [can't be re-used](https://github.com/capnproto/capnproto-rust/issues/111), we have to allocate
@@ -124,11 +121,11 @@ but it required reading through Cap'n Proto's [benchmarks](https://github.com/ca
 to find an example and using `transmute` to bypass Rust's borrow checker.
 
 Reading messages is better, but still had issues. Cap'n Proto has two message encodings: a ["packed"](https://capnproto.org/encoding.html#packing)
-version, and an unpacked version. When reading "packed" messages, we need a buffer to unpack the message into before we can use it;
+version, and an "unpacked" version. When reading "packed" messages, we need a buffer to unpack the message into before we can use it;
 Cap'n Proto allocates a new buffer to unpack the message every time, and I wasn't able to figure out a way around that.
 In contrast, the unpacked message format should be where Cap'n Proto shines; its main selling point is that there's [no decoding step](https://capnproto.org/).
-However, accomplishing this required copying code from the private API ([since fixed](https://github.com/capnproto/capnproto-rust/issues/148)),
-and we still allocate a vector on every read for the segment table.
+However, accomplishing zero-copy deserialization required copying code from the private API ([since fixed](https://github.com/capnproto/capnproto-rust/issues/148)),
+and we still allocate a vector on every read for the segment table (not fixed at time of writing).
 
 In the end, I put in significant work to make Cap'n Proto as fast as possible in the tests, but there were too many issues
 for me to feel comfortable using it long-term.
@@ -162,7 +159,7 @@ Second, streaming support in Flatbuffers seems to be something of an [afterthoug
 Where Cap'n Proto in Rust handles reading messages from a stream as part of the API, Flatbuffers just puts a `u32` at the front of each
 message to indicate the size. Not specifically a problem, but I would've rather seen message size integrated into the underlying format.
 
-Ultimately, I enjoyed using Flatbuffers, and had to do significantly less work to make it fast.
+Ultimately, I enjoyed using Flatbuffers, and had to do significantly less work to make it perform well.
 
 # Final Results
 
