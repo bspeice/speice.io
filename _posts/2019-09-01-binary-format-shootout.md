@@ -30,7 +30,14 @@ and support multiple languages. But actually picking one to build a system on is
 to know what issues that choice will lead to.
 
 Still, a choice must be made. It's not particularly groundbreaking, but I decided to build a test system to help
-understand how they all behave.
+understand how they all behave. All code can be found in the [repository](https://github.com/bspeice/speice.io-md_shootout).
+
+We'll discuss more in detail, but the TLDR:
+
+- Cap'n Proto can theoretically perform incredibly well, but the implementation had performance issues
+- Flatbuffers had poor serialization performance, but more than made up for it during deserialiation
+- SBE has the best median and worst-case performance, but the message structure doesn't support some
+  features that both Cap'n Proto and Flatbuffers have
 
 # Prologue: Reading the Data
 
