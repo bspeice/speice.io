@@ -6,9 +6,9 @@ category:
 tags: [python]
 ---
 
-Complaining about the [Global Interpreter Lock](https://wiki.python.org/moin/GlobalInterpreterLock)(GIL) seems like a rite of passage for Python developers. It's easy to criticize a design decision made before multi-core CPU's were widely available, but the fact that it's still around indicates that it generally works [Good](https://wiki.c2.com/?PrematureOptimization) [Enough](https://wiki.c2.com/?YouArentGonnaNeedIt). Besides, there are simple and effective workarounds; it's not hard to start a [new process](https://docs.python.org/3/library/multiprocessing.html) and use message passing to synchronize code running in parallel.
+Complaining about the [Global Interpreter Lock](https://wiki.python.org/moin/GlobalInterpreterLock) (GIL) seems like a rite of passage for Python developers. It's easy to criticize a design decision made before multi-core CPU's were widely available, but the fact that it's still around indicates that it generally works [Good](https://wiki.c2.com/?PrematureOptimization) [Enough](https://wiki.c2.com/?YouArentGonnaNeedIt). Besides, there are simple and effective workarounds; it's not hard to start a [new process](https://docs.python.org/3/library/multiprocessing.html) and use message passing to synchronize code running in parallel.
 
-Still, wouldn't it be nice to have more than a single active interpreter thread? In an age of asynchronicity and $M:N$ threading, Python seems lacking. The ideal scenario is to take advantage of both Python's productivity and the modern CPU's parallel capabilities.
+Still, wouldn't it be nice to have more than a single active interpreter thread? In an age of asynchronicity and *M:N* threading, Python seems lacking. The ideal scenario is to take advantage of both Python's productivity and the modern CPU's parallel capabilities.
 
 Presented below are two strategies for releasing the GIL's icy grip without giving up on what makes Python a nice language to start with. Bear in mind: these are just the tools, no claim is made about whether it's a good idea to use them. Very often, unlocking the GIL is an [XY problem](https://en.wikipedia.org/wiki/XY_problem); you want application performance, and the GIL seems like an obvious bottleneck. Remember that any gains from running code in parallel come at the expense of project complexity; messing with the GIL is ultimately messing with Python's memory model.
 
@@ -71,7 +71,6 @@ _ = cython_gil(N);
 
 > <pre>
 > CPU times: user 365 ms, sys: 0 ns, total: 365 ms
-> 
 > Wall time: 372 ms
 > </pre>
 
