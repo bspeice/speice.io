@@ -1,0 +1,95 @@
+---
+---
+
+// Import the theme rules
+@import "theme";
+
+body {
+    font-family: 'Lato', sans-serif;
+}
+
+.navbar {
+    color: $gray;
+}
+
+.separator {
+    margin-right: .45rem;
+    margin-left: .25rem;
+    color: #000;
+    &:after {
+        content: '\00a0/';
+    }
+}
+
+header {
+    padding-top: 80px;
+    padding-bottom: 0;
+};
+
+header h1,h2 {
+    color: #000;
+}
+
+.post-description {
+    color: #555;
+}
+
+.post-container a {
+    color: #555;
+    border-bottom-color: $gray;
+    border-bottom-style: dotted;
+    border-bottom-width: 1px;
+
+    position: relative;
+    display: inline-block;
+    padding: 1px 1px;
+    transition: color ease 0.3s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      width: 100%;
+      height: 0%;
+      left: 0;
+      bottom: 0;
+      background-color: $gray;
+      transition: all ease 0.3s;
+    }
+
+    &:hover {
+      color: #fff;
+      border-bottom-style: solid;
+      &::after {
+        height: 100%;
+      }
+    }
+}
+
+body pre {
+    font-size: 15px;
+}
+
+pre.highlight, code {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+div.highlighter-rouge {
+    // Default theme uses `width: 100vw`, which while cool, does cause the page
+    // to exceed screen width and trigger horizontal scrolling. No bueno.
+    width: 99vw;
+}
+
+.post-date {
+    // On the front page, make sure titles don't force wrapping the date box content
+    text-align: right;
+    white-space: nowrap;
+}
+
+blockquote {
+    color: #555;
+    right: 100px;
+    margin-left: 0;
+    padding-left: 1.8rem;
+    border-left: 5px solid $gray;
+}
