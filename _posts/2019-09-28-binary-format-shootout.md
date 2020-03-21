@@ -28,7 +28,7 @@ so I tend to avoid commitment until the last possible moment.
 
 Still, a choice must be made. Instead of worrying about which is "the best," I decided to build a small 
 proof-of-concept system in each format and pit them against each other. All code can be found in the
-[repository](https://github.com/bspeice/speice.io-md_shootout) for this post.
+[repository](https://github.com/speice-io/marketdata-shootout) for this post.
 
 We'll discuss more in detail, but a quick preview of the results:
 
@@ -74,7 +74,7 @@ For example, when parsing [PCAP files](https://www.winpcap.org/ntar/draft/PCAP-D
 ```
 
 ...you can build a parser in `nom` that looks like
-[this](https://github.com/bspeice/speice.io-md_shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/parsers.rs#L59-L93):
+[this](https://github.com/speice-io/marketdata-shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/parsers.rs#L59-L93):
 
 ```rust
 const ENHANCED_PACKET: [u8; 4] = [0x06, 0x00, 0x00, 0x00];
@@ -106,7 +106,7 @@ pub fn enhanced_packet_block(input: &[u8]) -> IResult<&[u8], &[u8]> {
 ```
 
 While this example isn't too interesting, more complex formats (like IEX market data) are where
-[`nom` really shines](https://github.com/bspeice/speice.io-md_shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/iex.rs).
+[`nom` really shines](https://github.com/speice-io/marketdata-shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/iex.rs).
 
 Ultimately, because the `nom` code in this shootout was the same for all formats, we're not too interested in its performance.
 Still, it's worth mentioning that building the market data parser was actually fun; I didn't have to write tons of boring code by hand.
@@ -121,7 +121,7 @@ once I started using it.
 To serialize new messages, Cap'n Proto uses a "builder" object. This builder allocates memory on the heap to hold the message
 content, but because builders [can't be re-used](https://github.com/capnproto/capnproto-rust/issues/111), we have to allocate
 a new buffer for every single message. I was able to work around this with a
-[special builder](https://github.com/bspeice/speice.io-md_shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/capnp_runner.rs#L17-L51)
+[special builder](https://github.com/speice-io/marketdata-shootout/blob/369613843d39cfdc728e1003123bf87f79422497/src/capnp_runner.rs#L17-L51)
 that could re-use the buffer, but it required reading through Cap'n Proto's
 [benchmarks](https://github.com/capnproto/capnproto-rust/blob/master/benchmark/benchmark.rs#L124-L156)
 to find an example, and used [`std::mem::transmute`](https://doc.rust-lang.org/std/mem/fn.transmute.html) to bypass Rust's borrow checker.
@@ -158,7 +158,7 @@ table MultiMessage {
 ```
 
 We want to create a `MultiMessage` which contains a vector of `Message`, and each `Message` itself contains a vector (the `string` type).
-I was able to work around this by [caching `Message` elements](https://github.com/bspeice/speice.io-md_shootout/blob/e9d07d148bf36a211a6f86802b313c4918377d1b/src/flatbuffers_runner.rs#L83)
+I was able to work around this by [caching `Message` elements](https://github.com/speice-io/marketdata-shootout/blob/e9d07d148bf36a211a6f86802b313c4918377d1b/src/flatbuffers_runner.rs#L83)
 in a `SmallVec` before building the final `MultiMessage`, but it was a painful process that I believe contributed to poor serialization performance.
 
 Second, streaming support in Flatbuffers seems to be something of an [afterthought](https://github.com/google/flatbuffers/issues/3898).
@@ -188,19 +188,19 @@ had the best streaming support of all formats I tested, and doesn't trigger allo
 
 # Results
 
-After building a test harness [for](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/capnp_runner.rs)
-[each](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/flatbuffers_runner.rs)
-[format](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/sbe_runner.rs),
+After building a test harness [for](https://github.com/speice-io/marketdata-shootout/blob/master/src/capnp_runner.rs)
+[each](https://github.com/speice-io/marketdata-shootout/blob/master/src/flatbuffers_runner.rs)
+[format](https://github.com/speice-io/marketdata-shootout/blob/master/src/sbe_runner.rs),
 it was time to actually take them for a spin. I used
-[this script](https://github.com/bspeice/speice.io-md_shootout/blob/master/run_shootout.sh) to run the benchmarks,
-and the raw results are [here](https://github.com/bspeice/speice.io-md_shootout/blob/master/shootout.csv). All data
+[this script](https://github.com/speice-io/marketdata-shootout/blob/master/run_shootout.sh) to run the benchmarks,
+and the raw results are [here](https://github.com/speice-io/marketdata-shootout/blob/master/shootout.csv). All data
 reported below is the average of 10 runs on a single day of IEX data. Results were validated to make sure
 that each format parsed the data correctly.
 
 ## Serialization
 
 This test measures, on a
-[per-message basis](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/main.rs#L268-L272),
+[per-message basis](https://github.com/speice-io/marketdata-shootout/blob/master/src/main.rs#L268-L272),
 how long it takes to serialize the IEX message into the desired format and write to a pre-allocated buffer.
 
 | Schema               | Median | 99th Pctl | 99.9th Pctl | Total  |
@@ -213,7 +213,7 @@ how long it takes to serialize the IEX message into the desired format and write
 ## Deserialization
 
 This test measures, on a
-[per-message basis](https://github.com/bspeice/speice.io-md_shootout/blob/master/src/main.rs#L294-L298),
+[per-message basis](https://github.com/speice-io/marketdata-shootout/blob/master/src/main.rs#L294-L298),
 how long it takes to read the previously-serialized message and
 perform some basic aggregation. The aggregation code is the same for each format,
 so any performance differences are due solely to the format implementation.
