@@ -55,7 +55,7 @@ I'll also note that we're going to skip [asm.js] and [emscripten]. Truth be told
 to output anything, and so I'm just going to say [here be dragons.](https://en.wikipedia.org/wiki/Here_be_dragons)
 Everything I'm discussing here uses the `wasm32-unknown-unknown` target.
 
-The code that I *did* get running is available [over here](https://github.com/bspeice/isomorphic_rust).
+The code that I *did* get running is available [over here](https://github.com/speice-io/isomorphic-rust).
 Feel free to use it as a starting point, but I'm mostly including the link as a reference for the things
 that were attempted.
 
@@ -68,7 +68,7 @@ So, I did *technically* get a running application:
 ...which you can also try out if you want:
 
 ```sh
-git clone https://github.com/bspeice/isomorphic_rust.git
+git clone https://github.com/speice-io/isomorphic-rust.git
 cd isomorphic_rust/percy
 yarn install && yarn start
 ```
@@ -111,7 +111,7 @@ There are a couple of solutions depending on how far into the deep end you care 
 But all these are pretty bad solutions and defeat the purpose of using WASM in the first place. Instead,
 my workaround was to [open a PR with `webpack`](https://github.com/webpack/webpack/issues/7918) and
 use regex to remove calls to `instantiateStreaming` in the
-[build script](https://github.com/bspeice/isomorphic_rust/blob/master/percy/build.sh#L21-L25):
+[build script](https://github.com/speice-io/isomorphic-rust/blob/master/percy/build.sh#L21-L25):
 
 ```sh
 cargo +nightly build --target=wasm32-unknown-unknown && \
@@ -122,7 +122,7 @@ cargo +nightly build --target=wasm32-unknown-unknown && \
 ```
 
 Once that lands, the
-[build process](https://github.com/bspeice/isomorphic_rust/blob/master/percy_patched_webpack/build.sh#L24-L27)
+[build process](https://github.com/speice-io/isomorphic-rust/blob/master/percy_patched_webpack/build.sh#L24-L27)
 becomes much simpler:
 
 ```sh
@@ -134,10 +134,10 @@ cargo +nightly build --target=wasm32-unknown-unknown && \
 
 But we're not done yet! After we compile Rust into WASM and link WASM to Javascript (via `wasm-bindgen` and `webpack`),
 we still have to make an Electron app. For this purpose I used a starter app from [Electron Forge],
-and then a [`prestart` script](https://github.com/bspeice/isomorphic_rust/blob/master/percy/package.json#L8)
+and then a [`prestart` script](https://github.com/speice-io/isomorphic-rust/blob/master/percy/package.json#L8)
 to actually handle starting the application.
 
-The [final toolchain](https://github.com/bspeice/isomorphic_rust/blob/master/percy/package.json#L8)
+The [final toolchain](https://github.com/speice-io/isomorphic-rust/blob/master/percy/package.json#L8)
 looks something like this:
 
 - `yarn start` triggers the `prestart` script
@@ -178,9 +178,9 @@ either updating the wasm-bindgen dependency or this binary.
 Not that I ever managed to run into this myself (*coughs nervously*).
 
 There are two projects attempting to be "application frameworks": [percy] and [yew]. Between those,
-I managed to get [two](https://github.com/bspeice/isomorphic_rust/tree/master/percy)
-[examples](https://github.com/bspeice/isomorphic_rust/tree/master/percy_patched_webpack) running
-using `percy`, but was unable to get an [example](https://github.com/bspeice/isomorphic_rust/tree/master/yew)
+I managed to get [two](https://github.com/speice-io/isomorphic-rust/tree/master/percy)
+[examples](https://github.com/speice-io/isomorphic-rust/tree/master/percy_patched_webpack) running
+using `percy`, but was unable to get an [example](https://github.com/speice-io/isomorphic-rust/tree/master/yew)
 running with `yew` because of issues with "missing modules" during the `webpack` step:
 
 ```sh
@@ -193,7 +193,7 @@ Module not found: Error: Can't resolve 'env' in '/home/bspeice/Development/isomo
 ```
 
 If you want to work with the browser APIs directly, your choices are [percy-webapis] or [stdweb] (or eventually [web-sys]).
-See above for my `percy` examples, but when I tried [an example with `stdweb`](https://github.com/bspeice/isomorphic_rust/tree/master/stdweb),
+See above for my `percy` examples, but when I tried [an example with `stdweb`](https://github.com/speice-io/isomorphic-rust/tree/master/stdweb),
 I was unable to get it running:
 
 ```sh
@@ -206,7 +206,7 @@ Module not found: Error: Can't resolve 'env' in '/home/bspeice/Development/isomo
 
 At this point I'm pretty convinced that `stdweb` is causing issues for `yew` as well, but can't prove it.
 
-I did also get a [minimal example](https://github.com/bspeice/isomorphic_rust/tree/master/minimal) running
+I did also get a [minimal example](https://github.com/speice-io/isomorphic-rust/tree/master/minimal) running
 that doesn't depend on any tools besides `wasm-bindgen`. However, it requires manually writing "`extern C`"
 blocks for everything you need from the browser. Es no bueno.
 
