@@ -1,0 +1,23 @@
+{% if page.layout == 'post' %}
+{# Thanks to https://www.bytedude.com/jekyll-previous-and-next-posts/ #}
+<div class="container">
+    <hr>
+    <div class="post-nav">
+        <div>
+            {% if page.previous.url %}
+            <a href="{{page.previous.url}}">&laquo;&nbsp;{{page.previous.title}}</a>
+            {% endif %}
+        </div>
+        <div class="post-nav-next">
+            {% if page.next.url %}
+            <a href="{{page.next.url}}">{{page.next.title}}&nbsp;&raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript"
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+{% endif %}
