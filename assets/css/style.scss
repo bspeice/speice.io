@@ -112,3 +112,8 @@ blockquote {
 .post-nav-next {
     text-align: right;
 }
+
+th, td {
+    border-bottom: 1px solid $gray;
+    padding: 0.75em;
+}
