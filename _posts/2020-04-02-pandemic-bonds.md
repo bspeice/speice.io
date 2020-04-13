@@ -71,14 +71,20 @@ Assuming the die is fair, and that we play this game for a very long (infinite) 
 
 With that out of the way, what the heck are pandemic bonds?
 
-The [Pandemic Emergency Financing Facility](https://en.wikipedia.org/wiki/Pandemic_Emergency_Financing_Facility)(PEF), also known as a "pandemic bond", is a very special financial contract. The basic structure of the bond is simple:
+The [Pandemic Emergency Financing Facility](https://en.wikipedia.org/wiki/Pandemic_Emergency_Financing_Facility)(PEF), also known as a "pandemic bond", is just a special financial contract. The basic structure of the bond is simple:
 
 - People give the World Bank money.
 - If there is no pandemic:
-    - Every month, the World Bank pays interest on that money
+    - Every month, the World Bank pays (a lot of) interest on that money
     - On July 15, 2020, all the money is given back
 - If there is a pandemic:
     - No further interest is paid on the money
     - The World Bank gets to keep the money
 
-If you're interested in more details, the [bond prospectus](http://pubdocs.worldbank.org/en/882831509568634367/PEF-Final-Prospectus-PEF.pdf) has you covered; interest rates, definition of what a "pandemic" is, etc.
+If you're interested in the specifics, check out the [bond prospectus](http://pubdocs.worldbank.org/en/882831509568634367/PEF-Final-Prospectus-PEF.pdf) for interest rates, a definition of "pandemic", and so much more.
+
+But the most interesting thing in this contract is how *both sides (lenders and the World Bank) benefit*.
+
+We'll look at this from the World Bank's perspective first. The World Bank is concerned about [the possibility of a pandemic](https://www.youtube.com/watch?v=6Af6b_wyiwI). 
+
+If you're lending money to the World Bank, this is a potentially great investment opportunity. Sure, there's a potential you lose everything, but *assuming a high enough interest rate*, this is a hard deal to pass up.
