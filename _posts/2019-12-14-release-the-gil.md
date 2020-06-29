@@ -2,13 +2,13 @@
 layout: post
 title: "Release the GIL"
 description: "Strategies for Parallelism in Python"
-category: 
+category:
 tags: [python]
 ---
 
 Complaining about the [Global Interpreter Lock](https://wiki.python.org/moin/GlobalInterpreterLock) (GIL) seems like a rite of passage for Python developers. It's easy to criticize a design decision made before multi-core CPU's were widely available, but the fact that it's still around indicates that it generally works [Good](https://wiki.c2.com/?PrematureOptimization) [Enough](https://wiki.c2.com/?YouArentGonnaNeedIt). Besides, there are simple and effective workarounds; it's not hard to start a [new process](https://docs.python.org/3/library/multiprocessing.html) and use message passing to synchronize code running in parallel.
 
-Still, wouldn't it be nice to have more than a single active interpreter thread? In an age of asynchronicity and *M:N* threading, Python seems lacking. The ideal scenario is to take advantage of both Python's productivity and the modern CPU's parallel capabilities.
+Still, wouldn't it be nice to have more than a single active interpreter thread? In an age of asynchronicity and _M:N_ threading, Python seems lacking. The ideal scenario is to take advantage of both Python's productivity and the modern CPU's parallel capabilities.
 
 Presented below are two strategies for releasing the GIL's icy grip without giving up on what makes Python a nice language to start with. Bear in mind: these are just the tools, no claim is made about whether it's a good idea to use them. Very often, unlocking the GIL is an [XY problem](https://en.wikipedia.org/wiki/XY_problem); you want application performance, and the GIL seems like an obvious bottleneck. Remember that any gains from running code in parallel come at the expense of project complexity; messing with the GIL is ultimately messing with Python's memory model.
 
@@ -84,9 +84,7 @@ _ = cython_nogil(N);
 > Wall time: 388 ms
 > </pre>
 
-
 Both versions (with and without GIL) take effectively the same amount of time to run. Even when running this calculation in parallel on separate threads, it is expected that the run time will double because only one thread can be active at a time:
-
 
 ```python
 %%time
@@ -106,9 +104,7 @@ t1.join(); t2.join()
 > Wall time: 645 ms
 > </pre>
 
-
 However, if the first thread releases the GIL, the second thread is free to acquire it and run in parallel:
-
 
 ```python
 %%time
@@ -153,10 +149,10 @@ Finally, be aware that attempting to unlock the GIL from a thread that doesn't o
 cdef int cython_recurse(int n) nogil:
     if n <= 0:
         return 0
-    
+
     with nogil:
         return cython_recurse(n - 1)
-    
+
 cython_recurse(2)
 ```
 
@@ -175,7 +171,7 @@ To conclude: use Cython's `nogil` annotation to assert that functions are safe f
 
 # Numba
 
-Like Cython, [Numba](https://numba.pydata.org/) is a "compiled Python." Where Cython works by compiling a Python-like language to C/C++, Numba compiles Python bytecode *directly to machine code* at runtime. Behavior is controlled with a special `@jit` decorator; calling a decorated function first compiles it to machine code before running. Calling the function a second time re-uses that machine code unless the argument types have changed.
+Like Cython, [Numba](https://numba.pydata.org/) is a "compiled Python." Where Cython works by compiling a Python-like language to C/C++, Numba compiles Python bytecode _directly to machine code_ at runtime. Behavior is controlled with a special `@jit` decorator; calling a decorated function first compiles it to machine code before running. Calling the function a second time re-uses that machine code unless the argument types have changed.
 
 Numba works best when a `nopython=True` argument is added to the `@jit` decorator; functions compiled in [`nopython`](http://numba.pydata.org/numba-doc/latest/user/jit.html?#nopython) mode avoid the CPython API and have performance comparable to C. Further, adding `nogil=True` to the `@jit` decorator unlocks the GIL while that function is running. Note that `nogil` and `nopython` are separate arguments; while it is necessary for code to be compiled in `nopython` mode in order to release the lock, the GIL will remain locked if `nogil=False` (the default).
 
@@ -299,7 +295,7 @@ def numba_recurse(n: int) -> int:
         return 0
 
     return numba_recurse(n - 1)
-    
+
 numba_recurse(2);
 ```
 

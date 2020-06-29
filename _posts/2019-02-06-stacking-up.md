@@ -2,7 +2,7 @@
 layout: post
 title: "Fixed Memory: Stacking Up"
 description: "We don't need no allocator."
-category: 
+category:
 tags: [rust, understanding-allocations]
 ---
 
@@ -23,7 +23,8 @@ When you're finished with stack memory, the `pop` instruction runs in
 1-3 cycles, as opposed to an allocator needing to worry about memory fragmentation
 and other issues with the heap. All sorts of incredibly sophisticated techniques have been used
 to design allocators:
-- [Garbage Collection](https://en.wikipedia.org/wiki/Garbage_collection_(computer_science))
+
+- [Garbage Collection](<https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)>)
   strategies like [Tracing](https://en.wikipedia.org/wiki/Tracing_garbage_collection)
   (used in [Java](https://www.oracle.com/technetwork/java/javase/tech/g1-intro-jsp-135488.html))
   and [Reference counting](https://en.wikipedia.org/wiki/Reference_counting)
@@ -57,6 +58,7 @@ when stack and heap memory regions are used:
 
 1. Stack manipulation instructions (`push`, `pop`, and `add`/`sub` of the `rsp` register)
    indicate allocation of stack memory:
+
    ```rust
    pub fn stack_alloc(x: u32) -> u32 {
        // Space for `y` is allocated by subtracting from `rsp`,
@@ -66,11 +68,13 @@ when stack and heap memory regions are used:
        x
    }
    ```
+
    -- [Compiler Explorer](https://godbolt.org/z/5WSgc9)
 
 2. Tracking when exactly heap allocation calls occur is difficult. It's typically easier to
    watch for `call core::ptr::real_drop_in_place`, and infer that a heap allocation happened
    in the recent past:
+
    ```rust
    pub fn heap_alloc(x: usize) -> usize {
        // Space for elements in a vector has to be allocated
@@ -80,10 +84,11 @@ when stack and heap memory regions are used:
        x
    }
    ```
+
    -- [Compiler Explorer](https://godbolt.org/z/epfgoQ) (`real_drop_in_place` happens on line 1317)
    <span style="font-size: .8em">Note: While the [`Drop` trait](https://doc.rust-lang.org/std/ops/trait.Drop.html)
    is [called for stack-allocated objects](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=87edf374d8983816eb3d8cfeac657b46),
-   the Rust standard library only defines `Drop` implementations for types that involve heap allocation.</span> 
+   the Rust standard library only defines `Drop` implementations for types that involve heap allocation.</span>
 
 3. If you don't want to inspect the assembly, use a custom allocator that's able to track
    and alert when heap allocations occur. Crates like [`alloc_counter`](https://crates.io/crates/alloc_counter)
@@ -132,6 +137,7 @@ pub fn make_line() {
     let ray = Line { a: origin, b: point };
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/vri9BE)
 
 Note that while some extra-fancy instructions are used for memory manipulation in the assembly,
@@ -181,7 +187,7 @@ fn distance(a: &Point, b: &Point) -> i64 {
     let y_pow = (y1 - y2) * (y1 - y2);
     let squared = x_pow + y_pow;
     squared / squared
-    
+
     // Our final result will be stored in the `rax` register
     // so that our caller knows where to retrieve it.
     // Finally, add back to `rsp` the stack memory that is
@@ -197,6 +203,7 @@ pub fn total_distance() {
     let _dist_2 = distance(&middle, &end);
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/Qmx4ST)
 
 As a consequence of function arguments never using heap memory, we can also
@@ -234,6 +241,7 @@ pub fn total_distance() {
     let _dist_2 = distance(&middle, &end);
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/30Sh66)
 
 Finally, passing by value (arguments with type
@@ -274,6 +282,7 @@ pub fn distance_borrowed(a: &Point, b: &Point) -> i64 {
     squared / squared
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/06hGiv)
 
 # Enums
@@ -304,6 +313,7 @@ pub fn enum_compare() {
     let opt = Option::Some(z);
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/HK7zBx)
 
 Because the size of an `enum` is the size of its largest element plus a flag,
@@ -312,7 +322,7 @@ of an enum is currently stored in a variable. Thus, enums and unions have no
 need of heap allocation. There's unfortunately not a great way to show this
 in assembly, so I'll instead point you to the
 [`core::mem::size_of`](https://doc.rust-lang.org/stable/core/mem/fn.size_of.html#size-of-enums)
-documentation. 
+documentation.
 
 # Arrays
 
@@ -353,6 +363,7 @@ fn main() {
     let _x = EightM::default();
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=587a6380a4914bcbcef4192c90c01dc4)
 
 There aren't any security implications of this (no memory corruption occurs),
@@ -367,7 +378,7 @@ are actually objects created on the heap that capture local primitives by copyin
 local non-primitives as (`final`) references.
 [Python](https://docs.python.org/3.7/reference/expressions.html#lambda) and
 [JavaScript](https://javascriptweblog.wordpress.com/2010/10/25/understanding-javascript-closures/)
-both bind *everything* by reference normally, but Python can also
+both bind _everything_ by reference normally, but Python can also
 [capture values](https://stackoverflow.com/a/235764/1454178) and JavaScript has
 [Arrow functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions).
 
@@ -395,6 +406,7 @@ pub fn immediate() {
     my_func()();
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/mgJ2zl), 25 total assembly instructions
 
 If we store a reference to the closure, the Rust compiler keeps values it needs
@@ -410,6 +422,7 @@ pub fn simple_reference() {
     x();
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/K_dj5n), 55 total assembly instructions
 
 Even things like variable order can make a difference in instruction count:
@@ -422,6 +435,7 @@ pub fn complex() {
     y();
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/p37qFl), 70 total assembly instructions
 
 In every circumstance though, the compiler ensured that no heap allocations were necessary.
@@ -430,7 +444,7 @@ In every circumstance though, the compiler ensured that no heap allocations were
 
 Traits in Rust come in two broad forms: static dispatch (monomorphization, `impl Trait`)
 and dynamic dispatch (trait objects, `dyn Trait`). While dynamic dispatch is often
-*associated* with trait objects being stored in the heap, dynamic dispatch can be used
+_associated_ with trait objects being stored in the heap, dynamic dispatch can be used
 with stack allocated objects as well:
 
 ```rust
@@ -445,7 +459,7 @@ struct WhyNotU8 {
 impl GetInt for WhyNotU8 {
     fn get_int(&self) -> u64 {
         self.x as u64
-    } 
+    }
 }
 
 // vtable stored at section L__unnamed_2
@@ -481,6 +495,7 @@ pub fn do_call() {
     retrieve_int(&b);
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/u_yguS)
 
 It's hard to imagine practical situations where dynamic dispatch would be
@@ -493,9 +508,9 @@ Understanding move semantics and copy semantics in Rust is weird at first. The R
 far better than can be addressed here, so I'll leave them to do the job.
 From a memory perspective though, their guideline is reasonable:
 [if your type can implemement `Copy`, it should](https://doc.rust-lang.org/stable/core/marker/trait.Copy.html#when-should-my-type-be-copy).
-While there are potential speed tradeoffs to *benchmark* when discussing `Copy`
-(move semantics for stack objects vs. copying stack pointers vs. copying stack `struct`s), 
-*it's impossible for `Copy` to introduce a heap allocation*.
+While there are potential speed tradeoffs to _benchmark_ when discussing `Copy`
+(move semantics for stack objects vs. copying stack pointers vs. copying stack `struct`s),
+_it's impossible for `Copy` to introduce a heap allocation_.
 
 But why is this the case? Fundamentally, it's because the language controls
 what `Copy` means -
@@ -519,6 +534,7 @@ struct NotCopyable {
     x: Box<u64>
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/VToRuK)
 
 # Iterators
@@ -587,4 +603,5 @@ pub fn sum_hm(x: &HashMap<u32, u32>) {
     }
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/FTT3CT)

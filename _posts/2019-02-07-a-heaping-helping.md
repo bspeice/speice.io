@@ -2,21 +2,21 @@
 layout: post
 title: "Dynamic Memory: A Heaping Helping"
 description: "The reason Rust exists."
-category: 
+category:
 tags: [rust, understanding-allocations]
 ---
 
 Managing dynamic memory is hard. Some languages assume users will do it themselves (C, C++),
 and some languages go to extreme lengths to protect users from themselves (Java, Python). In Rust,
-how the language uses dynamic memory (also referred to as the **heap**) is a system called *ownership*.
+how the language uses dynamic memory (also referred to as the **heap**) is a system called _ownership_.
 And as the docs mention, ownership
 [is Rust's most unique feature](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html).
 
-The heap is used in two situations; when the compiler is unable to predict either the *total size
-of memory needed*, or *how long the memory is needed for*, it allocates space in the heap.
+The heap is used in two situations; when the compiler is unable to predict either the _total size
+of memory needed_, or _how long the memory is needed for_, it allocates space in the heap.
 This happens pretty frequently; if you want to download the Google home page, you won't know
 how large it is until your program runs. And when you're finished with Google, we deallocate
-the memory so it can be used to store other webpages. If you're 
+the memory so it can be used to store other webpages. If you're
 interested in a slightly longer explanation of the heap, check out
 [The Stack and the Heap](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#the-stack-and-the-heap)
 in Rust's documentation.
@@ -50,7 +50,7 @@ unsafe impl GlobalAlloc for CountingAllocator {
         ALLOCATION_COUNT.fetch_add(1, Ordering::SeqCst);
         System.alloc(layout)
     }
-    
+
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         System.dealloc(ptr, layout);
     }
@@ -64,6 +64,7 @@ fn main() {
     println!("There were {} allocations before calling main!", x);
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=nightly&mode=debug&edition=2018&gist=fb5060025ba79fc0f906b65a4ef8eb8e)
 
 As of the time of writing, there are five allocations that happen before `main`
@@ -78,6 +79,7 @@ we'll follow this guide:
 
 Finally, there are two "addendum" issues that are important to address when discussing
 Rust and the heap:
+
 - Non-heap alternatives to many standard library types are available.
 - Special allocators to track memory behavior should be used to benchmark code.
 
@@ -93,6 +95,7 @@ comes from C++, and while it's closely linked to a general design pattern of
 we'll use it here specifically to describe objects that are responsible for managing
 ownership of data allocated on the heap. The smart pointers available in the `alloc`
 crate should look mostly familiar:
+
 - [`Box`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html)
 - [`Rc`](https://doc.rust-lang.org/alloc/rc/struct.Rc.html)
 - [`Arc`](https://doc.rust-lang.org/alloc/sync/struct.Arc.html)
@@ -100,6 +103,7 @@ crate should look mostly familiar:
 
 The [standard library](https://doc.rust-lang.org/std/) also defines some smart pointers
 to manage heap objects, though more than can be covered here. Some examples are:
+
 - [`RwLock`](https://doc.rust-lang.org/std/sync/struct.RwLock.html)
 - [`Mutex`](https://doc.rust-lang.org/std/sync/struct.Mutex.html)
 
@@ -142,6 +146,7 @@ pub fn my_cow() {
     Cow::from("drop");
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/4AMQug)
 
 # Collections
@@ -157,8 +162,8 @@ Common types that fall under this umbrella are
 [`String`](https://doc.rust-lang.org/stable/alloc/string/struct.String.html)
 (not [`str`](https://doc.rust-lang.org/std/primitive.str.html)).
 
-While collections store the objects they own in heap memory, *creating new collections
-will not allocate on the heap*. This is a bit weird; if we call `Vec::new()`, the
+While collections store the objects they own in heap memory, _creating new collections
+will not allocate on the heap_. This is a bit weird; if we call `Vec::new()`, the
 assembly shows a corresponding call to `real_drop_in_place`:
 
 ```rust
@@ -167,6 +172,7 @@ pub fn my_vec() {
     Vec::<u8>::new();
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/1WkNtC)
 
 But because the vector has no elements to manage, no calls to the allocator
@@ -179,11 +185,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 fn main() {
     // Turn on panicking if we allocate on the heap
     DO_PANIC.store(true, Ordering::SeqCst);
-    
+
     // Interesting bit happens here
     let x: Vec<u8> = Vec::new();
     drop(x);
-    
+
     // Turn panicking back off, some deallocations occur
     // after main as well.
     DO_PANIC.store(false, Ordering::SeqCst);
@@ -201,7 +207,7 @@ unsafe impl GlobalAlloc for PanicAllocator {
         }
         System.alloc(layout)
     }
-    
+
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         if DO_PANIC.load(Ordering::SeqCst) {
             panic!("Unexpected deallocation.");
@@ -210,6 +216,7 @@ unsafe impl GlobalAlloc for PanicAllocator {
     }
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=831a297d176d015b1f9ace01ae416cc6)
 
 Other standard library types follow the same behavior; make sure to check out

@@ -2,7 +2,7 @@
 layout: post
 title: "What I Learned: Porting Dateutil Parser to Rust"
 description: ""
-category: 
+category:
 tags: [dtparse, rust]
 ---
 
@@ -18,7 +18,7 @@ what to do with your life (but you should totally keep reading).
 
 # Slow down, what?
 
-OK, fine, I guess I should start with *why* someone would do this.
+OK, fine, I guess I should start with _why_ someone would do this.
 
 [Dateutil](https://github.com/dateutil/dateutil) is a Python library for handling dates.
 The standard library support for time in Python is kinda dope, but there are a lot of extras
@@ -32,9 +32,10 @@ and [time](https://infiniteundo.com/post/25509354022/more-falsehoods-programmers
 it feels like it shouldn't be that difficult to do, until you try to do it,
 and you realize that people suck and this is why [we can't we have nice things](https://zachholman.com/talk/utc-is-enough-for-everyone-right).
 But alas, we'll try and make contemporary art out of the rubble and give it a
-pretentious name like *Time*.
+pretentious name like _Time_.
 
 ![A gravel mound](/assets/images/2018-06-25-gravel-mound.jpg)
+
 > [Time](https://www.goodfreephotos.com/united-states/montana/elkhorn/remains-of-the-mining-operation-elkhorn.jpg.php)
 
 What makes `dateutil.parser` great is that there's single function with a single argument that drives
@@ -60,11 +61,11 @@ your code blows up in new and exciting ways. Having a reference manual for verba
 what your code should be means that you don't spend that long debugging complicated logic,
 you're more looking for typos.
 
-Also, **don't use nice Rust things like enums**. While 
+Also, **don't use nice Rust things like enums**. While
 [one time it worked out OK for me](https://github.com/bspeice/dtparse/blob/7d565d3a78876dbebd9711c9720364fe9eba7915/src/lib.rs#L88-L94),
 I also managed to shoot myself in the foot a couple times because `dateutil` stores AM/PM as a boolean
 and I mixed up which was true, and which was false (side note: AM is false, PM is true).
-In general, writing nice code *should not be a first-pass priority* when you're just trying to recreate
+In general, writing nice code _should not be a first-pass priority_ when you're just trying to recreate
 the same functionality.
 
 **Exceptions are a pain.** Make peace with it. Python code is just allowed to skip stack frames.
@@ -84,11 +85,11 @@ indentation levels so you can keep things straight.
 [main test body](https://github.com/bspeice/dtparse/blob/b0e737f088eca8e83ab4244c6621a2797d247697/tests/compat.rs#L63-L217)
 wrapped up in a macro using [pyo3](https://github.com/PyO3/PyO3). It took two minutes to compile. After
 [moving things to a function](https://github.com/bspeice/dtparse/blob/e017018295c670e4b6c6ee1cfff00dbb233db47d/tests/compat.rs#L76-L205)
-compile times dropped down to ~5 seconds. Turns out 150 lines * 100 tests = a lot of redundant code to be compiled.
+compile times dropped down to ~5 seconds. Turns out 150 lines \* 100 tests = a lot of redundant code to be compiled.
 My new rule of thumb is that any macros longer than 10-15 lines are actually functions that need to be liberated, man.
 
 Finally, **I really miss list comprehensions and dictionary comprehensions.**
-As a quick comparison, see 
+As a quick comparison, see
 [this dateutil code](https://github.com/dateutil/dateutil/blob/16561fc99361979e88cccbd135393b06b1af7e90/dateutil/parser/_parser.py#L476)
 and [the implementation in Rust](https://github.com/bspeice/dtparse/blob/7d565d3a78876dbebd9711c9720364fe9eba7915/src/lib.rs#L619-L629).
 I probably wrote it wrong, and I'm sorry. Ultimately though, I hope that these comprehensions can be added through macros or syntax extensions.
@@ -106,7 +107,7 @@ you use `dateutil`. If you want `decimal` types, it's already in the
 Thus began my quest to find a decimal library in Rust. What I quickly found was summarized
 in a comment:
 
-> Writing a BigDecimal is easy. Writing a *good* BigDecimal is hard.
+> Writing a BigDecimal is easy. Writing a _good_ BigDecimal is hard.
 >
 > [-cmr](https://github.com/rust-lang/rust/issues/8937#issuecomment-34582794)
 
@@ -119,7 +120,7 @@ and I'm forced to dig through a [couple](https://github.com/rust-lang/rust/issue
 to figure out if the library I'm look at is dead or just stable.
 
 And even when the "canonical library" exists, there's no guarantees that it will be well-maintained.
-[Chrono](https://github.com/chronotope/chrono) is the *de facto* date/time library in Rust,
+[Chrono](https://github.com/chronotope/chrono) is the _de facto_ date/time library in Rust,
 and just released version 0.4.4 like two days ago. Meanwhile, [chrono-tz](https://github.com/chronotope/chrono-tz)
 appears to be dead in the water even though [there are people happy to help maintain it](https://github.com/chronotope/chrono-tz/issues/19).
 I know relatively little about it, but it appears that most of the release process is automated; keeping
@@ -130,10 +131,10 @@ that up to date should be a no-brainer.
 Specifically given "maintenance" being an [oft-discussed](https://www.reddit.com/r/rust/comments/48540g/thoughts_on_initiators_vs_maintainers/)
 issue, I'm going to try out the following policy to keep things moving on `dtparse`:
 
-1. Issues/PRs needing *maintainer* feedback will be updated at least weekly. I want to make sure nobody's blocking on me.
+1. Issues/PRs needing _maintainer_ feedback will be updated at least weekly. I want to make sure nobody's blocking on me.
 
-2. To keep issues/PRs needing *contributor* feedback moving, I'm going to (kindly) ask the contributor to check in after two weeks,
-and close the issue without resolution if I hear nothing back after a month.
+2. To keep issues/PRs needing _contributor_ feedback moving, I'm going to (kindly) ask the contributor to check in after two weeks,
+   and close the issue without resolution if I hear nothing back after a month.
 
 The second point I think has the potential to be a bit controversial, so I'm happy to receive feedback on that.
 And if a contributor responds with "hey, still working on it, had a kid and I'm running on 30 seconds of sleep a night,"

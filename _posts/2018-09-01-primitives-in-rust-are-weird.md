@@ -2,7 +2,7 @@
 layout: post
 title: "Primitives in Rust are Weird (and Cool)"
 description: "but mostly weird."
-category: 
+category:
 tags: [rust, c, java, python, x86]
 ---
 
@@ -17,9 +17,9 @@ fn main() {
 
 And to my complete befuddlement, it compiled, ran, and produced a completely sensible output.
 The reason I was so surprised has to do with how Rust treats a special category of things
-I'm going to call *primitives*. In the current version of the Rust book, you'll see them
+I'm going to call _primitives_. In the current version of the Rust book, you'll see them
 referred to as [scalars][rust_scalar], and in older versions they'll be called [primitives][rust_primitive],
-but we're going to stick with the name *primitive* for the time being. Explaining
+but we're going to stick with the name _primitive_ for the time being. Explaining
 why this program is so cool requires talking about a number of other programming languages,
 and keeping a consistent terminology makes things easier.
 
@@ -28,15 +28,17 @@ Java, Python, C, and x86 Assembly. And also me pretending like I know what I'm t
 
 # Defining primitives (Java)
 
-The reason I'm using the name *primitive* comes from how much of my life is Java right now.
+The reason I'm using the name _primitive_ comes from how much of my life is Java right now.
 Spoiler alert: a lot of it. And for the most part I like Java, but I digress. In Java, there's a
 special name for some specific types of values:
 
 > ```
-bool    char    byte
-short   int     long
-float   double
-```
+> bool    char    byte
+> short   int     long
+> float   double
+> ```
+
+````
 
 They are referred to as [primitives][java_primitive]. And relative to the other bits of Java,
 they have two unique features. First, they don't have to worry about the
@@ -51,7 +53,7 @@ class Main {
         System.out.println(x.toString()); // Triggers a compiler error
     }
 }
-```
+````
 
 The error is:
 
@@ -64,7 +66,7 @@ Main.java:5: error: int cannot be dereferenced
 
 Specifically, Java's [`Object`](https://docs.oracle.com/javase/10/docs/api/java/lang/Object.html)
 and things that inherit from it are pointers under the hood, and we have to dereference them before
-the fields and methods they define can be used. In contrast, *primitive types are just values* -
+the fields and methods they define can be used. In contrast, _primitive types are just values_ -
 there's nothing to be dereferenced. In memory, they're just a sequence of bits.
 
 If we really want, we can turn the `int` into an
@@ -138,7 +140,7 @@ my_function:
 ```
 
 At a really low level of memory, we're copying bits around using the [`mov`][x86_guide] instruction; nothing crazy.
-But to show how similar Rust is, let's take a look at our program translated from C to Rust: 
+But to show how similar Rust is, let's take a look at our program translated from C to Rust:
 
 ```rust
 fn my_function(x: i32) {}
@@ -177,15 +179,15 @@ example::my_function:
 ```
 
 The generated Rust assembly is functionally pretty close to the C assembly:
-*When working with primitives, we're just dealing with bits in memory*. 
+_When working with primitives, we're just dealing with bits in memory_.
 
 In Java we have to dereference a pointer to call its functions; in Rust, there's no pointer to dereference. So what
 exactly is going on with this `.to_string()` function call?
 
 # impl primitive (and Python)
 
-Now it's time to <strike>reveal my trap card</strike> show the revelation that tied all this together: *Rust has
-implementations for its primitive types.* That's right, `impl` blocks aren't only for `structs` and `traits`,
+Now it's time to <strike>reveal my trap card</strike> show the revelation that tied all this together: _Rust has
+implementations for its primitive types._ That's right, `impl` blocks aren't only for `structs` and `traits`,
 primitives get them too. Don't believe me? Check out [u32](https://doc.rust-lang.org/std/primitive.u32.html),
 [f64](https://doc.rust-lang.org/std/primitive.f64.html) and [char](https://doc.rust-lang.org/std/primitive.char.html)
 as examples.
@@ -207,7 +209,7 @@ example::main:
   mov rdi, rsp
   lea rax, [rip + .Lbyte_str.u]
   mov rsi, rax
-  
+
   ; Cool stuff right here
   call <T as alloc::string::ToString>::to_string@PLT
 
@@ -224,7 +226,7 @@ the location of the function we want to call (like Java), we have a function tha
 outside of the instance and just give that function the value `8`.
 
 This is an incredibly technical detail, but the interesting idea I had was this:
-*if `to_string()` is a static function, can I refer to the unbound function and give it an instance?*
+_if `to_string()` is a static function, can I refer to the unbound function and give it an instance?_
 
 Better explained in code (and a [compiler explorer](https://godbolt.org/z/fJY-gA) link
 because I seriously love this thing):
@@ -269,7 +271,7 @@ m.my_function()
 MyClass.my_function(m)
 ```
 
-And Python tries to make you *think* that primitives can have instance methods...
+And Python tries to make you _think_ that primitives can have instance methods...
 
 ```python
 >>> dir(8)

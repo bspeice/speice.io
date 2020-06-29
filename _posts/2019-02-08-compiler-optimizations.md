@@ -2,7 +2,7 @@
 layout: post
 title: "Compiler Optimizations: What It's Done Lately"
 description: "A lot. The answer is a lot."
-category: 
+category:
 tags: [rust, understanding-allocations]
 ---
 
@@ -32,13 +32,13 @@ we're focusing on interesting things the Rust language (and LLVM!) can do
 with memory management. We'll still be looking at assembly code to
 understand what's going on, but it's important to mention again:
 **please use automated tools like
-[alloc-counter](https://crates.io/crates/alloc_counter) to double-check 
-memory behavior if it's something you care about**. 
+[alloc-counter](https://crates.io/crates/alloc_counter) to double-check
+memory behavior if it's something you care about**.
 It's far too easy to mis-read assembly in large code sections, you should
 always verify behavior if you care about memory usage.
 
-The guiding principal as we move forward is this: *optimizing compilers
-won't produce worse programs than we started with.* There won't be any
+The guiding principal as we move forward is this: _optimizing compilers
+won't produce worse programs than we started with._ There won't be any
 situations where stack allocations get moved to heap allocations.
 There will, however, be an opera of optimization.
 
@@ -57,7 +57,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 pub fn cmp(x: u32) {
     // Turn on panicking if we allocate on the heap
     DO_PANIC.store(true, Ordering::SeqCst);
-    
+
     // The compiler is able to see through the constant `Box`
     // and directly compare `x` to 24 - assembly line 73
     let y = Box::new(24);
@@ -70,7 +70,7 @@ pub fn cmp(x: u32) {
     // LLVM doesn't strip out all the code. If `y` is marked
     // volatile instead, allocation will be forced.
     unsafe { std::ptr::read_volatile(&equals) };
-    
+
     // Turn off panicking, as there are some deallocations
     // when we exit main.
     DO_PANIC.store(false, Ordering::SeqCst);
@@ -92,7 +92,7 @@ unsafe impl GlobalAlloc for PanicAllocator {
         }
         System.alloc(layout)
     }
-    
+
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         if DO_PANIC.load(Ordering::SeqCst) {
             panic!("Unexpected deallocation.");
@@ -101,6 +101,7 @@ unsafe impl GlobalAlloc for PanicAllocator {
     }
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/BZ_Yp3)  
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=release&edition=2018&gist=4a765f753183d5b919f62c71d2109d5d)
 
@@ -147,5 +148,6 @@ pub fn main() {
     let _x = EightM::default();
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/daHn7P)  
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=release&edition=2018&gist=4c253bf26072119896ab93c6ef064dc0)

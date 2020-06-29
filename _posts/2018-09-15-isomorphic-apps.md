@@ -2,7 +2,7 @@
 layout: post
 title: "Isomorphic Desktop Apps with Rust"
 description: "Electron + WASM = ☣"
-category: 
+category:
 tags: [rust, javascript, webassembly]
 ---
 
@@ -18,20 +18,20 @@ nicer and more fun at parties. But I cringe every time "Webpack" is mentioned, a
 that the [language specification](https://ecma-international.org/publications/standards/Ecma-402.htm)
 dramatically outpaces anyone's [actual implementation](https://kangax.github.io/compat-table/es2016plus/).
 The answer to this conundrum is of course to recompile code from newer versions of the language to
-older versions *of the same language* before running. At least [Babel] is a nice tongue-in-cheek reference.
+older versions _of the same language_ before running. At least [Babel] is a nice tongue-in-cheek reference.
 
 Yet for as much hate as [Electron] receives, it does a stunningly good job at solving
-a really hard problem: *how the hell do I put a button on the screen and react when the user clicks it*?
+a really hard problem: _how the hell do I put a button on the screen and react when the user clicks it_?
 GUI programming is hard, straight up. But if browsers are already able to run everywhere, why don't
 we take advantage of someone else solving the hard problems for us? I don't like that I have to use
 Javascript for it, but I really don't feel inclined to whip out good ol' [wxWidgets].
 
-Now there are other native solutions ([libui-rs], [conrod], [oh hey wxWdidgets again!][wxRust]),
+Now there are other native solutions ([libui-rs], [conrod], [oh hey wxWdidgets again!][wxrust]),
 but those also have their own issues with distribution, styling, etc. With Electron, I can
 `yarn create electron-app my-app` and just get going, knowing that packaging/upgrades/etc.
 are built in.
 
-My question is: given recent innovations with WASM, *are we Electron yet*?
+My question is: given recent innovations with WASM, _are we Electron yet_?
 
 No, not really.
 
@@ -44,8 +44,8 @@ There may already be solutions to the issues I discuss, but I'm totally unaware 
 so I'm going to try and organize what I did manage to discover.
 
 I should also mention that the content and things I'm talking about here are not intended to be prescriptive,
-but more "if someone else is interested, what do we already know doesn't work?" *I expect everything in this post to be obsolete
-within two months.* Even over the course of writing this, [a separate blog post](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/)
+but more "if someone else is interested, what do we already know doesn't work?" _I expect everything in this post to be obsolete
+within two months._ Even over the course of writing this, [a separate blog post](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/)
 had to be modified because [upstream changes](https://github.com/WebAssembly/binaryen/pull/1642)
 broke a [Rust tool](https://github.com/rustwasm/wasm-bindgen/pull/787) the post tried to use.
 The post ultimately [got updated](https://mnt.io/2018/08/28/from-rust-to-beyond-the-asm-js-galaxy/#comment-477),
@@ -55,13 +55,13 @@ I'll also note that we're going to skip [asm.js] and [emscripten]. Truth be told
 to output anything, and so I'm just going to say [here be dragons.](https://en.wikipedia.org/wiki/Here_be_dragons)
 Everything I'm discussing here uses the `wasm32-unknown-unknown` target.
 
-The code that I *did* get running is available [over here](https://github.com/speice-io/isomorphic-rust).
+The code that I _did_ get running is available [over here](https://github.com/speice-io/isomorphic-rust).
 Feel free to use it as a starting point, but I'm mostly including the link as a reference for the things
 that were attempted.
 
 # An Example Running Application
 
-So, I did *technically* get a running application:
+So, I did _technically_ get a running application:
 
 ![Electron app using WASM](/assets/images/2018-09-15-electron-percy-wasm.png)
 
@@ -142,10 +142,10 @@ looks something like this:
 
 - `yarn start` triggers the `prestart` script
 - `prestart` checks for missing tools (`wasm-bindgen-cli`, etc.) and then:
-    - Uses `cargo` to compile the Rust code into WASM
-    - Uses `wasm-bindgen` to link the WASM blob into a Javascript file with exported symbols
-    - Uses `webpack` to bundle the page start script with the Javascript we just generated
-        - Uses `babel` under the hood to compile the `wasm-bindgen` code down from ES6 into something browser-compatible
+  - Uses `cargo` to compile the Rust code into WASM
+  - Uses `wasm-bindgen` to link the WASM blob into a Javascript file with exported symbols
+  - Uses `webpack` to bundle the page start script with the Javascript we just generated
+    - Uses `babel` under the hood to compile the `wasm-bindgen` code down from ES6 into something browser-compatible
 - The `start` script runs an Electron Forge handler to do some sanity checks
 - Electron actually starts
 
@@ -175,7 +175,7 @@ exactly match, so it's required that these two version are kept in sync by
 either updating the wasm-bindgen dependency or this binary.
 ```
 
-Not that I ever managed to run into this myself (*coughs nervously*).
+Not that I ever managed to run into this myself (_coughs nervously_).
 
 There are two projects attempting to be "application frameworks": [percy] and [yew]. Between those,
 I managed to get [two](https://github.com/speice-io/isomorphic-rust/tree/master/percy)
@@ -256,7 +256,7 @@ can become a thing:
 [libui-rs]: https://github.com/LeoTindall/libui-rs/
 [electron]: https://electronjs.org/
 [babel]: https://babeljs.io/
-[wxRust]: https://github.com/kenz-gelsoft/wxRust
+[wxrust]: https://github.com/kenz-gelsoft/wxRust
 [wasm-bindgen]: https://github.com/rustwasm/wasm-bindgen
 [js-sys]: https://crates.io/crates/js-sys
 [percy-webapis]: https://crates.io/crates/percy-webapis

@@ -2,7 +2,7 @@
 layout: post
 title: "QADAPT - debug_assert! for your memory usage"
 description: "...and why you want an allocator that goes 💥."
-category: 
+category:
 tags: []
 ---
 
@@ -21,7 +21,7 @@ There's another part of the human condition that derives joy from seeing things 
 
 <iframe src="https://giphy.com/embed/YA6dmVW0gfIw8" width="480" height="336" frameBorder="0"></iframe>
 
-And *that's* the part I'm going to focus on.
+And _that's_ the part I'm going to focus on.
 
 # Why an Allocator?
 
@@ -30,7 +30,7 @@ There are three reasons for that:
 
 1. Allocation/dropping is slow
 2. It's difficult to know exactly when Rust will allocate or drop, especially when using
-code that you did not write
+   code that you did not write
 3. I want automated tools to verify behavior, instead of inspecting by hand
 
 When I say "slow," it's important to define the terms. If you're writing web applications,
@@ -38,7 +38,7 @@ you'll spend orders of magnitude more time waiting for the database than you wil
 However, there's still plenty of code where micro- or nano-seconds matter; think
 [finance](https://www.youtube.com/watch?v=NH1Tta7purM),
 [real-time audio](https://www.reddit.com/r/rust/comments/9hg7yj/synthesizer_progress_update/e6c291f),
-[self-driving cars](https://polysync.io/blog/session-types-for-hearty-codecs/), and 
+[self-driving cars](https://polysync.io/blog/session-types-for-hearty-codecs/), and
 [networking](https://carllerche.github.io/bytes/bytes/index.html).
 In these situations it's simply unacceptable for you to spend time doing things
 that are not your program, and waiting on the allocator is not cool.
@@ -88,7 +88,7 @@ as you expect them to.
 
 So, how exactly does QADAPT solve these problems? **Whenever an allocation or drop occurs in code marked
 allocation-safe, QADAPT triggers a thread panic.** We don't want to let the program continue as if
-nothing strange happened, *we want things to explode*.
+nothing strange happened, _we want things to explode_.
 
 However, you don't want code to panic in production because of circumstances you didn't predict.
 Just like [`debug_assert!`](https://doc.rust-lang.org/std/macro.debug_assert.html),

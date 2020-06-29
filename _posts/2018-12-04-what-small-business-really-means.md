@@ -1,12 +1,12 @@
 ---
 layout: post
-title: "More \"What Companies Really Mean\""
-description: "when they ask \"Why should we hire you?\""
-category: 
+title: 'More "What Companies Really Mean"'
+description: 'when they ask "Why should we hire you?"'
+category:
 tags: []
 ---
 
-I recently stumbled across a phenomenal small article entitled 
+I recently stumbled across a phenomenal small article entitled
 [What Startups Really Mean By "Why Should We Hire You?"](https://angel.co/blog/what-startups-really-mean-by-why-should-we-hire-you).
 Having been interviewed by smaller companies (though not exactly startups),
 the questions and subtexts are the same. There's often a question behind
@@ -17,8 +17,8 @@ Let me also make note of one more question/euphemism I've come across:
 
 # How do you feel about Production Support?
 
-**Translation**: *We're a fairly small team, and when things break on an evening/weekend/Christmas Day,
-can we call on you to be there?*
+**Translation**: _We're a fairly small team, and when things break on an evening/weekend/Christmas Day,
+can we call on you to be there?_
 
 I've met decidedly few people in my life who truly enjoy the "ops" side of "devops".
 They're incredibly good at taking an impossible problem, pre-existing knowledge of
@@ -33,4 +33,4 @@ Small teams have no such luck. If you're interviewing at a small company, especi
 "data scientist" or other somesuch position, be aware that systems can and do spontaneously
 combust at the most inopportune moments.
 
-**Terrible-but-popular answers include**: *It's a part of the job, and I'm happy to contribute.*
+**Terrible-but-popular answers include**: _It's a part of the job, and I'm happy to contribute._

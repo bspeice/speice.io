@@ -2,7 +2,7 @@
 layout: post
 title: "Allocations in Rust"
 description: "An introduction to the memory model."
-category: 
+category:
 tags: [rust, understanding-allocations]
 ---
 
@@ -55,7 +55,7 @@ distinction! If you:
 1. Never use `unsafe`
 2. Never use `#![feature(alloc)]` or the [`alloc` crate](https://doc.rust-lang.org/alloc/index.html)
 
-...then it's not possible for you to use dynamic memory! 
+...then it's not possible for you to use dynamic memory!
 
 For some uses of Rust, typically embedded devices, these constraints are OK.
 They have very limited memory, and the program binary size itself may significantly
@@ -75,7 +75,7 @@ would struggle without access to [`std::vector`](https://en.cppreference.com/w/c
 `Box`, `Rc`, etc., are also unusable for the same reason.
 
 Whether writing code for embedded devices or not, the important thing in both situations
-is how much you know *before your application starts* about what its memory usage will look like.
+is how much you know _before your application starts_ about what its memory usage will look like.
 In embedded devices, there's a small, fixed amount of memory to use.
 In a browser, you have no idea how large [google.com](https://www.google.com)'s home page is until you start
 trying to download it. The compiler uses this knowledge (or lack thereof) to optimize
@@ -106,5 +106,5 @@ Finally, I'll do what I can to flag potential future changes but the Rust docs
 have a notice worth repeating:
 
 > Rust does not currently have a rigorously and formally defined memory model.
->  
+>
 > -- [the docs](https://doc.rust-lang.org/std/ptr/fn.read_volatile.html)

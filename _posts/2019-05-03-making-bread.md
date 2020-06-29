@@ -2,7 +2,7 @@
 layout: post
 title: "Making Bread"
 description: "...because I've got some free time now. 🍞"
-category: 
+category:
 tags: [baking]
 ---
 

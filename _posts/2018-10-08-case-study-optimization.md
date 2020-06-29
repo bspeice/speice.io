@@ -2,7 +2,7 @@
 layout: post
 title: "A Case Study in Heaptrack"
 description: "...because you don't need no garbage collection"
-category: 
+category:
 tags: []
 ---
 
@@ -15,12 +15,12 @@ One of my earliest conversations about programming went like this:
 
 ...though it's not like the first code I wrote was for a
 [graphing calculator](https://education.ti.com/en/products/calculators/graphing-calculators/ti-84-plus-se)
-packing a whole 24KB of RAM. By the way, *what are you doing on my lawn?*
+packing a whole 24KB of RAM. By the way, _what are you doing on my lawn?_
 
 The principle remains though: be efficient with the resources you have, because
 [what Intel giveth, Microsoft taketh away](http://exo-blog.blogspot.com/2007/09/what-intel-giveth-microsoft-taketh-away.html).
 My professional work is focused on this kind of efficiency; low-latency financial markets demand that
-you understand at a deep level *exactly* what your code is doing. As I continue experimenting with Rust for
+you understand at a deep level _exactly_ what your code is doing. As I continue experimenting with Rust for
 personal projects, it's exciting to bring a utilitarian mindset with me: there's flexibility for the times I pretend
 to have a garbage collector, and flexibility for the times that I really care about how memory is used.
 
@@ -29,14 +29,14 @@ to be a starting toolkit to empower analysis of your own code.
 
 # Curiosity
 
-When I first started building the [dtparse] crate, my intention was to mirror as closely as possible 
+When I first started building the [dtparse] crate, my intention was to mirror as closely as possible
 the equivalent [Python library][dateutil]. Python, as you may know, is garbage collected. Very rarely is memory
 usage considered in Python, and I likewise wasn't paying too much attention when `dtparse` was first being built.
 
 This lackadaisical approach to memory works well enough, and I'm not planning on making `dtparse` hyper-efficient.
 But every so often, I've wondered: "what exactly is going on in memory?" With the advent of Rust 1.28 and the
 [Global Allocator trait](https://doc.rust-lang.org/std/alloc/trait.GlobalAlloc.html), I had a really great idea:
-*build a custom allocator that allows you to track your own allocations.* That way, you can do things like
+_build a custom allocator that allows you to track your own allocations._ That way, you can do things like
 writing tests for both correct results and correct memory usage. I gave it a [shot][qadapt], but learned
 very quickly: **never write your own allocator**. It went from "fun weekend project" to
 "I have literally no idea what my computer is doing" at breakneck speed.
@@ -97,7 +97,7 @@ For example, we can see that all executions happened during the `main` function:
 
 ![allocations in dtparse](/assets/images/2018-10-heaptrack/heaptrack-dtparse-colorized.png)
 
-...and within *that*, allocations happened in two different places:
+...and within _that_, allocations happened in two different places:
 
 ![allocations in parseinfo](/assets/images/2018-10-heaptrack/heaptrack-parseinfo-colorized.png)
 
@@ -124,6 +124,7 @@ pub fn parse(timestr: &str) -> ParseResult<(NaiveDateTime, Option<FixedOffset>)>
     Ok((res.0, res.1))
 }
 ```
+
 > [dtparse](https://github.com/bspeice/dtparse/blob/4d7c5dd99572823fa4a390b483c38ab020a2172f/src/lib.rs#L1286)
 
 ---

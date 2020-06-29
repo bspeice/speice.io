@@ -2,7 +2,7 @@
 layout: post
 title: "Binary Format Shootout"
 description: "Cap'n Proto vs. Flatbuffers vs. SBE"
-category: 
+category:
 tags: [rust]
 ---
 
@@ -26,7 +26,7 @@ Any one of these will satisfy the project requirements: easy to transmit over a 
 and polyglot support. But how do you actually pick one? It's impossible to know what issues will follow that choice,
 so I tend to avoid commitment until the last possible moment.
 
-Still, a choice must be made. Instead of worrying about which is "the best," I decided to build a small 
+Still, a choice must be made. Instead of worrying about which is "the best," I decided to build a small
 proof-of-concept system in each format and pit them against each other. All code can be found in the
 [repository](https://github.com/speice-io/marketdata-shootout) for this post.
 
@@ -204,7 +204,7 @@ This test measures, on a
 how long it takes to serialize the IEX message into the desired format and write to a pre-allocated buffer.
 
 | Schema               | Median | 99th Pctl | 99.9th Pctl | Total  |
-|:---------------------|:-------|:----------|:------------|:-------|
+| :------------------- | :----- | :-------- | :---------- | :----- |
 | Cap'n Proto Packed   | 413ns  | 1751ns    | 2943ns      | 14.80s |
 | Cap'n Proto Unpacked | 273ns  | 1828ns    | 2836ns      | 10.65s |
 | Flatbuffers          | 355ns  | 2185ns    | 3497ns      | 14.31s |
@@ -219,7 +219,7 @@ perform some basic aggregation. The aggregation code is the same for each format
 so any performance differences are due solely to the format implementation.
 
 | Schema               | Median | 99th Pctl | 99.9th Pctl | Total  |
-|:---------------------|:-------|:----------|:------------|:-------|
+| :------------------- | :----- | :-------- | :---------- | :----- |
 | Cap'n Proto Packed   | 539ns  | 1216ns    | 2599ns      | 18.92s |
 | Cap'n Proto Unpacked | 366ns  | 737ns     | 1583ns      | 12.32s |
 | Flatbuffers          | 173ns  | 421ns     | 1007ns      | 6.00s  |

@@ -2,12 +2,12 @@
 layout: post
 title: "Global Memory Usage: The Whole World"
 description: "Static considered slightly less harmful."
-category: 
+category:
 tags: [rust, understanding-allocations]
 ---
 
 The first memory type we'll look at is pretty special: when Rust can prove that
-a *value* is fixed for the life of a program (`const`), and when a *reference* is unique for
+a _value_ is fixed for the life of a program (`const`), and when a _reference_ is unique for
 the life of a program (`static` as a declaration, not
 [`'static`](https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html#the-static-lifetime)
 as a lifetime), we can make use of global memory. This special section of data is embedded
@@ -21,7 +21,7 @@ for these two keywords is available, we'll take a hands-on approach to the topic
 
 # **const**
 
-When a *value* is guaranteed to be unchanging in your program (where "value" may be scalars,
+When a _value_ is guaranteed to be unchanging in your program (where "value" may be scalars,
 `struct`s, etc.), you can declare it `const`.
 This tells the compiler that it's safe to treat the value as never changing, and enables
 some interesting optimizations; not only is there no initialization cost to
@@ -29,6 +29,7 @@ creating the value (it is loaded at the same time as the executable parts of you
 but the compiler can also copy the value around if it speeds up the code.
 
 The points we need to address when talking about `const` are:
+
 - `Const` values are stored in read-only memory - it's impossible to modify.
 - Values resulting from calling a `const fn` are materialized at compile-time.
 - The compiler may (or may not) copy `const` values wherever it chooses.
@@ -38,10 +39,10 @@ The points we need to address when talking about `const` are:
 The first point is a bit strange - "read-only memory."
 [The Rust book](https://doc.rust-lang.org/book/ch03-01-variables-and-mutability.html#differences-between-variables-and-constants)
 mentions in a couple places that using `mut` with constants is illegal,
-but it's also important to demonstrate just how immutable they are. *Typically* in Rust
+but it's also important to demonstrate just how immutable they are. _Typically_ in Rust
 you can use [interior mutability](https://doc.rust-lang.org/book/ch15-05-interior-mutability.html)
 to modify things that aren't declared `mut`.
-[`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html) provides an 
+[`RefCell`](https://doc.rust-lang.org/std/cell/struct.RefCell.html) provides an
 example of this pattern in action:
 
 ```rust
@@ -62,6 +63,7 @@ fn main() {
     println!("Cell: {:?}", cell);
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=8e4bea1a718edaff4507944e825a54b2)
 
 When `const` is involved though, interior mutability is impossible:
@@ -83,6 +85,7 @@ fn main() {
     println!("Cell: {:?}", &CELL);
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=88fe98110c33c1b3a51e341f48b8ae00)
 
 And a second example using [`Once`](https://doc.rust-lang.org/std/sync/struct.Once.html):
@@ -101,6 +104,7 @@ fn main() {
     SURPRISE.call_once(|| println!("Initializing again???"));
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=c3cc5979b5e5434eca0f9ec4a06ee0ed)
 
 When the [`const` specification](https://github.com/rust-lang/rfcs/blob/26197104b7bb9a5a35db243d639aee6e46d35d75/text/0246-const-vs-static.md)
@@ -110,7 +114,7 @@ but it's still something to be aware of.
 
 ## Initialization == Compilation
 
-The next thing to mention is that `const` values are loaded into memory *as part of your program binary*.
+The next thing to mention is that `const` values are loaded into memory _as part of your program binary_.
 Because of this, any `const` values declared in your program will be "realized" at compile-time;
 accessing them may trigger a main-memory lookup (with a fixed address, so your CPU may
 be able to prefetch the value), but that's it.
@@ -125,6 +129,7 @@ pub fn multiply(value: u32) -> u32 {
     value * (*CELL.get_mut())
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/Th8boO)
 
 The compiler creates one `RefCell`, uses it everywhere, and never
@@ -147,6 +152,7 @@ pub fn multiply_twice(value: u32) -> u32 {
     value * FACTOR * FACTOR
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/ZtS54X)
 
 In this example, the `FACTOR` value is turned into the `mov edi, 1000` instruction
@@ -156,23 +162,24 @@ in both the `multiply` and `multiply_twice` functions; the "1000" value is never
 Finally, getting the address of a `const` value is possible, but not guaranteed
 to be unique (because the compiler can choose to copy values). I was unable to
 get non-unique pointers in my testing (even using different crates),
-but the specifications are clear enough: *don't rely on pointers to `const`
-values being consistent*. To be frank, caring about locations for `const` values
+but the specifications are clear enough: _don't rely on pointers to `const`
+values being consistent_. To be frank, caring about locations for `const` values
 is almost certainly a code smell.
 
 # **static**
 
 Static variables are related to `const` variables, but take a slightly different approach.
-When we declare that a *reference* is unique for the life of a program,
+When we declare that a _reference_ is unique for the life of a program,
 you have a `static` variable (unrelated to the `'static` lifetime). Because of the
 reference/value distinction with `const`/`static`,
 static variables behave much more like typical "global" variables.
 
 But to understand `static`, here's what we'll look at:
+
 - `static` variables are globally unique locations in memory.
 - Like `const`, `static` variables are loaded at the same time as your program being read into memory.
 - All `static` variables must implement the [`Sync`](https://doc.rust-lang.org/std/marker/trait.Sync.html)
-marker trait.
+  marker trait.
 - Interior mutability is safe and acceptable when using `static` variables.
 
 ## Memory Uniqueness
@@ -195,6 +202,7 @@ pub fn multiply_twice(value: u32) -> u32 {
     value * FACTOR * FACTOR
 }
 ```
+
 -- [Compiler Explorer](https://godbolt.org/z/uxmiRQ)
 
 Where [previously](#copying) there were plenty of
@@ -225,6 +233,7 @@ fn main() {
     println!("Static MyStruct: {:?}", MY_STRUCT);
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=b538dbc46076f12db047af4f4403ee6e)
 
 Things can get a bit weirder when using `const fn` though. In most cases, it just works:
@@ -247,6 +256,7 @@ fn main() {
     println!("const fn Static MyStruct: {:?}", MY_STRUCT);
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=8c796a6e7fc273c12115091b707b0255)
 
 However, there's a caveat: you're currently not allowed to use `const fn` to initialize
@@ -261,6 +271,7 @@ use std::cell::RefCell;
 // error[E0277]: `std::cell::RefCell<u8>` cannot be shared between threads safely
 static MY_LOCK: RefCell<u8> = RefCell::new(0);
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=c76ef86e473d07117a1700e21fd45560)
 
 It's likely that this will [change in the future](https://github.com/rust-lang/rfcs/blob/master/text/0911-const-fn.md) though.
@@ -292,6 +303,7 @@ static MY_STRUCT: MyStruct = MyStruct {
     y: RefCell::new(8)
 };
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=40074d0248f056c296b662dbbff97cfc)
 
 ## Interior Mutability
@@ -315,4 +327,5 @@ fn main() {
     INIT.call_once(|| panic!("INIT was called twice!"));
 }
 ```
+
 -- [Rust Playground](https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=3ba003a981a7ed7400240caadd384d59)
