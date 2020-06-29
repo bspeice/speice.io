@@ -15,22 +15,23 @@ fn main() {
 }
 ```
 
-And to my complete befuddlement, it compiled, ran, and produced a completely sensible output.
-The reason I was so surprised has to do with how Rust treats a special category of things
-I'm going to call _primitives_. In the current version of the Rust book, you'll see them
-referred to as [scalars][rust_scalar], and in older versions they'll be called [primitives][rust_primitive],
-but we're going to stick with the name _primitive_ for the time being. Explaining
-why this program is so cool requires talking about a number of other programming languages,
-and keeping a consistent terminology makes things easier.
+And to my complete befuddlement, it compiled, ran, and produced a completely sensible output. The
+reason I was so surprised has to do with how Rust treats a special category of things I'm going to
+call _primitives_. In the current version of the Rust book, you'll see them referred to as
+[scalars][rust_scalar], and in older versions they'll be called [primitives][rust_primitive], but
+we're going to stick with the name _primitive_ for the time being. Explaining why this program is so
+cool requires talking about a number of other programming languages, and keeping a consistent
+terminology makes things easier.
 
-**You've been warned:** this is going to be a tedious post about a relatively minor issue that involves
-Java, Python, C, and x86 Assembly. And also me pretending like I know what I'm talking about with assembly.
+**You've been warned:** this is going to be a tedious post about a relatively minor issue that
+involves Java, Python, C, and x86 Assembly. And also me pretending like I know what I'm talking
+about with assembly.
 
 # Defining primitives (Java)
 
-The reason I'm using the name _primitive_ comes from how much of my life is Java right now.
-Spoiler alert: a lot of it. And for the most part I like Java, but I digress. In Java, there's a
-special name for some specific types of values:
+The reason I'm using the name _primitive_ comes from how much of my life is Java right now. Spoiler
+alert: a lot of it. And for the most part I like Java, but I digress. In Java, there's a special
+name for some specific types of values:
 
 > ```
 > bool    char    byte
@@ -70,8 +71,8 @@ the fields and methods they define can be used. In contrast, _primitive types ar
 there's nothing to be dereferenced. In memory, they're just a sequence of bits.
 
 If we really want, we can turn the `int` into an
-[`Integer`](https://docs.oracle.com/javase/10/docs/api/java/lang/Integer.html) and then
-dereference it, but it's a bit wasteful:
+[`Integer`](https://docs.oracle.com/javase/10/docs/api/java/lang/Integer.html) and then dereference
+it, but it's a bit wasteful:
 
 ```java
 class Main {
@@ -89,9 +90,9 @@ differently, but we have to dig into the low-level details to see it in action.
 
 # Low Level Handling of Primitives (C)
 
-We first need to build a foundation for reading and understanding the assembly code the
-final answer requires. Let's begin with showing how the `C` language (and your computer)
-thinks about "primitive" values in memory:
+We first need to build a foundation for reading and understanding the assembly code the final answer
+requires. Let's begin with showing how the `C` language (and your computer) thinks about "primitive"
+values in memory:
 
 ```c
 void my_function(int num) {}
@@ -102,8 +103,9 @@ int main() {
 }
 ```
 
-The [compiler explorer](https://godbolt.org/z/lgNYcc) gives us an easy way of showing off
-the assembly-level code that's generated: <span style="font-size:.6em">whose output has been lightly edited</span>
+The [compiler explorer](https://godbolt.org/z/lgNYcc) gives us an easy way of showing off the
+assembly-level code that's generated: <span style="font-size:.6em">whose output has been lightly
+edited</span>
 
 ```nasm
 main:
@@ -139,8 +141,9 @@ my_function:
         ret
 ```
 
-At a really low level of memory, we're copying bits around using the [`mov`][x86_guide] instruction; nothing crazy.
-But to show how similar Rust is, let's take a look at our program translated from C to Rust:
+At a really low level of memory, we're copying bits around using the [`mov`][x86_guide] instruction;
+nothing crazy. But to show how similar Rust is, let's take a look at our program translated from C
+to Rust:
 
 ```rust
 fn my_function(x: i32) {}
@@ -151,8 +154,9 @@ fn main() {
 }
 ```
 
-And the assembly generated when we stick it in the [compiler explorer](https://godbolt.org/z/cAlmk0):
-<span style="font-size:.6em">again, lightly edited</span>
+And the assembly generated when we stick it in the
+[compiler explorer](https://godbolt.org/z/cAlmk0): <span style="font-size:.6em">again, lightly
+edited</span>
 
 ```nasm
 example::main:
@@ -178,22 +182,23 @@ example::my_function:
   ret
 ```
 
-The generated Rust assembly is functionally pretty close to the C assembly:
-_When working with primitives, we're just dealing with bits in memory_.
+The generated Rust assembly is functionally pretty close to the C assembly: _When working with
+primitives, we're just dealing with bits in memory_.
 
-In Java we have to dereference a pointer to call its functions; in Rust, there's no pointer to dereference. So what
-exactly is going on with this `.to_string()` function call?
+In Java we have to dereference a pointer to call its functions; in Rust, there's no pointer to
+dereference. So what exactly is going on with this `.to_string()` function call?
 
 # impl primitive (and Python)
 
-Now it's time to <strike>reveal my trap card</strike> show the revelation that tied all this together: _Rust has
-implementations for its primitive types._ That's right, `impl` blocks aren't only for `structs` and `traits`,
-primitives get them too. Don't believe me? Check out [u32](https://doc.rust-lang.org/std/primitive.u32.html),
-[f64](https://doc.rust-lang.org/std/primitive.f64.html) and [char](https://doc.rust-lang.org/std/primitive.char.html)
-as examples.
+Now it's time to <strike>reveal my trap card</strike> show the revelation that tied all this
+together: _Rust has implementations for its primitive types._ That's right, `impl` blocks aren't
+only for `structs` and `traits`, primitives get them too. Don't believe me? Check out
+[u32](https://doc.rust-lang.org/std/primitive.u32.html),
+[f64](https://doc.rust-lang.org/std/primitive.f64.html) and
+[char](https://doc.rust-lang.org/std/primitive.char.html) as examples.
 
-But the really interesting bit is how Rust turns those `impl` blocks into assembly. Let's break out the
-[compiler explorer](https://godbolt.org/z/6LBEwq) once again:
+But the really interesting bit is how Rust turns those `impl` blocks into assembly. Let's break out
+the [compiler explorer](https://godbolt.org/z/6LBEwq) once again:
 
 ```rust
 pub fn main() {
@@ -220,16 +225,16 @@ example::main:
 ```
 
 Now, this assembly is a bit more complicated, but here's the big revelation: **we're calling
-`to_string()` as a function that exists all on its own, and giving it the instance of `8`**.
-Instead of thinking of the value 8 as an instance of `u32` and then peeking in to find
-the location of the function we want to call (like Java), we have a function that exists
-outside of the instance and just give that function the value `8`.
+`to_string()` as a function that exists all on its own, and giving it the instance of `8`**. Instead
+of thinking of the value 8 as an instance of `u32` and then peeking in to find the location of the
+function we want to call (like Java), we have a function that exists outside of the instance and
+just give that function the value `8`.
 
-This is an incredibly technical detail, but the interesting idea I had was this:
-_if `to_string()` is a static function, can I refer to the unbound function and give it an instance?_
+This is an incredibly technical detail, but the interesting idea I had was this: _if `to_string()`
+is a static function, can I refer to the unbound function and give it an instance?_
 
-Better explained in code (and a [compiler explorer](https://godbolt.org/z/fJY-gA) link
-because I seriously love this thing):
+Better explained in code (and a [compiler explorer](https://godbolt.org/z/fJY-gA) link because I
+seriously love this thing):
 
 ```rust
 struct MyVal {
@@ -255,8 +260,8 @@ Rust is totally fine "binding" the function call to the instance, and also as a 
 
 MIND == BLOWN.
 
-Python does the same thing where I can both call functions bound to their instances
-and also call as an unbound function where I give it the instance:
+Python does the same thing where I can both call functions bound to their instances and also call as
+an unbound function where I give it the instance:
 
 ```python
 class MyClass():
@@ -297,18 +302,18 @@ SyntaxError: invalid syntax
 
 ...but in practice it's a bit complicated.
 
-So while Python handles binding instance methods in a way similar to Rust, it's still not able
-to run the example we started with.
+So while Python handles binding instance methods in a way similar to Rust, it's still not able to
+run the example we started with.
 
 # Conclusion
 
-This was a super-roundabout way of demonstrating it, but the way Rust handles incredibly minor details
-like primitives leads to really cool effects. Primitives are optimized like C in how they have a
-space-efficient memory layout, yet the language still has a lot of features I enjoy in Python
+This was a super-roundabout way of demonstrating it, but the way Rust handles incredibly minor
+details like primitives leads to really cool effects. Primitives are optimized like C in how they
+have a space-efficient memory layout, yet the language still has a lot of features I enjoy in Python
 (like both instance and late binding).
 
-And when you put it together, there are areas where Rust does cool things nobody else can;
-as a quirky feature of Rust's type system, `8.to_string()` is actually valid code.
+And when you put it together, there are areas where Rust does cool things nobody else can; as a
+quirky feature of Rust's type system, `8.to_string()` is actually valid code.
 
 Now go forth and fool your friends into thinking you know assembly. This is all I've got.
 
