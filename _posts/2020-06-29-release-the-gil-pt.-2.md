@@ -31,6 +31,7 @@ The C++ implementation is very simple:
 
 ```c++
 #include <cstdint>
+#include <pybind11/pybind.h>
 
 inline std::uint64_t fibonacci(std::uint64_t n) {
   if (n <= 1) {
@@ -77,7 +78,7 @@ those steps here, but the full project is available at [INSERT LINK HERE].
 # it's simply to keep the processor busy.
 N = 1_000_000_000;
 
-from fibonacci import fibonacci_gil, fibonacci_nogil
+from speiceio_pybind11 import fibonacci_gil, fibonacci_nogil
 ```
 
 We'll first run each function independently:
