@@ -3,7 +3,7 @@ layout: post
 title: "Release the GIL: Part 2 - Pybind11, PyO3"
 description: "More Python Parallelism"
 category:
-tags: [python]
+tags: [python, rust, c++]
 ---
 
 I've been continuing experiments with parallelism in Python; while these techniques are a bit niche,
@@ -25,6 +25,9 @@ The motto of [Pybind11](https://github.com/pybind/pybind11) is "seamless operabi
 and Python", and they certainly deliver on that. Setting up a hybrid project where C++ (using CMake)
 and Python (using setuptools) could coexist was straight-forward, and the repository also works as
 [a template](https://github.com/speice-io/release-the-gil-pybind11/settings) for future projects.
+
+TODO: Include anything about how Pybind11 and Cython are similar because of compilation to C++?
+Maybe also talk about project setup being a good deal more complicated?
 
 Just like the previous post, we'll examine a simple Fibonacci sequence implementation to demonstrate
 how Python's threading model interacts with Pybind11:
@@ -68,10 +71,28 @@ std::uint64_t fibonacci_nogil(std::uint64_t n) {
   py::gil_scoped_release release;
   return fibonacci(n);
 }
+
+PYBIND11_MODULE(speiceio_pybind11, m) {
+
+  m.def("fibonacci_gil", &fibonacci_gil, R"pbdoc(
+        Calculate the Nth Fibonacci number while implicitly holding the GIL
+    )pbdoc");
+
+  m.def("fibonacci_nogil", &fibonacci_nogil,
+        R"pbdoc(
+        Calculate the Nth Fibonacci number after explicitly unlocking the GIL
+    )pbdoc");
+
+#ifdef VERSION_INFO
+  m.attr("__version__") = VERSION_INFO;
+#else
+  m.attr("__version__") = "dev";
+#endif
+}
 ```
 
-Admittedly, the project setup is significantly more involved than Cython or Numba. I've omitted
-those steps here, but the full project is available at [INSERT LINK HERE].
+After the code is installed into a `virtualenv` or similar setup, we can use the functions to
+demonstrate GIL unlocking:
 
 ```python
 # The billionth Fibonacci number overflows `std::uint64_t`, but that's OK;
@@ -161,3 +182,120 @@ t1.join(); t2.join()
 
 Finally, it's import to note that scheduling matters; in this example, threads run in serial because
 the GIL-locked thread is started first.
+
+TODO: Note about double-unlocking:
+
+```c++
+void recurse_unlock() {
+  py::gil_scoped_release release;
+  return recurse_unlock();
+}
+```
+
+> <pre>
+> Python 3.8.2 (default, Apr 27 2020, 15:53:34) 
+> [GCC 9.3.0] on linux
+> Type "help", "copyright", "credits" or "license" for more information.
+> >>> from speiceio_pybind11 import recurse_unlock
+> >>> recurse_unlock()
+> Fatal Python error: PyEval_SaveThread: NULL tstate
+> Python runtime state: initialized
+> 
+> Current thread 0x00007f213a627740 (most recent call first):
+> File "<stdin>", line 1 in <module>
+>  [1]    34943 abort (core dumped)  python
+> </pre>
+
+# PyO3
+
+```python
+N = 1_000_000_000;
+
+from speiceio_pyo3 import fibonacci_gil, fibonacci_nogil
+```
+
+```python
+%%time
+_ = fibonacci_gil(N)
+```
+
+> <pre>
+> CPU times: user 283 ms, sys: 0 ns, total: 283 ms
+> Wall time: 282 ms
+> </pre>
+
+```python
+%%time
+_ = fibonacci_nogil(N)
+```
+
+> <pre>
+> CPU times: user 284 ms, sys: 0 ns, total: 284 ms
+> Wall time: 284 ms
+> </pre>
+
+```python
+%%time
+from threading import Thread
+
+# Create the two threads to run on
+t1 = Thread(target=fibonacci_gil, args=[N])
+t2 = Thread(target=fibonacci_gil, args=[N])
+# Start the threads
+t1.start(); t2.start()
+# Wait for the threads to finish
+t1.join(); t2.join()
+```
+
+> <pre>
+> CPU times: user 503 ms, sys: 3.83 ms, total: 507 ms
+> Wall time: 506 ms
+> </pre>
+
+```python
+%%time
+
+t1 = Thread(target=fibonacci_nogil, args=[N])
+t2 = Thread(target=fibonacci_gil, args=[N])
+t1.start(); t2.start()
+t1.join(); t2.join()
+```
+
+> <pre>
+> CPU times: user 501 ms, sys: 3.96 ms, total: 505 ms
+> Wall time: 252 ms
+> </pre>
+
+```python
+%%time
+
+# Note that the GIL-locked version is started first
+t1 = Thread(target=fibonacci_gil, args=[N])
+t2 = Thread(target=fibonacci_nogil, args=[N])
+t1.start(); t2.start()
+t1.join(); t2.join()
+```
+
+> <pre>
+> CPU times: user 533 ms, sys: 3.69 ms, total: 537 ms
+> Wall time: 537 ms
+> </pre>
+
+Interestingly enough, Rust's borrow rules actually _prevent_ double-unlocking because the GIL handle
+can't be transferred across threads:
+
+```rust
+fn recursive_unlock(py: Python) -> PyResult<()> {
+    py.allow_threads(|| recursive_unlock(py))
+}
+```
+
+> <pre>
+> error[E0277]: `std::rc::Rc<()>` cannot be shared between threads safely
+>   --> src/lib.rs:38:8
+>    |
+> 38 |     py.allow_threads(|| recursive_unlock(py))
+>    |        ^^^^^^^^^^^^^ `std::rc::Rc<()>` cannot be shared between threads safely
+>    |
+>    = help: within `pyo3::python::Python<'_>`, the trait `std::marker::Sync` is not implemented for `std::rc::Rc<()>`
+> </pre>
