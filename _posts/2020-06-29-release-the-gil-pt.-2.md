@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Release the GIL: Part 2 - Pybind11, PyO3"
+title: "Release the GIL: Pybind11, PyO3"
 description: "More Python Parallelism"
 category:
 tags: [python, rust, c++]
@@ -26,8 +26,11 @@ and Python", and they certainly deliver on that. Setting up a hybrid project whe
 and Python (using setuptools) could coexist was straight-forward, and the repository also works as
 [a template](https://github.com/speice-io/release-the-gil-pybind11/settings) for future projects.
 
-TODO: Include anything about how Pybind11 and Cython are similar because of compilation to C++?
-Maybe also talk about project setup being a good deal more complicated?
+On a technical level, there's a great deal of overlap between Pybind11 and Cython. Where Pybind11
+starts with C++ and facilitates interaction with the interpreter, Cython starts with a Python-like
+language and facilitates interaction with other code written in C++. In a way, Pybind11 is for C++
+developers who want to interact with Python, and Cython is for Python developers who want to
+interact with C++.
 
 Just like the previous post, we'll examine a simple Fibonacci sequence implementation to demonstrate
 how Python's threading model interacts with Pybind11:
