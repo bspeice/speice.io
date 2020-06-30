@@ -103,7 +103,7 @@ N = 1_000_000_000;
 from speiceio_pybind11 import fibonacci_gil, fibonacci_nogil
 ```
 
-Even though two threads are used, the GIL prevents those threads from running in parallel:
+In the first example, even though two threads are used, the GIL constrains code to run in serial:
 
 ```python
 %%time
