@@ -26,11 +26,10 @@ and Python", and they certainly deliver on that. Setting up a hybrid project whe
 and Python (using setuptools) could coexist was straight-forward, and the repository also works as
 [a template](https://github.com/speice-io/release-the-gil-pybind11/settings) for future projects.
 
-On a technical level, there's a great deal of overlap between Pybind11 and Cython. Where Pybind11
-starts with C++ and facilitates interaction with the interpreter, Cython starts with a Python-like
-language and facilitates interaction with other code written in C++. In a way, Pybind11 is for C++
-developers who want to interact with Python, and Cython is for Python developers who want to
-interact with C++.
+There's a great deal of overlap between Pybind11 and Cython. Where Pybind11 makes it easy for C++ to
+interact with the interpreter, Cython uses a Python-like language to facilitate interaction with
+C++. Another way of thinking about is like this: Pybind11 is for C++ developers who want to interact
+with Python, and Cython is for Python developers who want to interact with C++.
 
 Just like the previous post, we'll examine a simple Fibonacci sequence implementation to demonstrate
 how Python's threading model interacts with Pybind11:
@@ -46,9 +45,8 @@ inline std::uint64_t fibonacci(std::uint64_t n) {
 
   std::uint64_t a = 0;
   std::uint64_t b = 1;
-  std::uint64_t c = 0;
+  std::uint64_t c = a + b;
 
-  c = a + b;
   for (std::uint64_t _i = 2; _i < n; _i++) {
     a = b;
     b = c;
