@@ -24,7 +24,7 @@ techniques below for managing the GIL in a Python extension.
 The motto of [Pybind11](https://github.com/pybind/pybind11) is "seamless operability between C++11
 and Python", and they certainly deliver on that. Setting up a hybrid project where C++ (using CMake)
 and Python (using setuptools) could coexist was straight-forward, and the repository also works as
-[a template](LINK HERE) for future projects.
+[a template](https://github.com/speice-io/release-the-gil-pybind11/settings) for future projects.
 
 Just like the previous post, we'll examine a simple Fibonacci sequence implementation to demonstrate
 how Python's threading model interacts with Pybind11:
