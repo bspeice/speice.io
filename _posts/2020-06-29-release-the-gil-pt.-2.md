@@ -92,8 +92,8 @@ PYBIND11_MODULE(speiceio_pybind11, m) {
 }
 ```
 
-After the code is installed into a `virtualenv` or similar setup, we can use the functions to
-demonstrate GIL unlocking:
+After building the C++ module, those functions can be used to demonstrate the effect of unlocking
+the GIL.
 
 ```python
 # The billionth Fibonacci number overflows `std::uint64_t`, but that's OK;
@@ -103,7 +103,7 @@ N = 1_000_000_000;
 from speiceio_pybind11 import fibonacci_gil, fibonacci_nogil
 ```
 
-Even when using two threads, the code is effectively serial:
+Even though two threads are used, the GIL prevents those threads from running in parallel:
 
 ```python
 %%time
@@ -123,9 +123,11 @@ t1.join(); t2.join()
 > Wall time: 705 ms
 > </pre>
 
-The elapsed ("wall") time is effectively the same as the time spent executing on the CPU ("user").
+Because the elapsed ("wall") time is effectively the same as the time spent executing on the CPU
+("user"), there was no benefit to using multiple threads.
 
-However, if one thread unlocks the GIL first, then the threads will execute in parallel:
+However, if one thread unlocks the GIL first, the Python interpreter is allowed to execute the
+second thread in parallel:
 
 ```python
 %%time
@@ -141,9 +143,10 @@ t1.join(); t2.join()
 > Wall time: 372 ms
 > </pre>
 
-The CPU time ("user") hasn't changed, but the elapsed time ("wall") is effectively cut in half.
+The CPU time ("user") hasn't changed much, but the elapsed time ("wall") is effectively cut in half.
 
-TODO: Note about double-unlocking:
+Caution is advised though; attempting to unlock the GIL when it isn't locked will terminate the
+current process:
 
 ```c++
 void recurse_unlock() {
