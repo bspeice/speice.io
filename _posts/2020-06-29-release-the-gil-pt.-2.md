@@ -22,12 +22,12 @@ techniques below for managing the GIL in a Python extension.
 # Pybind11
 
 The motto of [Pybind11](https://github.com/pybind/pybind11) is "seamless operability between C++11
-and Python", and they certainly deliver on that. My experience was that it was relatively simple to
-set up a hybrid project where C++ (using CMake) and Python (using setuptools) were able to
-peacefully coexist. We'll examine a simple Fibonacci sequence implementation to demonstrate how
-Python's threading model interacts with Pybind11.
+and Python", and they certainly deliver on that. Setting up a hybrid project where C++ (using CMake)
+and Python (using setuptools) could coexist was straight-forward, and the repository also works as
+[a template](LINK HERE) for future projects.
 
-The C++ implementation is very simple:
+Just like the previous post, we'll examine a simple Fibonacci sequence implementation to demonstrate
+how Python's threading model interacts with Pybind11:
 
 ```c++
 #include <cstdint>
@@ -61,9 +61,9 @@ std::uint64_t fibonacci_gil(std::uint64_t n) {
 }
 
 std::uint64_t fibonacci_nogil(std::uint64_t n) {
-  // Because the GIL is held by default, we need to explicitly release it here.
-  // Note that like Cython, releasing the lock multiple times will crash the
-  // interpreter.
+  // Because the GIL is held by default, we need to explicitly release it here
+  // to run in parallel.
+  // WARNING: Releasing the lock multiple times will crash the process.
 
   py::gil_scoped_release release;
   return fibonacci(n);
@@ -74,8 +74,8 @@ Admittedly, the project setup is significantly more involved than Cython or Numb
 those steps here, but the full project is available at [INSERT LINK HERE].
 
 ```python
-# This number will overflow, but that's OK; our purpose isn't to get an accurate result,
-# it's simply to keep the processor busy.
+# The billionth Fibonacci number overflows `std::uint64_t`, but that's OK;
+# our purpose is keeping the CPU busy, not getting the correct result.
 N = 1_000_000_000;
 
 from speiceio_pybind11 import fibonacci_gil, fibonacci_nogil
