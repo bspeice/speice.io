@@ -102,31 +102,7 @@ N = 1_000_000_000;
 from speiceio_pybind11 import fibonacci_gil, fibonacci_nogil
 ```
 
-We'll first run each function independently:
-
-```python
-%%time
-_ = fibonacci_gil(N);
-```
-
-> <pre>
-> CPU times: user 350 ms, sys: 3.54 ms, total: 354 ms
-> Wall time: 355 ms
-> </pre>
-
-```python
-%%time
-_ = fibonacci_nogil(N);
-```
-
-> <pre>
-> CPU times: user 385 ms, sys: 0 ns, total: 385 ms
-> Wall time: 384 ms
-> </pre>
-
-There's some minor variation in how long it takes to run the code, but not a material difference.
-When running the same function in multiple threads, we expect the run time to double; even though
-there are multiple threads, they effectively run in serial because of the GIL:
+Even when using two threads, the code is effectively serial:
 
 ```python
 %%time
@@ -146,6 +122,8 @@ t1.join(); t2.join()
 > Wall time: 705 ms
 > </pre>
 
+The elapsed ("wall") time is effectively the same as the time spent executing on the CPU ("user").
+
 However, if one thread unlocks the GIL first, then the threads will execute in parallel:
 
 ```python
@@ -162,26 +140,7 @@ t1.join(); t2.join()
 > Wall time: 372 ms
 > </pre>
 
-While it takes the same amount of CPU time to compute the result ("user" time), the run time ("wall"
-time) is cut in half because the code is now running in parallel.
-
-```python
-%%time
-
-# Note that the GIL-locked version is started first
-t1 = Thread(target=fibonacci_gil, args=[N])
-t2 = Thread(target=fibonacci_nogil, args=[N])
-t1.start(); t2.start()
-t1.join(); t2.join()
-```
-
-> <pre>
-> CPU times: user 736 ms, sys: 0 ns, total: 736 ms
-> Wall time: 734 ms
-> </pre>
-
-Finally, it's import to note that scheduling matters; in this example, threads run in serial because
-the GIL-locked thread is started first.
+The CPU time ("user") hasn't changed, but the elapsed time ("wall") is effectively cut in half.
 
 TODO: Note about double-unlocking:
 
@@ -208,31 +167,56 @@ void recurse_unlock() {
 
 # PyO3
 
+```rust
+use pyo3::prelude::*;
+use pyo3::wrap_pyfunction;
+
+fn fibonacci_impl(n: u64) -> u64 {
+    if n <= 1 {
+        return n;
+    }
+
+    let mut a: u64 = 0;
+    let mut b: u64 = 1;
+    let mut c: u64 = a + b;
+
+    for _i in 2..n {
+        a = b;
+        b = c;
+        // We're not particularly concerned about the actual result, just in keeping the
+        // processor busy.
+        c = a.overflowing_add(b).0;
+    }
+
+    c
+}
+
+#[pyfunction]
+fn fibonacci_gil(n: u64) -> PyResult<u64> {
+    // The GIL is implicitly held here
+    Ok(fibonacci_impl(n))
+}
+
+#[pyfunction]
+fn fibonacci_nogil(py: Python, n: u64) -> PyResult<u64> {
+    // Explicitly release the GIL
+    py.allow_threads(|| Ok(fibonacci_impl(n)))
+}
+
+#[pymodule]
+fn speiceio_pyo3(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_wrapped(wrap_pyfunction!(fibonacci_gil))?;
+    m.add_wrapped(wrap_pyfunction!(fibonacci_nogil))?;
+
+    Ok(())
+}
+```
+
 ```python
 N = 1_000_000_000;
 
 from speiceio_pyo3 import fibonacci_gil, fibonacci_nogil
 ```
-
-```python
-%%time
-_ = fibonacci_gil(N)
-```
-
-> <pre>
-> CPU times: user 283 ms, sys: 0 ns, total: 283 ms
-> Wall time: 282 ms
-> </pre>
-
-```python
-%%time
-_ = fibonacci_nogil(N)
-```
-
-> <pre>
-> CPU times: user 284 ms, sys: 0 ns, total: 284 ms
-> Wall time: 284 ms
-> </pre>
 
 ```python
 %%time
@@ -264,21 +248,6 @@ t1.join(); t2.join()
 > <pre>
 > CPU times: user 501 ms, sys: 3.96 ms, total: 505 ms
 > Wall time: 252 ms
-> </pre>
-
-```python
-%%time
-
-# Note that the GIL-locked version is started first
-t1 = Thread(target=fibonacci_gil, args=[N])
-t2 = Thread(target=fibonacci_nogil, args=[N])
-t1.start(); t2.start()
-t1.join(); t2.join()
-```
-
-> <pre>
-> CPU times: user 533 ms, sys: 3.69 ms, total: 537 ms
-> Wall time: 537 ms
 > </pre>
 
 Interestingly enough, Rust's borrow rules actually _prevent_ double-unlocking because the GIL handle
