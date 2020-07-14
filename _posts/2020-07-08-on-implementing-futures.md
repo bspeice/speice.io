@@ -180,3 +180,9 @@ help: consider further restricting this bound
 15 | impl<R3: AsyncBufRead + ?Sized + std::marker::Unpin> Future for MyStruct<'_, R3> {
    |                                ^^^^^^^^^^^^^^^^^^^^
 ```
+
+# Don't feel bad about fallbacks
+
+When used sparingly, either `#[async_trait]` or `Box::pin(async move {})` can enable async
+functionality in code that will later not need the allocations. Use the escape hatch when you need
+to such that you can continue making incremental improvements later.
