@@ -133,6 +133,56 @@ error[E0277]: the trait bound `&R3: futures_io::if_std::AsyncBufRead` is not sat
 
 I need to reduce this example though.
 
+NOTE: Should also add something about how `AsyncBufRead` isn't implemented for `&R3`, but _is_ after
+deref. The errors become a lot more obvious if you try to deref `self.reader`:
+
+```rust
+use futures_io::AsyncBufRead;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+
+fn poll_once<R1: AsyncBufRead + ?Sized>(mut reader: Pin<&mut R1>, cx: &mut Context<'_>) -> Poll<()> {
+    reader.as_mut().poll_fill_buf(cx);
+    return Poll::Ready(());
+}
+
+struct MyStruct<'a, R2: ?Sized> {
+    reader: &'a R2,
+}
+
+impl<R3: AsyncBufRead + ?Sized + Unpin> Future for MyStruct<'_, R3> {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        poll_once(Pin::new(&mut *self.reader), cx)
+    }
+}
+```
+
+```text
+error[E0596]: cannot borrow data in a dereference of `std::pin::Pin<&mut MyStruct<'_, R3>>` as mutable
+  --> src/lib.rs:19:28
+   |
+12 |     reader: &'a R2,
+   |             ------ help: consider changing this to be mutable: `&'a mut R2`
+...
+19 |         poll_once(Pin::new(&mut *self.reader), cx)
+   |                            ^^^^^^^^^^^^^^^^^ cannot borrow as mutable
+
+error[E0596]: cannot borrow `self` as mutable, as it is not declared as mutable
+  --> src/lib.rs:19:34
+   |
+18 |     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+   |             ---- help: consider changing this to be mutable: `mut self`
+19 |         poll_once(Pin::new(&mut *self.reader), cx)
+   |                                  ^^^^ cannot borrow as mutable
+```
+
+Now, we can see that `self` can't be borrowed as mutable (it needs to be marked
+`mut self: Pin<&mut Self>`) and that the reader can't be borrowed as mutable (the struct definition
+needs `&'a mut R2`).
+
 # Don't feel bad about requiring `Unpin`
 
 Principle: don't require it unless you need to, but don't hesitate to add it if the compiler thinks
@@ -181,8 +231,44 @@ help: consider further restricting this bound
    |                                ^^^^^^^^^^^^^^^^^^^^
 ```
 
-# Don't feel bad about fallbacks
+# Know what the escape hatches are
 
 When used sparingly, either `#[async_trait]` or `Box::pin(async move {})` can enable async
 functionality in code that will later not need the allocations. Use the escape hatch when you need
 to such that you can continue making incremental improvements later.
+
+Specific trick: use `BoxFuture` for opaque type erasure:
+
+```rust
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use futures::future::BoxFuture;
+
+async fn my_function() {}
+
+struct MyStruct<F: Future<Output = ()>> {
+    f: F
+}
+
+fn another_function() -> MyStruct<BoxFuture<'static, ()>> {
+    MyStruct { f: Box::pin(async { my_function().await }) }
+}
+```
+
+NOTE: Should also add something about owned data structures need to implemented `Unpin`:
+
+```rust
+
+struct First<T> {
+    value: T,
+}
+
+// To get access to `T` through `self`, `T` must implement `Unpin`
+
+struct Second<T> {
+    values: Vec<T>
+}
+
+// Same thing - `T` must implement `Unpin` to get access to `values`
+```
