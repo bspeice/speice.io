@@ -181,7 +181,7 @@ error[E0596]: cannot borrow `self` as mutable, as it is not declared as mutable
 
 Now, we can see that `self` can't be borrowed as mutable (it needs to be marked
 `mut self: Pin<&mut Self>`) and that the reader can't be borrowed as mutable (the struct definition
-needs `&'a mut R2`).
+needs `&'a mut R2`). After those are fixed, we're good to go.
 
 # Don't feel bad about requiring `Unpin`
 
