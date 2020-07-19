@@ -79,62 +79,22 @@ these techniques should make the process at least a bit easier.
 
 # Implement functionality before structure
 
-Principle: if possible, implement the desired behavior in a separate function where all state is
-provided as arguments.
+Don't `impl Future` right away; use a separate method and pass eevrything in. It's helpful to
+de-couple "what you need in order to function" from "how you get those things"; are you supposed to
+use `#[pin_project]` or `let Self { } = &mut *self` or maybe just `&mut self.value`? Self-pinning
+makes things weird, and it's typically safe to deal with those questions later. Two guidelines:
 
-It's helpful to de-couple "what you need in order to function" from "how you get those things"; are
-you supposed to use `#[pin_project]` or `let Self { } = &mut *self` or maybe just `&mut self.value`?
-Instead, just pass everything that needs polled as `Pin<&mut Thing>` and deal with it later.
+1. Everything that needs to be `poll`-ed should be passed as `Pin<&mut T>`
+2. Everything else passed by reference.
 
-## Caveat 1: Don't reference this method until ready
+Don't call this function before it's ready; errors elsewhere in the code can make it difficult to
+understand if the problem is in your "inner" function implementation, or the `impl Future`
+implementation.
 
-Errors elsewhere in the code can mask issues in the implementation, or make it difficult to
-understand if there are issues in specification (the `struct`) or implementation (the function).
+# Dealing with unfulfilled trait bounds
 
-## Caveat 2: Don't re-use type names
-
-Can reconcile the names afterward, but it's helpful to separate issues of implementation from
-specification:
-
-```rust
-use futures_io::AsyncBufRead;
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
-
-fn poll_once<R1: AsyncBufRead + ?Sized>(mut reader: Pin<&mut R1>, cx: &mut Context<'_>) -> Poll<()> {
-    reader.as_mut().poll_fill_buf(cx);
-    return Poll::Ready(());
-}
-
-struct MyStruct<'a, R2: ?Sized> {
-    reader: &'a R2,
-}
-
-impl<R3: AsyncBufRead + ?Sized + Unpin> Future for MyStruct<'_, R3> {
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        poll_once(Pin::new(&mut self.reader), cx)
-    }
-}
-```
-
-```text
-error[E0277]: the trait bound `&R3: futures_io::if_std::AsyncBufRead` is not satisfied
-  --> src/lib.rs:19:9
-   |
-6  | fn poll_once<R1: AsyncBufRead + ?Sized>(mut reader: Pin<&mut R1>, cx: &mut Context<'_>) -> Poll<()> {
-   |                  ------------ required by this bound in `poll_once`
-...
-19 |         poll_once(Pin::new(&mut self.reader), cx)
-   |         ^^^^^^^^^ the trait `futures_io::if_std::AsyncBufRead` is not implemented for `&R3`
-```
-
-I need to reduce this example though.
-
-NOTE: Should also add something about how `AsyncBufRead` isn't implemented for `&R3`, but _is_ after
-deref. The errors become a lot more obvious if you try to deref `self.reader`:
+Should also add something about how `AsyncBufRead` isn't implemented for `&R3`, but _is_ after deref
+(`R3`). The errors become a lot more obvious if you try to deref `self.reader`:
 
 ```rust
 use futures_io::AsyncBufRead;
@@ -155,6 +115,7 @@ impl<R3: AsyncBufRead + ?Sized + Unpin> Future for MyStruct<'_, R3> {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // Important bit is the `*self.reader` here
         poll_once(Pin::new(&mut *self.reader), cx)
     }
 }
@@ -185,8 +146,8 @@ needs `&'a mut R2`). After those are fixed, we're good to go.
 
 # Don't feel bad about requiring `Unpin`
 
-Principle: don't require it unless you need to, but don't hesitate to add it if the compiler thinks
-you should.
+For trait bounds, don't require it unless you need to, but don't hesitate to add it if the compiler
+thinks you should.
 
 ```rust
 use futures_io::AsyncBufRead;
@@ -231,13 +192,61 @@ help: consider further restricting this bound
    |                                ^^^^^^^^^^^^^^^^^^^^
 ```
 
+For struct, if they have no `Pin` elements, `Unpin` is automatically implemented. Just need to make
+sure that type bounds contain `Unpin`, or weird things happen when trying to use them:
+
+```rust
+#![allow(unused_mut)]
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+
+struct CantUnpin<T> {
+    items: Vec<T>
+}
+
+impl<T: Default> Future for CantUnpin<T> {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.items.push(T::default());
+        Poll::Ready(())
+    }
+}
+
+struct CanUnpin<T> {
+    items: Vec<T>
+}
+
+impl<T: Default + Unpin> Future for CanUnpin<T> {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.items.push(T::default());
+        Poll::Ready(())
+    }
+}
+```
+
+```text
+error[E0596]: cannot borrow data in a dereference of `std::pin::Pin<&mut CantUnpin<T>>` as mutable
+  --> src/lib.rs:14:9
+   |
+14 |         self.items.push(T::default());
+   |         ^^^^^^^^^^ cannot borrow as mutable
+   |
+   = help: trait `DerefMut` is required to modify through a dereference, but it is not implemented for `std::pin::Pin<&mut CantUnpin<T>>`
+```
+
+Rule of thumb: If you don't know whether it implements `Unpin`, it almost certainly does.
+
 # Know what the escape hatches are
 
-When used sparingly, either `#[async_trait]` or `Box::pin(async move {})` can enable async
-functionality in code that will later not need the allocations. Use the escape hatch when you need
-to such that you can continue making incremental improvements later.
+When used sparingly, either `#[async_trait]` or `BoxFuture` can enable async functionality in code
+that will later not need the allocations. Use the escape hatch when you need to such that you can
+continue making incremental improvements later.
 
-Specific trick: use `BoxFuture` for opaque type erasure:
+Specific trick: use `BoxFuture` for type erasure:
 
 ```rust
 use std::future::Future;
@@ -245,30 +254,29 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use futures::future::BoxFuture;
 
-async fn my_function() {}
+async fn function1() {}
 
-struct MyStruct<F: Future<Output = ()>> {
-    f: F
+async fn function2() -> u8 { 0 }
+
+pub struct MyStruct<T> {
+    f: BoxFuture<'static, T>
 }
 
-fn another_function() -> MyStruct<BoxFuture<'static, ()>> {
-    MyStruct { f: Box::pin(async { my_function().await }) }
+impl<T> Future for MyStruct<T> {
+    type Output = T;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<T> {
+        self.f.as_mut().poll(cx)
+    }
+}
+
+pub fn another_function() -> MyStruct<u8> {
+    MyStruct { f: Box::pin(async {
+        function1().await;
+        function2().await
+    }) }
 }
 ```
 
-NOTE: Should also add something about owned data structures need to implemented `Unpin`:
-
-```rust
-
-struct First<T> {
-    value: T,
-}
-
-// To get access to `T` through `self`, `T` must implement `Unpin`
-
-struct Second<T> {
-    values: Vec<T>
-}
-
-// Same thing - `T` must implement `Unpin` to get access to `values`
-```
+There's one allocation because of `Box::pin()`, but that's it. We're allowed to use an opaque
+`impl Future` and still return values from it.
