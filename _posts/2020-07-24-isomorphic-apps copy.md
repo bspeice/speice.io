@@ -81,10 +81,10 @@ Looking forward, the things I think could be beneficial to address are:
     `wasm-bindgen` or `wasm-pack`.
 - Comparisons to Typescript and Neon
   - Is there a development or performance benefit that comes from using Rust instead of Typescript?
-    WASM might execute faster, but Rust might be more tedious to develop. It would be useful to port
-    an existing (small) application to Rust and see what the differences are. That said, while
-    benchmarking WASM vs. Javascript is at least theoretically possible to do in a systematic
-    manner, evaluating the developer experience is like a case-by-case determination.
+    Took some time to learn Typescript since the last post, and while it's possible that WASM might
+    execute faster, I'm not sure that Rust offers enough of a benefit to justify the significantly
+    more complex setup. It would be useful to port an existing (small) application to Rust so that
+    other developers can see a representative example of each and make a decision for themselves.
   - Instead of embedding Rust in Electron by way of WASM, [Neon] can be used to develop extensions
     that run natively and are "glued" to Electron via Javascript. Further investigation to clarify
     the pros/cons of each approach would be helpful; are there situations in which WASM offers
