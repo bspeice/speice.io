@@ -238,7 +238,8 @@ error[E0596]: cannot borrow data in a dereference of `std::pin::Pin<&mut CantUnp
    = help: trait `DerefMut` is required to modify through a dereference, but it is not implemented for `std::pin::Pin<&mut CantUnpin<T>>`
 ```
 
-Rule of thumb: If you don't know whether it implements `Unpin`, it almost certainly does.
+Rule of thumb: If you don't know whether it's safe to require `Unpin`, it almost certainly is. Worst
+case, can write a "compile test"; put code in a closure that's never called.
 
 # Know what the escape hatches are
 
@@ -280,3 +281,24 @@ pub fn another_function() -> MyStruct<u8> {
 
 There's one allocation because of `Box::pin()`, but that's it. We're allowed to use an opaque
 `impl Future` and still return values from it.
+
+---
+
+Other thoughts that may be helpful in writing:
+
+Plenty of reasons to write low level futures code; if you feel guilty about every heap allocation
+because you wonder if it's really necessary, if you have to write traits, no_std or no alloc
+environments
+
+These are tools to help the mortals who don't really understand the Pin system yet. It's like
+fighting the borrow checker; you'll probably figure it out eventually, but eventually doesn't help
+you right now.
+
+Unpin seems to mostly mean "safe to move", so everything that doesn't interact with the pin system
+normally is probably fine.
+
+Also need a note about enum type parameters and pinning
+
+Principle: pinning is needed so Rust can desugar references across await points. Practically? No
+idea how to meaningfully use it, what the purpose of pin project is, or how to actually create a
+struct with internal reference.
