@@ -171,6 +171,8 @@ void recurse_unlock() {
 
 # PyO3
 
+Now that pyo3 is stable, represents a great candidate for bridge.
+
 ```rust
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
