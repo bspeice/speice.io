@@ -144,7 +144,8 @@ must be defined on the remote type.
 Rust makes this weird because you have to `use ClientExt` to bring the methods in scope, but the
 trait name might not show up because `impl ClientExt for RemoteStruct` is defined elsewhere.
 Alternately, `ClientExt: AnotherTrait` implementations where the default `ClientExt` implementation
-is used.
+is used. To do this, Rust compiles the entire crate as a single translation unit, and the orphan
+rule.
 
 # Automatic markers?
 
