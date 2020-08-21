@@ -86,8 +86,23 @@ template to add methods for specific classes I guess? But it's still inheriting 
 can't define things directly on it.
 
 Generally, "you can just use free functions" seems like a shoddy explanation. We could standardize
-overload `MyClass_init` as a constructor, etc., but the language is designed to assist us so we
-don't have to do crap like that. I do hope UFCS becomes a thing.
+overload `MyClass_init` as a constructor and function similar to C, etc., but the language is
+designed to assist us so we don't have to do crap like that. I do hope UFCS becomes a thing.
+
+That said, it is interesting that for Rust, arbitrary self can be replaced with traits:
+
+```rust
+trait MyTrait {
+    fn my_function(&self);
+}
+
+impl MyTrait for Box<MyStruct> {
+    fn my_function(&self) {}
+}
+```
+
+Just have to make sure that `MyTrait` is in scope all the time, and that's not fun. Ultimately, Rust
+kinda already has UFCS.
 
 # Default implementation
 
@@ -115,6 +130,7 @@ public:
 
     // Because the free function still needs a "this" reference (unlike Javascript which has a
     // floating `this`), we can't bind as `std::uint64_t do_method() = free_do_method`
+    // Also can't do it because it's a syntax error; can only use `= 0` to indicate pure virtual.
     std::uint64_t do_method() {
         return free_do_method(this);
     }
@@ -123,13 +139,20 @@ public:
 
 # Require concept methods to take `const this`?
 
+`std::is_const` should be able to handle it: https://en.cppreference.com/w/cpp/types/is_const
+
 # Move/consume `self` as opposed to `&self`?
 
-Is there a way to force `std::move(object).method()`?
+Is there a way to force `std::move(object).method()`? C++ can still use objects after movement makes
+them invalid, so not sure that it makes conceptual sense.
 
 # Require static methods on a class?
 
+Shouldn't be too hard - `T::some_method()` should be compilable.
+
 # `override`, or other means of verifying a function implements a requirement?
+
+`noexcept`, etc.
 
 # Local trait implementation of remote types?
 
@@ -176,7 +199,35 @@ void my_function(T& value) {}
 fn my_function<T: MyTrait>(value: &T) {}
 ```
 
-vtable is automatically used if declared virtual.
+Alternate form with concepts:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template<typename T>
+concept HasMethod = requires (T a) {
+    { a.some_method() } -> std::same_as<std::uint64_t>;
+};
+
+auto my_function(HasMethod auto value) {
+    auto x = value.some_method();
+}
+
+class MyClass {
+public:
+    std::uint64_t some_method() {
+        return 42;
+    }
+};
+
+int main() {
+    auto x = MyClass {};
+    my_function(x);
+}
+```
+
+vtable is automatically used if virtual, but concepts (so far as I can tell) can't detect virtual.
 
 `dyn Trait` seems to be used in Rust mostly for type erasure - `Box<Pin<dyn Future>>` for example,
 but is generally fairly rare, and C++ probably doesn't suffer for not having it. Can use inheritance
