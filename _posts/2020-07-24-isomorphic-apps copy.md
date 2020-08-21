@@ -75,6 +75,9 @@ it's now _feasible_.
 
 Looking forward, the things I think could be beneficial to address are:
 
+Put another way, these are the things that would be necessary for me to consider moving away from
+Typescript:
+
 - Template/starter project examples
   - Being able to `yarn create` a project and have it already set up with two-way JS to Rust
     bindings would go a long way towards reducing the currently painful setup using either
@@ -89,4 +92,8 @@ Looking forward, the things I think could be beneficial to address are:
     that run natively and are "glued" to Electron via Javascript. Further investigation to clarify
     the pros/cons of each approach would be helpful; are there situations in which WASM offers
     benefits over Neon? Vice-versa? Both WASM and Neon already require more complex setups than
-    typical JS/TS setups.
+    typical JS/TS setups. Using Rust stdlib instead of Node API's for system access is nice, being
+    forced into loose coupling is nice, but maybe the penalty associated with
+    bundling/distribution/etc. only makes sense for projects as large as Rust-analyzer, etc.
+- Automatically generate bindings from TS definition files. Alternately, something like the JS
+  "@types" as a group to supervise maintenance of TS to Rust bindings?
