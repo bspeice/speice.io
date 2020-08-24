@@ -6,6 +6,9 @@ category:
 tags: [python]
 ---
 
+Other languages have done similar things (interfaces in Java), but think the Rust comparison is
+useful because both languages are "system."
+
 # Simple Example
 
 Accept parameter types, return known type.
@@ -19,6 +22,8 @@ Same parameter signature, but return different types - `AsRef`
 `.as_iter()`, and the iterator item types
 
 # Arbitrary `self`
+
+Forms the basis for Rust's async system, but used very rarely aside from that.
 
 [`std::enable_shared_from_this`](https://en.cppreference.com/w/cpp/memory/enable_shared_from_this)
 
@@ -102,7 +107,8 @@ impl MyTrait for Box<MyStruct> {
 ```
 
 Just have to make sure that `MyTrait` is in scope all the time, and that's not fun. Ultimately, Rust
-kinda already has UFCS.
+kinda already has UFCS. It's only "kinda" because you have to bring it in scope, and it's
+potentially unclear when it's being used (extension traits), but it does get the basic job done.
 
 # Default implementation
 
@@ -154,7 +160,7 @@ Shouldn't be too hard - `T::some_method()` should be compilable.
 
 `noexcept`, etc.
 
-# Local trait implementation of remote types?
+# Local trait implementation of remote data type?
 
 AKA "extension methods". UFCS can accomplish this, and could use free functions to handle instead,
 but having the IDE auto-complete `.<the next thing>` is exceedingly useful, as opposed to memorizing
@@ -162,7 +168,60 @@ what functions are necessary for conversion. We're not changing what's possible,
 easier for humans.
 
 Likely requires sub-classing the remote class. Implicit conversions don't _really_ work because they
-must be defined on the remote type.
+must be defined on the remote type (not true: `operator Local` must be defined on remote, but
+`Local` could have a `Local(const Remote&)` implicit constructor). Could maybe use wrapper classes
+that have single-arg (implicit) constructors, and get away with it as long as the wrapper knows it's
+not safe to modify the internals. That said, wrapper can only use the public interface unless
+declared friend (which is no different to Rust).
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+class SomeRemoteClass {};
+
+template<typename T>
+concept MyConcept = requires (T a) {
+    { a.do_something() } -> std::same_as<std::uint64_t>;
+};
+
+// Note: It's unsafe to move `SomeRemoteClass`, so we accept by reference
+// Requiring SomeRemoteClass be copy-constructible would also be OK.
+class LocalImpl {
+public:
+    LocalImpl(const SomeRemoteClass &remote): remote_{remote} {};
+    std::uint64_t do_something() {
+        return 42;
+    }
+
+private:
+    const SomeRemoteClass &remote_;
+};
+
+auto auto_func(MyConcept auto value) {
+    auto x = value.do_something();
+}
+
+void regular_func(LocalImpl value) {
+    auto x = value.do_something();
+}
+
+int main() {
+    SomeRemoteClass x {};
+
+    // This isn't OK because `auto` doesn't automatically convert to `LocalImpl`
+    //auto_func(x);
+
+    // This _is_ OK because we explicitly declare the class we want (`LocalImpl`) and `SomeRemoteClass`
+    // is implicitly converted. Just so happens that `LocalImpl` implements `MyConcept`.
+    regular_func(x);
+
+    // We could extend the conversion pattern using specializations of `LocalImpl`, or maybe use
+    // `std::variant` to hold different internal types, but there's still a disconnect between
+    // what we actually want to fulfill (`MyConcept`) and how that's implemented for remote types
+    // (using the `LocalImpl` wrapper and implicit conversions).
+}
+```
 
 Rust makes this weird because you have to `use ClientExt` to bring the methods in scope, but the
 trait name might not show up because `impl ClientExt for RemoteStruct` is defined elsewhere.
