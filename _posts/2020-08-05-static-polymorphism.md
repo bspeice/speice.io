@@ -7,7 +7,8 @@ tags: [python]
 ---
 
 Other languages have done similar things (interfaces in Java), but think the Rust comparison is
-useful because both languages are "system."
+useful because both languages are "system." Mostly looking at how static polymorphism is implemented
+in C++ and Rust, but also some comparisons to Rust behavior not strictly related to polymorphism.
 
 # Simple Example
 
