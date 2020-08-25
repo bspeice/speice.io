@@ -11,15 +11,19 @@ useful because both languages are "system."
 
 # Simple Example
 
-Accept parameter types, return known type.
+Accept parameter types, return known type. Also needs to be generic over parameter types.
 
 # Generic return
 
-Same parameter signature, but return different types - `AsRef`
+Same name and parameter signature, but return different types - `AsRef`
 
 # Associated types
 
-`.as_iter()`, and the iterator item types
+`.as_iter()`, and the iterator `Item` type
+
+# Require static methods on a class?
+
+Shouldn't be too hard - `T::some_method()` should be compilable.
 
 # Arbitrary `self`
 
@@ -149,16 +153,9 @@ public:
 
 # Move/consume `self` as opposed to `&self`?
 
-Is there a way to force `std::move(object).method()`? C++ can still use objects after movement makes
-them invalid, so not sure that it makes conceptual sense.
-
-# Require static methods on a class?
-
-Shouldn't be too hard - `T::some_method()` should be compilable.
-
-# `override`, or other means of verifying a function implements a requirement?
-
-`noexcept`, etc.
+Not exactly polymorphism, but is a significant feature of Rust trait system. Is there a way to force
+`std::move(object).method()`? C++ can still use objects after movement makes them invalid, so not
+sure that it makes conceptual sense - it's your job to prevent use-after-move, not the compiler's.
 
 # Local trait implementation of remote data type?
 
@@ -288,6 +285,60 @@ int main() {
 
 vtable is automatically used if virtual, but concepts (so far as I can tell) can't detect virtual.
 
+Kind of nice because you don't have to explicitly manage the vtable in Rust, but you trade off the
+ability to get inheritance. Modern trends have been "composition over inheritance" (see Google style
+docs as an example) so the trend may be worth it, but moving away from inheritance models is
+disorienting.
+
 `dyn Trait` seems to be used in Rust mostly for type erasure - `Box<Pin<dyn Future>>` for example,
 but is generally fairly rare, and C++ probably doesn't suffer for not having it. Can use inheritance
 to force virtual if truly necessary, but not sure why you'd need that.
+
+# Checking a type fulfills the concept
+
+With concepts, you find out that there's an issue only when you attempt to use it. Traits in Rust
+will let you know during implementation that something is wrong (there's a local error).  
+https://www.ecorax.net/as-above-so-below-1/
+
+Can use `static_assert` to kinda make sure a contract is fulfilled:
+
+```c++
+#include <cstdint>
+#include <type_traits>
+
+template<typename T>
+constexpr bool has_method = std::is_same_v<decltype(std::declval<T>().method()), std::uint64_t>;
+
+class WithMethod {
+public:
+    std::uint64_t method() { return 0; }
+};
+
+static_assert(has_method<WithMethod>);
+
+class WithoutMethod {};
+
+// <source>: In instantiation of 'constexpr const bool has_method<WithoutMethod>':
+// <source>:16:16:   required from here
+// <source>:5:71: error: 'class WithoutMethod' has no member named 'method'
+//     5 | constexpr bool has_method = std::is_same_v<decltype(std::declval<T>().method()), std::uint64_t>;
+//       |                                                     ~~~~~~~~~~~~~~~~~~^~~~~~
+// <source>:16:15: error: non-constant condition for static assertion
+//    16 | static_assert(has_method<WithoutMethod>);
+//       |
+static_assert(has_method<WithoutMethod>);
+```
+
+We'd rather the example fail the static assert, rather than have an error on the `decltype`, but it
+does get the job done; we're told explicitly that `WithoutMethod` has no member `method`, so the
+error message for `decltype()` is actually much nicer than the `static_assert`.. Can use
+[custom SFINAE](https://stackoverflow.com/a/257382) or
+[experimental](https://stackoverflow.com/a/22014784)
+[type traits](http://en.cppreference.com/w/cpp/experimental/is_detected) to fix those issues, but
+mostly please just use concepts.
+
+# Visibility
+
+Worth acknowledging that C++ can do interesting things with `protected`, `friend`, and others, that
+Rust can't. However, Rust can limit trait implementations to current crate ("sealed traits"), where
+C++ concepts are purely duck typing.
