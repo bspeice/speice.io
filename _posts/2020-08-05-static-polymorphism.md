@@ -26,8 +26,12 @@ Same name and parameter signature, but return different types - `AsRef`
 
 Rust has some types named by the compiler, but inaccessible in traits; can't return `impl SomeTrait`
 from traits. Can return `impl Future` from free functions and structs, but traits can't use
-compiler-generated types (associated types still need to name the type). C++ doesn't appear to have
-the same restrictions.
+compiler-generated types (associated types still need to name the type). Can have traits return
+references (and use vtable, so no longer statically polymorphic), but typically get into all sorts
+of lifetime issues. Can also use `Box` trait objects to avoid lifetime issues, but again, uses
+vtable.
+
+C++ doesn't appear to have the same restrictions, mostly because the "contract" is just duck typing.
 
 # Require static methods on a class?
 
@@ -159,11 +163,67 @@ public:
 
 `std::is_const` should be able to handle it: https://en.cppreference.com/w/cpp/types/is_const
 
-# Move/consume `self` as opposed to `&self`?
+---
 
-Not exactly polymorphism, but is a significant feature of Rust trait system. Is there a way to force
-`std::move(object).method()`? C++ can still use objects after movement makes them invalid, so not
-sure that it makes conceptual sense - it's your job to prevent use-after-move, not the compiler's.
+`is_const` could be used to declare the entire class is const, but don't think you could require
+const-ness for only certain methods. Can use `const_cast` to assert "constness" though:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template <typename T>
+concept ConstMethod = requires (T a) {
+    { const_cast<const T&>(a).method() } -> std::same_as<std::uint64_t>;
+};
+
+std::uint64_t my_function(ConstMethod auto a) {
+    return a.method();
+}
+
+class HasConst {
+public:
+    std::uint64_t method() const {
+        return 42;
+    }
+};
+
+class WithoutConst {
+public:
+    std::uint64_t method() {
+        return 42;
+    }
+};
+
+int main() {
+    auto x = HasConst{};
+    my_function(x);
+
+    auto y = WithoutConst{};
+    my_function(y);
+}
+```
+
+```text
+<source>:32:18: error: use of function 'uint64_t my_function(auto:1) [with auto:1 = WithoutConst; uint64_t = long unsigned int]' with unsatisfied constraints
+   32 |     my_function(y);
+      |                  ^
+<source>:9:15: note: declared here
+    9 | std::uint64_t my_function(ConstMethod auto a) {
+      |               ^~~~~~~~~~~
+<source>:9:15: note: constraints not satisfied
+<source>: In instantiation of 'uint64_t my_function(auto:1) [with auto:1 = WithoutConst; uint64_t = long unsigned int]':
+<source>:32:18:   required from here
+<source>:5:9:   required for the satisfaction of 'ConstMethod<auto:1>' [with auto:1 = WithoutConst]
+<source>:5:23:   in requirements with 'T a' [with T = WithoutConst]
+<source>:6:37: note: the required expression 'const_cast<const T&>(a).method()' is invalid, because
+    6 |     { const_cast<const T&>(a).method() } -> std::same_as<std::uint64_t>;
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+<source>:6:37: error: passing 'const WithoutConst' as 'this' argument discards qualifiers [-fpermissive]
+<source>:22:19: note:   in call to 'uint64_t WithoutConst::method()'
+   22 |     std::uint64_t method() {
+      |                   ^~~~~~
+```
 
 # Local trait implementation of remote data type?
 
@@ -233,10 +293,6 @@ trait name might not show up because `impl ClientExt for RemoteStruct` is define
 Alternately, `ClientExt: AnotherTrait` implementations where the default `ClientExt` implementation
 is used. To do this, Rust compiles the entire crate as a single translation unit, and the orphan
 rule.
-
-# Automatic markers?
-
-Alternately, conditional inheritance based on templates?
 
 # Trait objects as arguments
 
@@ -350,3 +406,18 @@ mostly please just use concepts.
 Worth acknowledging that C++ can do interesting things with `protected`, `friend`, and others, that
 Rust can't. However, Rust can limit trait implementations to current crate ("sealed traits"), where
 C++ concepts are purely duck typing.
+
+# Potentially excluded
+
+Some ideas related to traits, but that I'm not sure sufficiently fit the theme. May be worth
+investigating in a future post?
+
+## Move/consume `self` as opposed to `&self`?
+
+Not exactly polymorphism, but is a significant feature of Rust trait system. Is there a way to force
+`std::move(object).method()`? C++ can still use objects after movement makes them invalid, so not
+sure that it makes conceptual sense - it's your job to prevent use-after-move, not the compiler's.
+
+## Automatic markers?
+
+Alternately, conditional inheritance based on templates?
