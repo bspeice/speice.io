@@ -343,3 +343,10 @@ mostly please just use concepts.
 Worth acknowledging that C++ can do interesting things with `protected`, `friend`, and others, that
 Rust can't. However, Rust can limit trait implementations to current crate ("sealed traits"), where
 C++ concepts are purely duck typing.
+
+# decltype and compiler-named types
+
+Rust has some types named by the compiler, but inaccessible in traits; can't return `impl SomeTrait`
+from traits. Can return `impl Future` from free functions and structs, but traits can't use
+compiler-generated types (associated types still need to name the type). C++ doesn't appear to have
+the same restrictions.
