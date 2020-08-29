@@ -7,8 +7,15 @@ tags: [python]
 ---
 
 Other languages have done similar things (interfaces in Java), but think the Rust comparison is
-useful because both languages are "system." Mostly looking at how static polymorphism is implemented
-in C++ and Rust, but also some comparisons to Rust behavior not strictly related to polymorphism.
+useful because both languages are "system."
+
+# System Differences
+
+Worth noting differences in goals: polymorphism in C++ is only duck typing. Means that static
+polymorphism happens separate from visibility, overloading, etc.
+
+Rust's trait system is different (need a better way to explain that) which allows for trait markers,
+auto-deriving, arbitrary self.
 
 # Simple Example
 
@@ -26,10 +33,11 @@ Same name and parameter signature, but return different types - `AsRef`
 
 Rust has some types named by the compiler, but inaccessible in traits; can't return `impl SomeTrait`
 from traits. Can return `impl Future` from free functions and structs, but traits can't use
-compiler-generated types (associated types still need to name the type). Can have traits return
-references (and use vtable, so no longer statically polymorphic), but typically get into all sorts
-of lifetime issues. Can also use `Box` trait objects to avoid lifetime issues, but again, uses
-vtable.
+compiler-generated types (associated types still need to name the type).
+
+Can have traits return references (`&dyn Trait`), but uses vtable (so no longer statically
+polymorphic), and very likely get into all sorts of lifetime issues. Can use `Box<dyn Trait>` trait
+objects to avoid lifetime issues, but again, uses vtable.
 
 C++ doesn't appear to have the same restrictions, mostly because the "contract" is just duck typing.
 
@@ -37,126 +45,70 @@ C++ doesn't appear to have the same restrictions, mostly because the "contract" 
 
 Shouldn't be too hard - `T::some_method()` should be compilable.
 
-# Arbitrary `self`
-
-Forms the basis for Rust's async system, but used very rarely aside from that.
-
-[`std::enable_shared_from_this`](https://en.cppreference.com/w/cpp/memory/enable_shared_from_this)
-
-`enable_unique_from_this` doesn't make a whole lot of sense, but Rust can do it:
-
-```rust
-struct MyStruct {}
-
-impl MyStruct {
-    fn my_function(self: &Box<Self>) {}
-}
-
-fn main() {
-    let unboxed = MyStruct {};
-    // error[E0599]: no method named `my_function` found for struct `MyStruct` in the current scope
-    // unboxed.my_function();
-
-    let boxed = Box::new(MyStruct {});
-    boxed.my_function();
-    boxed.my_function();
-}
-```
-
-Interestingly enough, can't bind `static` version using equality:
-
-```c++
-#include <iterator>
-#include <vector>
-#include <concepts>
-
-std::uint64_t free_get_value() {
-    return 24;
-}
-
-class MyClass {
-public:
-    // <source>:11:47: error: invalid pure specifier (only '= 0' is allowed) before ';' token
-    std::uint64_t get_value() = free_get_value;
-};
-
-int main() {
-    auto x = MyClass {};
-}
-```
-
----
-
-Turns out the purpose of `enable_shared_from_this` is so that you can create new shared instances of
-yourself from within yourself, it doesn't have anything to do with enabling extra functionality
-depending on whether you're owned by a shared pointer. _At best_, you could have other runtime
-checks to see if you're owned exclusively, or as part of some other smart pointer, but the type
-system can't enforce that. And if you're _not_ owned by that smart pointer, what then? Exceptions?
-
-UFCS would be able to help with this - define new methods like:
-
-```c++
-template<>
-void do_a_thing(std::unique_ptr<MyType> value) {}
-```
-
-In this case, the extension is actually on `unique_ptr`, but the overload resolution applies only to
-pointers of `MyType`. Note that `shared_ptr` and others seem to work by overloading `operator ->` to
-proxy function calls to the delegates; you could inherit `std::shared_ptr` and specialize the
-template to add methods for specific classes I guess? But it's still inheriting `shared_ptr`, you
-can't define things directly on it.
-
-Generally, "you can just use free functions" seems like a shoddy explanation. We could standardize
-overload `MyClass_init` as a constructor and function similar to C, etc., but the language is
-designed to assist us so we don't have to do crap like that. I do hope UFCS becomes a thing.
-
-That said, it is interesting that for Rust, arbitrary self can be replaced with traits:
-
-```rust
-trait MyTrait {
-    fn my_function(&self);
-}
-
-impl MyTrait for Box<MyStruct> {
-    fn my_function(&self) {}
-}
-```
-
-Just have to make sure that `MyTrait` is in scope all the time, and that's not fun. Ultimately, Rust
-kinda already has UFCS. It's only "kinda" because you have to bring it in scope, and it's
-potentially unclear when it's being used (extension traits), but it does get the basic job done.
-
 # Default implementation
 
 First: example of same name, different arguments. Not possible in Rust.
 
-Can you bind a free function in a non-static way? Pseudocode:
+```rust
+trait MyTrait {
+    // This is illegal in Rust, even though name-mangling is unique:
+    // fn method(&self, value: usize) -> usize;
+
+    // Works if you rename the method, but is a pain to type:
+    fn method_with_options(&self, value: usize) -> usize;
+    fn method(&self) -> usize {
+        self.method_with_options(42);
+    }
+}
+
+struct MyStruct {}
+impl MyTrait for MyStruct {
+    fn method_with_options(&self, value: usize) -> usize {
+        println!("{}", value);
+        value
+    }
+}
+```
+
+Second: example of same name, different arguments, but can't provide default implementation.
 
 ```c++
-template<typename T>
-concept DoMethod = requires (T a) {
-    { a.do_method(std::declval<std::uint64_t>() } -> std::same_as<std::uint64_t>;
-    { a.do_method() } -> std::same_as<std::uint64_t>;
+template <typename T>
+concept MyTrait = requires (T a) {
+    { a.method(declval<std::size_t>()) } -> std::same_as<std::size_t>,
+    { a.method() } -> std::same_as<std::size_t>,
 }
 
-template<typename T> requires DoMethod<T>
-std::uint64_t free_do_method(T& a) {
-    a.do_method(0);
-}
-
+// Each class must implement both `method` signatures.
 class MyClass {
 public:
-    std::uint64_t do_method(std::uint64_t value) {
-        return value * 2;
+    std::size_t method(std::size_t value) {
+        std::cout << value << std::endl;
+        return value;
     }
 
-    // Because the free function still needs a "this" reference (unlike Javascript which has a
-    // floating `this`), we can't bind as `std::uint64_t do_method() = free_do_method`
-    // Also can't do it because it's a syntax error; can only use `= 0` to indicate pure virtual.
-    std::uint64_t do_method() {
-        return free_do_method(this);
+    std::size_t method() {
+        return method(42);
     }
 };
+
+// Can write free functions as the default and then call explicitly, but for trivial
+// implementations (replacing defaults) it's not likely to be worth it.
+auto method_default_(auto MyTrait this) std::size_t {
+    return this.method(42);
+}
+
+class MyClassDefault {
+public:
+    std::size_t method(std::size_t value) {
+        std::cout << value << std::endl;
+        return value;
+    }
+
+    std::size_t method() {
+        return method_default_(this);
+    }
+}
 ```
 
 # Require concept methods to take `const this`?
@@ -165,8 +117,9 @@ public:
 
 ---
 
-`is_const` could be used to declare the entire class is const, but don't think you could require
-const-ness for only certain methods. Can use `const_cast` to assert "constness" though:
+`is_const` could be used to declare the class is const for an entire concept, but don't think you
+could require const-ness for only certain methods. Can use `const_cast` to assert "constness"
+though:
 
 ```c++
 #include <concepts>
@@ -294,7 +247,166 @@ Alternately, `ClientExt: AnotherTrait` implementations where the default `Client
 is used. To do this, Rust compiles the entire crate as a single translation unit, and the orphan
 rule.
 
+Rust can do one thing special though - can run methods on literals - `42.my_method()`.
+
+# Checking a type fulfills the concept
+
+With concepts, you find out that there's an issue only when you attempt to use it. Traits in Rust
+will let you know during implementation that something is wrong (there's a local error).  
+https://www.ecorax.net/as-above-so-below-1/
+
+Can use `static_assert` to kinda make sure a contract is fulfilled:
+
+```c++
+#include <cstdint>
+#include <type_traits>
+
+template<typename T>
+constexpr bool has_method = std::is_same_v<decltype(std::declval<T>().method()), std::uint64_t>;
+
+class WithMethod {
+public:
+    std::uint64_t method() { return 0; }
+};
+
+static_assert(has_method<WithMethod>);
+
+class WithoutMethod {};
+
+// <source>: In instantiation of 'constexpr const bool has_method<WithoutMethod>':
+// <source>:16:16:   required from here
+// <source>:5:71: error: 'class WithoutMethod' has no member named 'method'
+//     5 | constexpr bool has_method = std::is_same_v<decltype(std::declval<T>().method()), std::uint64_t>;
+//       |                                                     ~~~~~~~~~~~~~~~~~~^~~~~~
+// <source>:16:15: error: non-constant condition for static assertion
+//    16 | static_assert(has_method<WithoutMethod>);
+//       |
+static_assert(has_method<WithoutMethod>);
+```
+
+We'd rather the example fail the static assert, rather than have an error on the `decltype`, but it
+does get the job done; we're told explicitly that `WithoutMethod` has no member `method`, so the
+error message for `decltype()` is actually much nicer than the `static_assert`.. Can use
+[custom SFINAE](https://stackoverflow.com/a/257382) or
+[experimental](https://stackoverflow.com/a/22014784)
+[type traits](http://en.cppreference.com/w/cpp/experimental/is_detected) to fix those issues, but
+mostly please just use concepts.
+
+# Potentially excluded
+
+Some ideas related to traits, but that I'm not sure sufficiently fit the theme. May be worth
+investigating in a future post?
+
+## Visibility
+
+Worth acknowledging that C++ can do interesting things with `protected`, `friend`, and others, that
+Rust can't. However, Rust can limit trait implementations to current crate ("sealed traits"), where
+C++ concepts are purely duck typing.
+
+## Move/consume `self` as opposed to `&self`?
+
+Not exactly polymorphism, but is a significant feature of Rust trait system. Is there a way to force
+`std::move(object).method()`? C++ can still use objects after movement makes them invalid, so not
+sure that it makes conceptual sense - it's your job to prevent use-after-move, not the compiler's.
+
+## Automatic markers?
+
+Alternately, conditional inheritance based on templates?
+
+## Arbitrary `self`
+
+Handled as part of section on `impl Trait` for remote type, not sure this needs it's own section.
+
+Forms the basis for Rust's async system, but used very rarely aside from that.
+
+[`std::enable_shared_from_this`](https://en.cppreference.com/w/cpp/memory/enable_shared_from_this)
+
+`enable_unique_from_this` doesn't make a whole lot of sense, but Rust can do it:
+
+```rust
+struct MyStruct {}
+
+impl MyStruct {
+    fn my_function(self: &Box<Self>) {}
+}
+
+fn main() {
+    let unboxed = MyStruct {};
+    // error[E0599]: no method named `my_function` found for struct `MyStruct` in the current scope
+    // unboxed.my_function();
+
+    let boxed = Box::new(MyStruct {});
+    boxed.my_function();
+    boxed.my_function();
+}
+```
+
+Interestingly enough, can't bind `static` version using equality:
+
+```c++
+#include <iterator>
+#include <vector>
+#include <concepts>
+
+std::uint64_t free_get_value() {
+    return 24;
+}
+
+class MyClass {
+public:
+    // <source>:11:47: error: invalid pure specifier (only '= 0' is allowed) before ';' token
+    std::uint64_t get_value() = free_get_value;
+};
+
+int main() {
+    auto x = MyClass {};
+}
+```
+
+---
+
+Turns out the purpose of `enable_shared_from_this` is so that you can create new shared instances of
+yourself from within yourself, it doesn't have anything to do with enabling extra functionality
+depending on whether you're owned by a shared pointer. _At best_, you could have other runtime
+checks to see if you're owned exclusively, or as part of some other smart pointer, but the type
+system can't enforce that. And if you're _not_ owned by that smart pointer, what then? Exceptions?
+
+UFCS would be able to help with this - define new methods like:
+
+```c++
+template<>
+void do_a_thing(std::unique_ptr<MyType> value) {}
+```
+
+In this case, the extension is actually on `unique_ptr`, but the overload resolution applies only to
+pointers of `MyType`. Note that `shared_ptr` and others seem to work by overloading `operator ->` to
+proxy function calls to the delegates; you could inherit `std::shared_ptr` and specialize the
+template to add methods for specific classes I guess? But it's still inheriting `shared_ptr`, you
+can't define things directly on it.
+
+Generally, "you can just use free functions" seems like a shoddy explanation. We could standardize
+overload `MyClass_init` as a constructor and function similar to C, etc., but the language is
+designed to assist us so we don't have to do crap like that. I do hope UFCS becomes a thing.
+
+That said, it is interesting that for Rust, arbitrary self can be replaced with traits:
+
+```rust
+trait MyTrait {
+    fn my_function(&self);
+}
+
+impl MyTrait for Box<MyStruct> {
+    fn my_function(&self) {}
+}
+```
+
+Just have to make sure that `MyTrait` is in scope all the time, and that's not fun. Ultimately, Rust
+kinda already has UFCS. It's only "kinda" because you have to bring it in scope, and it's
+potentially unclear when it's being used (extension traits), but it does get the basic job done.
+
 # Trait objects as arguments
+
+Handled as part of `decltype` and compiler-named types, not sure it needs it's own section.
 
 ```rust
 trait MyTrait {
@@ -357,67 +469,3 @@ disorienting.
 `dyn Trait` seems to be used in Rust mostly for type erasure - `Box<Pin<dyn Future>>` for example,
 but is generally fairly rare, and C++ probably doesn't suffer for not having it. Can use inheritance
 to force virtual if truly necessary, but not sure why you'd need that.
-
-# Checking a type fulfills the concept
-
-With concepts, you find out that there's an issue only when you attempt to use it. Traits in Rust
-will let you know during implementation that something is wrong (there's a local error).  
-https://www.ecorax.net/as-above-so-below-1/
-
-Can use `static_assert` to kinda make sure a contract is fulfilled:
-
-```c++
-#include <cstdint>
-#include <type_traits>
-
-template<typename T>
-constexpr bool has_method = std::is_same_v<decltype(std::declval<T>().method()), std::uint64_t>;
-
-class WithMethod {
-public:
-    std::uint64_t method() { return 0; }
-};
-
-static_assert(has_method<WithMethod>);
-
-class WithoutMethod {};
-
-// <source>: In instantiation of 'constexpr const bool has_method<WithoutMethod>':
-// <source>:16:16:   required from here
-// <source>:5:71: error: 'class WithoutMethod' has no member named 'method'
-//     5 | constexpr bool has_method = std::is_same_v<decltype(std::declval<T>().method()), std::uint64_t>;
-//       |                                                     ~~~~~~~~~~~~~~~~~~^~~~~~
-// <source>:16:15: error: non-constant condition for static assertion
-//    16 | static_assert(has_method<WithoutMethod>);
-//       |
-static_assert(has_method<WithoutMethod>);
-```
-
-We'd rather the example fail the static assert, rather than have an error on the `decltype`, but it
-does get the job done; we're told explicitly that `WithoutMethod` has no member `method`, so the
-error message for `decltype()` is actually much nicer than the `static_assert`.. Can use
-[custom SFINAE](https://stackoverflow.com/a/257382) or
-[experimental](https://stackoverflow.com/a/22014784)
-[type traits](http://en.cppreference.com/w/cpp/experimental/is_detected) to fix those issues, but
-mostly please just use concepts.
-
-# Visibility
-
-Worth acknowledging that C++ can do interesting things with `protected`, `friend`, and others, that
-Rust can't. However, Rust can limit trait implementations to current crate ("sealed traits"), where
-C++ concepts are purely duck typing.
-
-# Potentially excluded
-
-Some ideas related to traits, but that I'm not sure sufficiently fit the theme. May be worth
-investigating in a future post?
-
-## Move/consume `self` as opposed to `&self`?
-
-Not exactly polymorphism, but is a significant feature of Rust trait system. Is there a way to force
-`std::move(object).method()`? C++ can still use objects after movement makes them invalid, so not
-sure that it makes conceptual sense - it's your job to prevent use-after-move, not the compiler's.
-
-## Automatic markers?
-
-Alternately, conditional inheritance based on templates?
