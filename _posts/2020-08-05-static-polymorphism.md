@@ -266,12 +266,15 @@ auto some_func(MyConcept auto value) -> void {
 }
 
 void some_func(LocalImpl value) {
-    // NOTE: This is actually a recursive call because `LocalImpl` is more specific than `auto`,
-    // so will overflow the stack.
+    // NOTE: Because `LocalImpl` is more specific than `auto`, this is a recursive call and
+    // will overflow the stack.
     // We use `some_func_` above to uniquely name the function we actually want to call.
     some_func(value);
 }
 ```
+
+Potentially worth mentioning orphan rule in Rust as limit to extension methods - can't implement
+remote traits for remote types.
 
 # Checking a type fulfills the concept
 
