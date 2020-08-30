@@ -14,12 +14,14 @@ useful because both languages are "system."
 Worth noting differences in goals: polymorphism in C++ is only duck typing. Means that static
 polymorphism happens separate from visibility, overloading, etc.
 
-Rust's trait system is different (need a better way to explain that) which allows for trait markers,
-auto-deriving, arbitrary self.
+Rust's trait system is more thorough (need a better way to explain that), which allows for trait
+markers, auto-deriving, arbitrary self.
 
 # Simple Example
 
 Accept parameter types, return known type. Also needs to be generic over parameter types.
+
+Should make a quick note that C++ doesn't allow
 
 # Generic return
 
@@ -113,7 +115,7 @@ public:
 
 # Method Qualifiers
 
-Rust allows declaring immutable, mutable, and consumed arguments (including `self`).
+Rust allows declaring immutable or mutable.
 
 C++ can use `const_cast` to assert "constness" of `this`:
 
@@ -254,11 +256,174 @@ int main() {
 ```
 
 Rust is much simpler about all this - the signature for a trait implementation must _exactly_ match
-a trait definition.
+a trait definition. Actual usage rules may be weird (what happens with a mut reference
+`#[derive(Copy)]` struct when a function takes immutable by value?), but the polymorphic side stays
+consistent.
 
-C++ also has way more qualifiers - `noexcept`, `override`, `volatile`, but I can't find a way to
-require those qualifiers being present. In contrast Rust doesn't have exceptions, doesn't have
-inheritance, and uses `unsafe` to handle `volatile`, so doesn't need to care about these qualifiers.
+Can also use `noexcept` qualifier. Not sure why this has issues:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template<typename T>
+concept NoExceptMethod = requires (T a) {
+    { noexcept(a.method()) } -> std::same_as<std::uint64_t>;
+};
+
+class NoExcept {
+public:
+    std::uint64_t method() {
+        return 42;
+    }
+};
+
+void f(NoExceptMethod auto a) {}
+
+int main() {
+    NoExcept x{};
+
+    f(x);
+}
+```
+
+Or why this is allowable:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template<typename T>
+concept NoExceptMethod = requires (T a) {
+    { a.method() } -> std::same_as<std::uint64_t>;
+    noexcept(a.method());
+};
+
+class NoExcept {
+public:
+    std::uint64_t method() {
+        return 42;
+    }
+};
+
+void f(NoExceptMethod auto a) {}
+
+int main() {
+    NoExcept x{};
+
+    f(x);
+}
+```
+
+Turns out this is the way to do it:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template<typename T>
+concept NoExceptMethod = requires (T a) {
+    { a.method() } noexcept -> std::same_as<std::uint64_t>;
+};
+
+class NoExcept {
+public:
+    std::uint64_t method() noexcept {
+        return 42;
+    }
+};
+
+void f(NoExceptMethod auto a) {}
+
+int main() {
+    NoExcept x{};
+
+    f(x);
+}
+```
+
+But this doesn't compile?
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template<typename T>
+concept NoExceptMethod = requires (T a) {
+    // Note that we simply replaced `noexcept` with `const`
+    { a.method() } const -> std::same_as<std::uint64_t>;
+};
+
+class NoExcept {
+public:
+    // Note that we simply replaced `noexcept` with `const`
+    std::uint64_t method() const {
+        return 42;
+    }
+};
+
+void f(NoExceptMethod auto a) {}
+
+int main() {
+    NoExcept x{};
+
+    f(x);
+}
+```
+
+```text
+<source>:6:19: error: expected ';' before 'const'
+    6 |     { a.method() } const -> std::same_as<std::uint64_t>;
+      |                   ^~~~~~
+      |                   ;
+```
+
+In general: exceptions add an orthogonal dimension of complexity on top of `const` because of how
+difficult it is to deduce `noexcept` in practice. See also
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1667r0.html
+
+Also, concepts getting so hard to understand that we write test cases:
+https://andreasfertig.blog/2020/08/cpp20-concepts-testing-constrained-functions/
+
+And for handling `volatile`:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template<typename T>
+concept VolatileMethod = requires(volatile T a) {
+    { a.method() } -> std::same_as<std::uint64_t>;
+};
+
+class Volatile {
+public:
+    std::uint64_t method() volatile {
+        return 42;
+    }
+};
+
+void f(VolatileMethod auto a) {
+    a.method();
+}
+
+int main() {
+    Volatile x{};
+
+    f(x);
+}
+```
+
+Though the compiler nicely warns us that we shouldn't do this:
+
+```text
+<source>:5:46: warning: 'volatile'-qualified parameter is deprecated [-Wvolatile]
+    5 | concept VolatileMethod = requires(volatile T a) {
+      |                                   ~~~~~~~~~~~^
+```
+
+C++ also has `override`, but doesn't make much sense to impose that as a requirement; inheritance
+and concepts are orthogonal systems.
 
 # Implement methods on remote types
 
@@ -400,6 +565,13 @@ error message for `decltype()` is actually much nicer than the `static_assert`..
 [experimental](https://stackoverflow.com/a/22014784)
 [type traits](http://en.cppreference.com/w/cpp/experimental/is_detected) to fix those issues, but
 mostly please just use concepts.
+
+# Templated splatter
+
+Rust can't handle arbitrary numbers of template parameters. Can use macros, but I should investigate
+`typename...` types.
+
+Common pattern to implement
 
 # Potentially excluded
 
