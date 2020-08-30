@@ -232,6 +232,20 @@ concept ConstMethod =
         { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
     };
 
+// Can also use parentheses:
+/*
+template <typename T>
+concept ConstMethod = (
+    requires (const T a) {
+        { a.const_method() } -> std::same_as<std::uint64_t>;
+    } &&
+    requires (T a) {
+        { a.nonconst_method() } -> std::same_as<std::uint64_t>;
+        { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
+    }
+);
+*/
+
 // Formulated inside a `requires` block:
 /*
 template <typename T>
