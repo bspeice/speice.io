@@ -111,15 +111,11 @@ public:
 }
 ```
 
-# Require concept methods to take `const this`?
+# Method Qualifiers
 
-`std::is_const` should be able to handle it: https://en.cppreference.com/w/cpp/types/is_const
+Rust allows declaring immutable, mutable, and consumed arguments (including `self`).
 
----
-
-`is_const` could be used to declare the class is const for an entire concept, but don't think you
-could require const-ness for only certain methods. Can use `const_cast` to assert "constness"
-though:
+C++ can use `const_cast` to assert "constness" of `this` and method arguments:
 
 ```c++
 #include <concepts>
@@ -128,6 +124,7 @@ though:
 template <typename T>
 concept ConstMethod = requires (T a) {
     { const_cast<const T&>(a).method() } -> std::same_as<std::uint64_t>;
+    { a.another(std::declval<const std::uint64_t>()) } -> std::same_as<std::uint64_t>;
 };
 
 std::uint64_t my_function(ConstMethod auto a) {
@@ -139,12 +136,21 @@ public:
     std::uint64_t method() const {
         return 42;
     }
+
+    // NOTE: non-`const` value is also acceptable here.
+    std::uint64_t another(const std::uint64_t value) {
+        return value;
+    }
 };
 
 class WithoutConst {
 public:
     std::uint64_t method() {
         return 42;
+    }
+
+    std::uint64_t another(const std::uint64_t value) {
+        return value;
     }
 };
 
@@ -177,6 +183,9 @@ int main() {
    22 |     std::uint64_t method() {
       |                   ^~~~~~
 ```
+
+...but difficult to do anything beyond that. Is there a way to declare methods must be `noexcept`,
+`volatile`, etc.? Also can't have methods that consume `this`.
 
 # Implement methods on remote types
 
