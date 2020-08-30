@@ -178,19 +178,19 @@ int main() {
       |                   ^~~~~~
 ```
 
-# Local trait implementation of remote data type?
+# Implement methods on remote types
 
-AKA "extension methods". UFCS can accomplish this, and could use free functions to handle instead,
-but having the IDE auto-complete `.<the next thing>` is exceedingly useful, as opposed to memorizing
-what functions are necessary for conversion. We're not changing what's possible, just making it
-easier for humans.
+Rust allows both arbitrary `self` and extension traits. Arbitrary self forms the basis of the
+`async` system in Rust. Extension traits form basis of `futures` library. Accomplish effectively the
+same thing, but for concrete types and traits respectively.
 
-Likely requires sub-classing the remote class. Implicit conversions don't _really_ work because they
-must be defined on the remote type (not true: `operator Local` must be defined on remote, but
-`Local` could have a `Local(const Remote&)` implicit constructor). Could maybe use wrapper classes
-that have single-arg (implicit) constructors, and get away with it as long as the wrapper knows it's
-not safe to modify the internals. That said, wrapper can only use the public interface unless
-declared friend (which is no different to Rust).
+UFCS would achieve the same effect, but unclear if/when it will be available:
+https://dancrn.com/2020/08/02/ufcs-in-clang.html
+
+Can use free functions in the meantime, but having the IDE auto-complete `.<the next thing>` is
+exceedingly useful, as opposed to looking through all functions in a namespace.
+
+Can also sub-class or implicitly convert to a wrapper:
 
 ```c++
 #include <concepts>
@@ -227,27 +227,51 @@ void regular_func(LocalImpl value) {
 int main() {
     SomeRemoteClass x {};
 
-    // This isn't OK because `auto` doesn't automatically convert to `LocalImpl`
+    // This _will not_ compile because `auto` doesn't trigger the conversion to `LocalImpl`
     //auto_func(x);
 
-    // This _is_ OK because we explicitly declare the class we want (`LocalImpl`) and `SomeRemoteClass`
-    // is implicitly converted. Just so happens that `LocalImpl` implements `MyConcept`.
+    // This _will_ compile because the function signature declares a concrete class for which an
+    // implicit conversion is available. It just so happens that `LocalImpl` satisfies `MyConcept`.
     regular_func(x);
-
-    // We could extend the conversion pattern using specializations of `LocalImpl`, or maybe use
-    // `std::variant` to hold different internal types, but there's still a disconnect between
-    // what we actually want to fulfill (`MyConcept`) and how that's implemented for remote types
-    // (using the `LocalImpl` wrapper and implicit conversions).
 }
 ```
 
-Rust makes this weird because you have to `use ClientExt` to bring the methods in scope, but the
-trait name might not show up because `impl ClientExt for RemoteStruct` is defined elsewhere.
-Alternately, `ClientExt: AnotherTrait` implementations where the default `ClientExt` implementation
-is used. To do this, Rust compiles the entire crate as a single translation unit, and the orphan
-rule.
+The `LocalImpl` wrapper could be extended to handle additional remote types using template
+specialization or holding an internal `std::variant`, but that misses the point: we want to write
+code that accepts anything that satisfies `MyConcept`. When we write functions that require a
+specific wrapper, we're being overly restrictive, and obfuscating our intentions (we don't actually
+care about the wrapper, it's just there for ease-of-use).
 
-Rust can do one thing special though - can run methods on literals - `42.my_method()`.
+Can use some overloading/specialization tricks for ease of use:
+
+```c++
+auto some_func_(MyConcept auto value) -> void {
+    auto x = value.do_something();
+}
+
+auto some_func(MyConcept auto value) -> void {
+    some_func_(value);
+}
+
+void some_func(LocalImpl value) {
+    some_func_(value);
+}
+```
+
+Need to be careful though:
+
+```c++
+auto some_func(MyConcept auto value) -> void {
+    auto x = value.do_something();
+}
+
+void some_func(LocalImpl value) {
+    // NOTE: This is actually a recursive call because `LocalImpl` is more specific than `auto`,
+    // so will overflow the stack.
+    // We use `some_func_` above to uniquely name the function we actually want to call.
+    some_func(value);
+}
+```
 
 # Checking a type fulfills the concept
 
