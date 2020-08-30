@@ -223,6 +223,18 @@ Alternate alternate form:
 
 ```c++
 template <typename T>
+concept ConstMethod =
+    requires (const T a) {
+        { a.const_method() } -> std::same_as<std::uint64_t>;
+    } &&
+    requires (T a) {
+        { a.nonconst_method() } -> std::same_as<std::uint64_t>;
+        { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
+    };
+
+// Formulated inside a `requires` block:
+/*
+template <typename T>
 concept ConstMethod = requires {
     requires requires (const T a) {
         { a.const_method() } -> std::same_as<std::uint64_t>;
@@ -233,6 +245,7 @@ concept ConstMethod = requires {
         { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
     };
 };
+*/
 ```
 
 Third alternate form:
@@ -240,21 +253,26 @@ Third alternate form:
 ```c++
 template<typename T>
 concept ConstMethods = requires (const T a) {
-        { a.const_method() } -> std::same_as<std::uint64_t>;
-    };
+    { a.const_method() } -> std::same_as<std::uint64_t>;
+};
 
 template<typename T>
 concept NonConstMethods = requires (T a) {
-        { a.nonconst_method() } -> std::same_as<std::uint64_t>;
-        { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
-    };
+    { a.nonconst_method() } -> std::same_as<std::uint64_t>;
+    { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
+};
 
+template<typename T>
+concept ConstMethod = ConstMethods<T> && NonConstMethods<T>;
 
+// Formulated inside a requires block:
+/*
 template <typename T>
 concept ConstMethod = requires {
     requires ConstMethods<T>;
     requires NonConstMethods<T>;
 };
+*/
 ```
 
 ...which goes a long way towards explaining why the "requires requires" form is necessary. Not sure
