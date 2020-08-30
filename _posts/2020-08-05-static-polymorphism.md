@@ -115,7 +115,7 @@ public:
 
 Rust allows declaring immutable, mutable, and consumed arguments (including `self`).
 
-C++ can use `const_cast` to assert "constness" of `this` and method arguments:
+C++ can use `const_cast` to assert "constness" of `this`:
 
 ```c++
 #include <concepts>
@@ -124,7 +124,6 @@ C++ can use `const_cast` to assert "constness" of `this` and method arguments:
 template <typename T>
 concept ConstMethod = requires (T a) {
     { const_cast<const T&>(a).method() } -> std::same_as<std::uint64_t>;
-    { a.another(std::declval<const std::uint64_t>()) } -> std::same_as<std::uint64_t>;
 };
 
 std::uint64_t my_function(ConstMethod auto a) {
@@ -136,21 +135,12 @@ public:
     std::uint64_t method() const {
         return 42;
     }
-
-    // NOTE: non-`const` value is also acceptable here.
-    std::uint64_t another(const std::uint64_t value) {
-        return value;
-    }
 };
 
 class WithoutConst {
 public:
     std::uint64_t method() {
         return 42;
-    }
-
-    std::uint64_t another(const std::uint64_t value) {
-        return value;
     }
 };
 
@@ -184,8 +174,91 @@ int main() {
       |                   ^~~~~~
 ```
 
-...but difficult to do anything beyond that. Is there a way to declare methods must be `noexcept`,
-`volatile`, etc.? Also can't have methods that consume `this`.
+...but can't mark `this` as consumed.
+
+Working with `const` parameters can be a bit weird because of implicit copies:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+class WithCopyCtor {
+public:
+    WithCopyCtor(const WithCopyCtor &other) = default;
+};
+
+class WithoutCopyCtor {
+public:
+    WithoutCopyCtor(const WithoutCopyCtor &other) = delete;
+};
+
+template <typename T>
+concept ConstArgument = requires (T a) {
+    // Arguments passed by value:
+    { a.method_one(std::declval<const std::uint64_t>()) } -> std::same_as<std::uint64_t>;
+    { a.method_two(std::declval<const WithCopyCtor>()) } -> std::same_as<std::uint64_t>;
+
+    // Arguments passed by reference:
+    { a.method_three(std::declval<const WithCopyCtor&>()) } -> std::same_as<std::uint64_t>;
+    { a.method_four(std::declval<const WithoutCopyCtor&&>()) } -> std::same_as<std::uint64_t>;
+
+    // NOTE: This requirement is illogical. It's impossible to call a method accepting a parameter
+    // by value when that parameter can not copy construct.
+    // Not sure if it's worth including this note in the final write-up though.
+    //{ a.method_four(std::declval<const WithoutCopyCtor>()) } -> std::same_as<std::uint64_t>;
+
+    { a.method_five(std::declval<WithoutCopyCtor&>()) } -> std::same_as<std::uint64_t>;
+};
+
+std::uint64_t my_function(ConstArgument auto a) {
+    return 42;
+}
+
+class MyClass {
+public:
+    // NOTE: Even though the concept required `method_one` to accept `const std::uint64_t`, we don't need
+    // to use a `const` qualifier here because we can implicitly copy `const std::uint64_t` to `std::uint64_t`.
+    std::uint64_t method_one(std::uint64_t value) {
+        return 42;
+    }
+
+    // NOTE: Similar to `method_one`, even though the concept declared `const WithCopyCtor`,
+    // we can use the copy constructor to implicitly copy and convert between `const` and non-`const`.
+    std::uint64_t method_two(WithCopyCtor value) {
+        return 42;
+    }
+
+    // NOTE: Because we can't implicitly copy from `const` references to non-`const` references,
+    // _even if the class has a copy constructor_, we must include the qualifier here.
+    std::uint64_t method_three(const WithCopyCtor &value) {
+        return 42;
+    }
+
+    // NOTE: Similar to `method_three`, because we can't copy from `const` rvalue references to non-`const`,
+    // we must include the qualifier.
+    std::uint64_t method_four(const WithoutCopyCtor &&value) {
+        return 42;
+    }
+
+    // NOTE: We can _add_ a `const` qualifier even if the concept doesn't require it, because it's safe to
+    // treat non-`const` references as `const.
+    std::uint64_t method_five(const WithoutCopyCtor &value) {
+        return 42;
+    }
+};
+
+int main() {
+    auto x = MyClass{};
+    my_function(x);
+}
+```
+
+Rust is much simpler about all this - the signature for a trait implementation must _exactly_ match
+a trait definition.
+
+C++ also has way more qualifiers - `noexcept`, `override`, `volatile`, but I can't find a way to
+require those qualifiers being present. In contrast Rust doesn't have exceptions, doesn't have
+inheritance, and uses `unsafe` to handle `volatile`, so doesn't need to care about these qualifiers.
 
 # Implement methods on remote types
 
@@ -340,6 +413,8 @@ Rust can't. However, Rust can limit trait implementations to current crate ("sea
 C++ concepts are purely duck typing.
 
 ## Move/consume `self` as opposed to `&self`?
+
+Handled as part of method qualifiers.
 
 Not exactly polymorphism, but is a significant feature of Rust trait system. Is there a way to force
 `std::move(object).method()`? C++ can still use objects after movement makes them invalid, so not
