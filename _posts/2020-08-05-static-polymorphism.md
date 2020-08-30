@@ -219,8 +219,46 @@ int main() {
 }
 ```
 
-May be better off defining `const T` methods in one concept, `T` methods in another, and then having
-one concept that `requires` the sub-concepts, but just trying to demonstrate what is possible.
+Alternate alternate form:
+
+```c++
+template <typename T>
+concept ConstMethod = requires {
+    requires requires (const T a) {
+        { a.const_method() } -> std::same_as<std::uint64_t>;
+    };
+
+    requires requires (T a) {
+        { a.nonconst_method() } -> std::same_as<std::uint64_t>;
+        { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
+    };
+};
+```
+
+Third alternate form:
+
+```c++
+template<typename T>
+concept ConstMethods = requires (const T a) {
+        { a.const_method() } -> std::same_as<std::uint64_t>;
+    };
+
+template<typename T>
+concept NonConstMethods = requires (T a) {
+        { a.nonconst_method() } -> std::same_as<std::uint64_t>;
+        { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
+    };
+
+
+template <typename T>
+concept ConstMethod = requires {
+    requires ConstMethods<T>;
+    requires NonConstMethods<T>;
+};
+```
+
+...which goes a long way towards explaining why the "requires requires" form is necessary. Not sure
+what the "best practices" form is, just trying to demonstrate what is possible.
 
 Working with `const` parameters can be a bit weird because of implicit copies:
 
