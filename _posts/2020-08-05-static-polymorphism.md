@@ -117,15 +117,15 @@ public:
 
 Rust allows declaring immutable or mutable.
 
-C++ can use `const_cast` to assert "constness" of `this`:
+Can require object we're calling methods on to be `const`:
 
 ```c++
 #include <concepts>
 #include <cstdint>
 
 template <typename T>
-concept ConstMethod = requires (T a) {
-    { const_cast<const T&>(a).method() } -> std::same_as<std::uint64_t>;
+concept ConstMethod = requires (const T a) {
+    { a.method() } -> std::same_as<std::uint64_t>;
 };
 
 std::uint64_t my_function(ConstMethod auto a) {
@@ -176,7 +176,51 @@ int main() {
       |                   ^~~~~~
 ```
 
-...but can't mark `this` as consumed.
+...which is equivalent to Rust's `&mut self`. Unlike Rust, can't mark `this` as consumed.
+
+Alternate form: using `static_cast<>` allows mixing some methods that are `const`, some not:
+
+```c++
+#include <concepts>
+#include <cstdint>
+
+template <typename T>
+concept ConstMethod = requires (T a) {
+    { static_cast<const T>(a).const_method() } -> std::same_as<std::uint64_t>;
+    { a.nonconst_method() } -> std::same_as<std::uint64_t>;
+    { a.unnecessary_const_method() } -> std::same_as<std::uint64_t>;
+};
+
+std::uint64_t my_function(ConstMethod auto a) {
+    return a.method();
+}
+
+class HasConst {
+public:
+    std::uint64_t const_method() const {
+        return 42;
+    }
+
+    std::uint64_t nonconst_method() {
+        return 42;
+    }
+
+    // Concept didn't require this to be `const`, but we can add the qualifier if we want.
+    std::uint64_t unnecessary_const_method() const {
+        return 42;
+    }
+};
+
+void f(ConstMethod auto x) {}
+
+int main() {
+    auto x = HasConst{};
+    f(x);
+}
+```
+
+May be better off defining `const T` methods in one concept, `T` methods in another, and then having
+one concept that `requires` the sub-concepts, but just trying to demonstrate what is possible.
 
 Working with `const` parameters can be a bit weird because of implicit copies:
 
