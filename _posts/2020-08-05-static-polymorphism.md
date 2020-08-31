@@ -536,8 +536,8 @@ Though the compiler nicely warns us that we shouldn't do this:
       |                                   ~~~~~~~~~~~^
 ```
 
-C++ also has `override`, but doesn't make much sense to impose that as a requirement; inheritance
-and concepts are orthogonal systems.
+C++ also has `override` and `final`, but doesn't make much sense to impose that as a requirement;
+inheritance and concepts are orthogonal systems.
 
 # Implement methods on remote types
 
