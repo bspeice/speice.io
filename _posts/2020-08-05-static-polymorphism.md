@@ -682,15 +682,36 @@ mostly please just use concepts.
 
 # Templated splatter
 
-Rust can't handle arbitrary numbers of template parameters. Can use macros, but I should investigate
-`typename...` types.
+Rust can't handle arbitrary numbers of template parameters. Macros can (see `vec![]`), and you could
+use a macro to define the implementation of free functions, but methods need to know exactly what
+the arguments are. Also, no concept of SFINAE or type inspection in Rust macros.
 
-Common pattern to implement
+Good example of how to demonstrate Rust not being able to use splatter templates: can't emplace back
+on a vector. Have to construct and move. In general, don't think it's possible to "construct" into a
+pre-existing address; could use same variation of unsafe to say "I know how large i am, I know my
+layout, I have a pointer to where I begin, set it all up," but even that would have to be defined on
+the struct, `Vec` can't forward args to this initializer method.  
+That said, open question as to whether the move vs. construct-in-place/placement new matters given
+an optimizing compiler: https://stackoverflow.com/a/36919571
 
 # Potentially excluded
 
 Some ideas related to traits, but that I'm not sure sufficiently fit the theme. May be worth
 investigating in a future post?
+
+# CRTP
+
+Might not need to be an extensive section? CRTP lets bases reference children. Rust has no struct
+inheritance, but some CRTP stuff can be used with traits.
+
+Review of the examples Wikipedia gives:
+
+- Static polymorphism: Traits are allowed to declare that implementors define an `implementation()`
+  and then provide default implementations of other methods that use it (without virtual calls). Not
+  a common pattern though; use composition, not inheritance. https://godbolt.org/z/Md55e7
+- Object counter: I don't think Rust has a way to accomplish this; traits aren't allowed to hold
+  data.
+- Polymorphic chaining: Feel free to return `Self`, `&Self`, etc., builder patterns aren't new.
 
 ## Visibility
 
