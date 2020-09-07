@@ -694,10 +694,7 @@ the struct, `Vec` can't forward args to this initializer method.
 That said, open question as to whether the move vs. construct-in-place/placement new matters given
 an optimizing compiler: https://stackoverflow.com/a/36919571
 
-# Potentially excluded
-
-Some ideas related to traits, but that I'm not sure sufficiently fit the theme. May be worth
-investigating in a future post?
+Also: `std::initializer_list` (although Rust can get _very_ close with macros: `vec!`).
 
 # CRTP
 
@@ -712,6 +709,11 @@ Review of the examples Wikipedia gives:
 - Object counter: I don't think Rust has a way to accomplish this; traits aren't allowed to hold
   data.
 - Polymorphic chaining: Feel free to return `Self`, `&Self`, etc., builder patterns aren't new.
+
+# Potentially excluded
+
+Some ideas related to traits, but that I'm not sure sufficiently fit the theme. May be worth
+investigating in a future post?
 
 ## Visibility
 
