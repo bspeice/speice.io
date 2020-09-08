@@ -694,8 +694,6 @@ the struct, `Vec` can't forward args to this initializer method.
 That said, open question as to whether the move vs. construct-in-place/placement new matters given
 an optimizing compiler: https://stackoverflow.com/a/36919571
 
-Also: `std::initializer_list` (although Rust can get _very_ close with macros: `vec!`).
-
 # CRTP
 
 Might not need to be an extensive section? CRTP lets bases reference children. Rust has no struct
