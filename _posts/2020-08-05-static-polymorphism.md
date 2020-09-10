@@ -12,7 +12,10 @@ useful because both languages are "system."
 # System Differences
 
 Worth noting differences in goals: polymorphism in C++ is only duck typing. Means that static
-polymorphism happens separate from visibility, overloading, etc.
+polymorphism happens separate from visibility, overloading, etc. Concepts appear to be more than an
+extension of template metaprogramming
+([example](https://cppinsights.io/lnk?code=I2luY2x1ZGUgPGNvbmNlcHRzPgojaW5jbHVkZSA8Y3N0ZGludD4KCnRlbXBsYXRlPHR5cGVuYW1lIFQ+CmNvbmNlcHQgSGFzTWV0aG9kID0gcmVxdWlyZXMgKFQgYSkgewogIHsgYS5tZXRob2QoKSB9IC0+IHN0ZDo6c2FtZV9hczxzdGQ6OnVpbnQ2NF90PjsKfTsKCmNsYXNzIE15Q2xhc3MgewpwdWJsaWM6CiAgc3RkOjp1aW50NjRfdCBtZXRob2QoKSB7CiAgICByZXR1cm4gMDsKICB9Cn07Cgp2b2lkIGZ1bmN0aW9uKEhhc01ldGhvZCBhdXRvIGEpIHsKICBhLm1ldGhvZCgpOwp9CgppbnQgbWFpbigpCnsKICBNeUNsYXNzIHh7fTsKICAKICBmdW5jdGlvbih4KTsKfQ==&insightsOptions=cpp2a&std=cpp2a&rev=1.0)),
+but don't enable anything that wasn't possible otherwise (was just a monstrous pain previously).
 
 Rust's trait system is more thorough (need a better way to explain that), which allows for trait
 markers, auto-deriving, arbitrary self.
