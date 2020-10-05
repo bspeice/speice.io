@@ -9,6 +9,17 @@ tags: [rust, javascript, webassembly]
 In honor of Webpack 5.0 being released and dramatically easing integration of WebAssembly, it's time
 to revisit previous work done to use Electron as a backend for Rust GUI applications.
 
+Structure:
+
+- Why did I want to do this?: Potential to use Electron+WASM as Rust GUI; not truly native, but at
+  least experimenting with.
+- Problems: Hard to use ecosystem, crates don't compile, MIME types, async loading
+- What changed?: Webpack makes WASM loading asynchronous and easy in v5, Chrome now sets MIME type
+- Demonstration and screenshots
+- Closing thoughts: is it worth it?
+
+---
+
 I wasn't expecting to write this, but it's 2020 and we could all use a win. When last I addressed
 using WASM + Electron to write desktop applications in Rust, there were ultimately too many issues
 to recommend this combination as feasible. Since then, there's been a lot of progress, and after
