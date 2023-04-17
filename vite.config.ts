@@ -3,12 +3,16 @@ import blog from "@bspeice/vite-plugin-blog";
 import mdx from "@mdx-js/rollup";
 import react from "@vitejs/plugin-react-swc";
 
+import remarkPrism from "remark-prism";
+
 export default defineConfig({
   plugins: [
     blog({
-      "/": "/pages/index",
+      "/": "/pages/index.tsx",
+      "/about": "/pages/about.mdx",
+      "/2019/02/the-whole-world": "/posts/2019/02/the-whole-world.mdx",
     }),
-    mdx(),
+    mdx({ remarkPlugins: [remarkPrism] }),
     react(),
   ],
 });

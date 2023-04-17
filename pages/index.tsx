@@ -1,9 +1,9 @@
-import React from "react";
+import Layout from "./LayoutPage";
 
-export default function Page() {
+export default function () {
   return (
-    <>
+    <Layout>
       <p>Is this thing on?</p>
-    </>
+    </Layout>
   );
 }

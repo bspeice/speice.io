@@ -1,0 +1,72 @@
+@import "normalize.css";
+
+@import "@fontsource/lato";
+@import "@fontsource/jetbrains-mono";
+@import "prism-themes/themes/prism-material-dark";
+
+body {
+  font-family: "Lato", sans-serif;
+  font-size: 14pt;
+  line-height: 1.4;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 0.6em;
+  margin-bottom: 0;
+}
+
+p,
+ul {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+pre {
+  padding: 1em 0;
+}
+
+code,
+code[class*="language-"] {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.gridOffset {
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(1em, 2fr)
+    [main-start] minmax(0, 45em) [main-end]
+    minmax(0, 1fr)
+    [side-start] minmax(0, 3fr) [side-end]
+    minmax(1em, 2fr) [full-end];
+}
+
+.gridOffset > :not(.gridOffsetSide) {
+  grid-column: main;
+}
+
+.gridOffset > div.remark-highlight,
+.gridOffset > div.remark-highlight > pre {
+  display: inherit;
+  grid-column: full;
+  grid-template-columns: inherit;
+}
+
+.gridOffset > div.remark-highlight > pre > code {
+  grid-column: main;
+}
+
+.gridOffsetSide {
+  grid-column: side;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.navbar > * {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
