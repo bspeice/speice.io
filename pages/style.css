@@ -75,6 +75,7 @@ a > code {
 }
 
 a:hover,
+a:hover > code,
 a > code:hover {
   color: var(--color-primary-highlight);
   background-color: var(--color-secondary-highlight);
