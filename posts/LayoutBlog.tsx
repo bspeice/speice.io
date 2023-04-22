@@ -1,4 +1,6 @@
 import { PropsWithChildren } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendar } from "@fortawesome/free-regular-svg-icons";
 
 import Base from "../pages/LayoutBase";
 
@@ -19,7 +21,10 @@ export default function Layout({
     <div className="header">
       <h1>{title}</h1>
       <h3>{description}</h3>
-      <h4>Published: {published}</h4>
+      <h4>
+        <FontAwesomeIcon icon={faCalendar} />
+        {published}
+      </h4>
       {updated && <p>Last updated: {updated}</p>}
     </div>
   );
