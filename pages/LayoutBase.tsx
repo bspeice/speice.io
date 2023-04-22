@@ -1,18 +1,18 @@
 import { PropsWithChildren, StrictMode } from "react";
-import { IconContext } from "react-icons";
-import { FaHome, FaUser } from "react-icons/fa";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHome, faUser } from "@fortawesome/free-solid-svg-icons";
 
 import "./style.css";
 
 const Navbar: React.FC = () => (
   <span className="navbar">
     <a href="/">
-      <FaHome />
+      <FontAwesomeIcon icon={faHome} className="icon" />
       Home
     </a>
     <span>/</span>
     <a href="/about">
-      <FaUser />
+      <FontAwesomeIcon icon={faUser} className="icon" />
       About
     </a>
   </span>
@@ -20,13 +20,11 @@ const Navbar: React.FC = () => (
 
 const Layout: React.FC<PropsWithChildren> = ({ children }) => (
   <StrictMode>
-    <IconContext.Provider value={{ className: "icon" }}>
-      <div className="gridOffset">
-        <Navbar />
-        <hr style={{ marginTop: "0" }} />
-        {children}
-      </div>
-    </IconContext.Provider>
+    <div className="gridOffset">
+      <Navbar />
+      <hr style={{ marginTop: "0" }} />
+      {children}
+    </div>
   </StrictMode>
 );
 
