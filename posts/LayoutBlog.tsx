@@ -1,6 +1,6 @@
 import { PropsWithChildren } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendar } from "@fortawesome/free-regular-svg-icons";
+import { IconContext } from "react-icons";
+import { FaCalendar } from "react-icons/fa";
 
 import Base from "../pages/LayoutBase";
 
@@ -22,7 +22,7 @@ export default function Layout({
       <h1>{title}</h1>
       <h3>{description}</h3>
       <h4>
-        <FontAwesomeIcon icon={faCalendar} />
+        <FaCalendar />
         {published}
       </h4>
       {updated && <p>Last updated: {updated}</p>}
@@ -31,9 +31,13 @@ export default function Layout({
 
   const withChildren: React.FC<PropsWithChildren> = ({ children }) => (
     <Base>
-      {header}
-      <div style={{ paddingTop: "2em" }} />
-      {children}
+      <IconContext.Provider
+        value={{ className: "icon icon-post", size: "1.2em" }}
+      >
+        {header}
+        <div style={{ paddingTop: "2em" }} />
+        {children}
+      </IconContext.Provider>
     </Base>
   );
   return withChildren;

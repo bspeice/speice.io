@@ -113,16 +113,22 @@ a > code:hover {
 
 .navbar {
   text-align: right;
-  margin: 0.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
-.navbar * {
-  margin-left: 0.5em;
-  margin-right: 0.5em;
+.navbar :not(.icon) {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
   text-decoration: none;
   border-bottom-style: none;
 }
 
-[class*="fa-"] {
-  margin-right: 0.5em;
+.icon {
+  vertical-align: middle;
+  margin-right: 0.3em;
+}
+
+.icon-post {
+  vertical-align: text-top;
 }
