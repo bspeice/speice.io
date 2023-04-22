@@ -19,7 +19,7 @@ export default function Layout({
     <div className="header">
       <h1>{title}</h1>
       <h3>{description}</h3>
-      <p>Published: {published}</p>
+      <h4>Published: {published}</h4>
       {updated && <p>Last updated: {updated}</p>}
     </div>
   );
@@ -27,7 +27,7 @@ export default function Layout({
   const withChildren: React.FC<PropsWithChildren> = ({ children }) => (
     <Base>
       {header}
-      <hr />
+      <div style={{ paddingTop: "2em" }} />
       {children}
     </Base>
   );

@@ -12,13 +12,16 @@
   "dependencies": {
     "@fontsource/jetbrains-mono": "^4.5.12",
     "@fontsource/lato": "^4.5.10",
+    "highlight.js": "^11.7.0",
     "normalize.css": "^8.0.1",
     "prism-themes": "^1.9.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "rehype-highlight": "^6.0.0"
   },
   "devDependencies": {
     "@bspeice/vite-plugin-blog": "^1.1.0",
+    "@mapbox/rehype-highlight-code-block": "^1.0.0",
     "@mdx-js/rollup": "^2.3.0",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
