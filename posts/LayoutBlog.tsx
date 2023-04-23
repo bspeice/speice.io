@@ -1,6 +1,7 @@
-import { PropsWithChildren } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
+import { MDXProvider } from "@mdx-js/react";
+import React, { PropsWithChildren } from "react";
 
 import Base from "../pages/LayoutBase";
 
@@ -10,6 +11,10 @@ interface BlogProps {
   published: string;
   updated?: string;
 }
+
+const components = {
+  pre: (props: any) => <pre className="hljs" {...props} />,
+};
 
 export default function Layout({
   title,
@@ -37,7 +42,7 @@ export default function Layout({
     <Base>
       {header}
       <div style={{ paddingTop: "2em" }} />
-      {children}
+      <MDXProvider components={components}>{children}</MDXProvider>
     </Base>
   );
   return withChildren;

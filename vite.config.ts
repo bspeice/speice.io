@@ -10,34 +10,6 @@ import { Root, Element } from "hast";
 import { Plugin } from "unified";
 import { visit } from "unist-util-visit";
 
-// Add the `hljs` class to `pre` so it picks up the highlight background color
-const highlightPre: Plugin<[], Root> = () => {
-  return (tree) => {
-    visit(tree, (node, _, parent) => {
-      if (
-        !parent ||
-        (parent as Element).tagName !== "pre" ||
-        (node as Element).tagName !== "code"
-      ) {
-        return;
-      }
-
-      const parentElement = parent as Element;
-      const parentProperties = parentElement.properties;
-
-      if (!parentProperties) {
-        return;
-      }
-
-      if (!Array.isArray(parentProperties["className"])) {
-        parentProperties["className"] = ["hljs"];
-      } else {
-        parentProperties["className"].unshift("hljs");
-      }
-    });
-  };
-};
-
 export default defineConfig({
   build: {
     rollupOptions: {
@@ -52,7 +24,8 @@ export default defineConfig({
     }),
     mdx({
       remarkPlugins: [remarkMath],
-      rehypePlugins: [highlightPre, rehypeHighlight, rehypeKatex],
+      rehypePlugins: [rehypeHighlight, rehypeKatex],
+      providerImportSource: "@mdx-js/react",
     }),
     react(),
   ],
