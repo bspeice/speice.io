@@ -6,10 +6,6 @@ import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-import { Root, Element } from "hast";
-import { Plugin } from "unified";
-import { visit } from "unist-util-visit";
-
 export default defineConfig({
   build: {
     rollupOptions: {
