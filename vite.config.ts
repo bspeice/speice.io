@@ -3,6 +3,8 @@ import blog from "@bspeice/vite-plugin-blog";
 import mdx from "@mdx-js/rollup";
 import react from "@vitejs/plugin-react-swc";
 import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
 
 import { Root, Element } from "hast";
 import { Plugin } from "unified";
@@ -48,7 +50,10 @@ export default defineConfig({
       "/about": "/pages/about.mdx",
       "/2019/02/the-whole-world": "/posts/2019/02/the-whole-world.mdx",
     }),
-    mdx({ rehypePlugins: [rehypeHighlight, highlightPre] }),
+    mdx({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: [highlightPre, rehypeHighlight, rehypeKatex],
+    }),
     react(),
   ],
 });

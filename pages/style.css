@@ -2,8 +2,8 @@
 
 @import "@fontsource/lato";
 @import "@fontsource/jetbrains-mono";
-
 @import "highlight.js/styles/atom-one-dark.css";
+@import "katex/dist/katex.min.css";
 
 :root {
   --color-primary: #000;
@@ -109,7 +109,7 @@ a > code:hover {
 }
 
 .gridOffset > pre > code {
-  grid-column: main;
+  grid-column: main / full;
 }
 
 .navbar {
@@ -126,10 +126,5 @@ a > code:hover {
 }
 
 .icon {
-  vertical-align: middle;
   margin-right: 0.3em;
-}
-
-.icon-post {
-  vertical-align: text-top;
 }
