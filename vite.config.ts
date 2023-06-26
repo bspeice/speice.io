@@ -19,6 +19,7 @@ export default defineConfig({
       "/": "/pages/index.tsx",
       "/about": "/pages/about.mdx",
       "/2019/02/the-whole-world": "/posts/2019/02/the-whole-world.mdx",
+      "/2023/06/flam3": "/posts/2023/06/flam3/index.tsx",
     }),
     mdx({
       remarkPlugins: [remarkFrontmatter, remarkMath, remarkMdxFrontmatter],
