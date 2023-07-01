@@ -1,9 +1,10 @@
-import React from "react";
 import Blog from "../../../LayoutBlog";
 
 import { Canvas } from "./0-utility";
 import { gasket } from "./1-gasket";
-import { renderBaseline } from "./2-variations";
+import { renderBaseline } from "./2a-variations";
+import { renderPost } from "./2b-post";
+import { renderFinal } from "./2c-final";
 
 export default function () {
   const Layout = Blog({
@@ -15,6 +16,8 @@ export default function () {
     <Layout>
       <Canvas f={gasket} />
       <Canvas f={renderBaseline} />
+      <Canvas f={renderPost} />
+      <Canvas f={renderFinal} />
     </Layout>
   );
 }
