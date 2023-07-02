@@ -104,8 +104,6 @@ export function camera(x: number, y: number, size: number): [number, number] {
 }
 
 export function plot(x: number, y: number, image: ImageData) {
-  // "Zoom out" the camera by a factor of 2 to match the default Apophysis scaling
-  // (plot all points in the range [-2, 2])
   const [pixelX, pixelY] = camera(x, y, image.width);
 
   if (
