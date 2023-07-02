@@ -8,13 +8,12 @@ import {
   popcorn,
   pdj,
   render,
-  transform1Coefs,
   transform1Weight,
-  transform2Coefs,
+  transform1,
   transform2Weight,
-  transform3Coefs,
-  transform3Pdj,
+  transform2,
   transform3Weight,
+  transform3,
 } from "./2a-variations";
 
 export class TransformPost extends Transform {
@@ -45,35 +44,26 @@ export function variationPost(coefs: Coefs, variation: Variation): Variation {
   };
 }
 
-export const transform2Post: Coefs = {
-  a: 1,
-  b: 0,
-  c: 0.241352,
-  d: 0,
-  e: 1,
-  f: 0.271521,
-};
+export const transform2Post = new TransformPost(
+  transform2.coefs,
+  [
+    [1, linear],
+    [1, popcorn],
+  ],
+  {
+    a: 1,
+    b: 0,
+    c: 0.241352,
+    d: 0,
+    e: 1,
+    f: 0.271521,
+  }
+);
 
 export function renderPost(image: ImageData) {
-  const transform1 = new Transform(transform1Coefs, [[1, julia]]);
-
-  const transform2 = new TransformPost(
-    transform2Coefs,
-    [
-      [1, linear],
-      [1, popcorn],
-    ],
-    transform2Post
-  );
-
-  const [pdjA, pdjB, pdjC, pdjD] = transform3Pdj;
-  const transform3 = new Transform(transform3Coefs, [
-    [1, pdj(pdjA, pdjB, pdjC, pdjD)],
-  ]);
-
   const flame = new Flame([
     [transform1Weight, transform1],
-    [transform2Weight, transform2],
+    [transform2Weight, transform2Post],
     [transform3Weight, transform3],
   ]);
 

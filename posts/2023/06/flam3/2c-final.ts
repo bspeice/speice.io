@@ -2,20 +2,15 @@ import {
   Coefs,
   Flame,
   Transform,
-  linear,
   julia,
-  popcorn,
-  pdj,
-  transform1Coefs,
   transform1Weight,
-  transform2Coefs,
+  transform1,
   transform2Weight,
-  transform3Coefs,
-  transform3Pdj,
   transform3Weight,
+  transform3,
   render,
 } from "./2a-variations";
-import { TransformPost, transform2Post } from "./2b-post";
+import { transform2Post } from "./2b-post";
 
 export class FlameFinal extends Flame {
   constructor(
@@ -31,38 +26,23 @@ export class FlameFinal extends Flame {
   }
 }
 
-export const finalCoefs: Coefs = {
-  a: 2,
-  b: 0,
-  c: 0,
-  d: 0,
-  e: 2,
-  f: 0,
-};
+export const transformFinal = new Transform(
+  {
+    a: 2,
+    b: 0,
+    c: 0,
+    d: 0,
+    e: 2,
+    f: 0,
+  },
+  [[1, julia]]
+);
 
 export function renderFinal(image: ImageData) {
-  const transform1 = new Transform(transform1Coefs, [[1, julia]]);
-
-  const transform2 = new TransformPost(
-    transform2Coefs,
-    [
-      [1, linear],
-      [1, popcorn],
-    ],
-    transform2Post
-  );
-
-  const [pdjA, pdjB, pdjC, pdjD] = transform3Pdj;
-  const transform3 = new Transform(transform3Coefs, [
-    [1, pdj(pdjA, pdjB, pdjC, pdjD)],
-  ]);
-
-  const transformFinal = new Transform(finalCoefs, [[1, julia]]);
-
   const flame = new FlameFinal(
     [
       [transform1Weight, transform1],
-      [transform2Weight, transform2],
+      [transform2Weight, transform2Post],
       [transform3Weight, transform3],
     ],
     transformFinal

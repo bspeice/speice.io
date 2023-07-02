@@ -137,50 +137,50 @@ export function render(flame: Flame, quality: number, image: ImageData) {
   }
 }
 
-export const transform1Coefs: Coefs = {
-  a: -1.381068,
-  b: -1.381068,
-  c: 0,
-  d: 1.381068,
-  e: -1.381068,
-  f: 0,
-};
 export const transform1Weight = 0.56453495;
+export const transform1 = new Transform(
+  {
+    a: -1.381068,
+    b: -1.381068,
+    c: 0,
+    d: 1.381068,
+    e: -1.381068,
+    f: 0,
+  },
+  [[1, julia]]
+);
 
-export const transform2Coefs: Coefs = {
-  a: 0.031393,
-  b: 0.031367,
-  c: 0,
-  d: -0.031367,
-  e: 0.031393,
-  f: 0,
-};
 export const transform2Weight = 0.013135;
-
-export const transform3Coefs: Coefs = {
-  a: 1.51523,
-  b: -3.048677,
-  c: 0.724135,
-  d: 0.740356,
-  e: -1.455964,
-  f: -0.362059,
-};
-export const transform3Pdj = [1.09358, 2.13048, 2.54127, 2.37267];
-export const transform3Weight = 0.42233;
-
-export function renderBaseline(image: ImageData) {
-  const transform1 = new Transform(transform1Coefs, [[1, julia]]);
-
-  const transform2 = new Transform(transform2Coefs, [
+export const transform2 = new Transform(
+  {
+    a: 0.031393,
+    b: 0.031367,
+    c: 0,
+    d: -0.031367,
+    e: 0.031393,
+    f: 0,
+  },
+  [
     [1, linear],
     [1, popcorn],
-  ]);
+  ]
+);
 
-  const [pdjA, pdjB, pdjC, pdjD] = transform3Pdj;
-  const transform3 = new Transform(transform3Coefs, [
-    [1, pdj(pdjA, pdjB, pdjC, pdjD)],
-  ]);
+export const transform3Weight = 0.42233;
+export const transform3Pdj = [1.09358, 2.13048, 2.54127, 2.37267] as const;
+export const transform3 = new Transform(
+  {
+    a: 1.51523,
+    b: -3.048677,
+    c: 0.724135,
+    d: 0.740356,
+    e: -1.455964,
+    f: -0.362059,
+  },
+  [[1, pdj(...transform3Pdj)]]
+);
 
+export function renderBaseline(image: ImageData) {
   const flame = new Flame([
     [transform1Weight, transform1],
     [transform2Weight, transform2],
