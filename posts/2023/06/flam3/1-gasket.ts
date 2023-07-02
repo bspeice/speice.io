@@ -10,7 +10,7 @@ function plot(x: number, y: number, image: ImageData) {
   //  pixelY = Math.floor((y + 1) * image.height / 2)
   //
   // However, that produces a mirror image (across both X and Y)
-  // from the paper. We'll invert X and Y to compensate.
+  // from the paper. We'll negate X and Y to compensate.
   // Second, because the gasket solution only contains points in
   // the range [0, 1), the naive plot above would waste 75% of
   // the pixels available. We'll keep the shift by 1 (to compensate

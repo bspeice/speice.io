@@ -14,10 +14,14 @@ export default function () {
   });
   return (
     <Layout>
-      <Canvas f={gasket} />
-      <Canvas f={renderBaseline} />
-      <Canvas f={renderPost} />
-      <Canvas f={renderFinal} />
+      <div>
+        <Canvas f={gasket} />
+        <Canvas f={renderBaseline} />
+      </div>
+      <div>
+        <Canvas f={renderPost} />
+        <Canvas f={renderFinal} />
+      </div>
     </Layout>
   );
 }

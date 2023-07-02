@@ -28,7 +28,7 @@ export const Canvas: React.FC<{ f: renderFn }> = ({ f }) => {
     }
   });
 
-  return <canvas ref={canvasRef} width={600} height={600} />;
+  return <canvas ref={canvasRef} width={400} height={400} />;
 };
 
 export function randomInteger(min: number, max: number) {

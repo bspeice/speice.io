@@ -17,7 +17,7 @@ function r(x: number, y: number) {
 }
 
 function theta(x: number, y: number) {
-  return Math.atan2(x, y);
+  return Math.atan2(y, x);
 }
 
 function omega(): number {
@@ -93,6 +93,18 @@ export function weightedChoice<T>(choices: [number, T][]) {
   throw "unreachable";
 }
 
+export class Flame {
+  x: number = Math.random() * 2 - 1;
+  y: number = Math.random() * 2 - 1;
+
+  constructor(public readonly transforms: [number, Transform][]) {}
+
+  step() {
+    const transform = weightedChoice(this.transforms);
+    [this.x, this.y] = transform.apply(this.x, this.y);
+  }
+}
+
 export function plot(x: number, y: number, image: ImageData) {
   const pixelX = Math.floor(((x + 2) * image.width) / 4);
   const pixelY = Math.floor(((y + 2) * image.height) / 4);
@@ -114,23 +126,13 @@ export function plot(x: number, y: number, image: ImageData) {
   image.data[index + 3] = 0xff;
 }
 
-export class Flame {
-  constructor(public readonly transforms: [number, Transform][]) {}
+export function render(flame: Flame, quality: number, image: ImageData) {
+  const iterations = quality * image.width * image.height;
 
-  render(quality: number, image: ImageData) {
-    var x = Math.random() * 2 - 1;
-    var y = Math.random() * 2 - 1;
-
-    const iter = quality * (image.width * image.height);
-    for (var i = 0; i < iter; i++) {
-      const transform = weightedChoice(this.transforms);
-
-      // Play the chaos game
-      [x, y] = transform.apply(x, y);
-
-      if (i > 20) {
-        plot(x, y, image);
-      }
+  for (var i = 0; i < iterations; i++) {
+    flame.step();
+    if (i > 20) {
+      plot(flame.x, flame.y, image);
     }
   }
 }
@@ -185,5 +187,5 @@ export function renderBaseline(image: ImageData) {
     [transform3Weight, transform3],
   ]);
 
-  flame.render(1, image);
+  render(flame, 1, image);
 }

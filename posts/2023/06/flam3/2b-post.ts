@@ -7,6 +7,7 @@ import {
   julia,
   popcorn,
   pdj,
+  render,
   transform1Coefs,
   transform1Weight,
   transform2Coefs,
@@ -75,5 +76,6 @@ export function renderPost(image: ImageData) {
     [transform2Weight, transform2],
     [transform3Weight, transform3],
   ]);
-  flame.render(1, image);
+
+  render(flame, 1, image);
 }

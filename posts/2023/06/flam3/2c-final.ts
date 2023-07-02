@@ -13,8 +13,7 @@ import {
   transform3Coefs,
   transform3Pdj,
   transform3Weight,
-  weightedChoice,
-  plot,
+  render,
 } from "./2a-variations";
 import { TransformPost, transform2Post } from "./2b-post";
 
@@ -26,22 +25,9 @@ export class FlameFinal extends Flame {
     super(transforms);
   }
 
-  render(quality: number, image: ImageData) {
-    var x = Math.random() * 2 - 1;
-    var y = Math.random() * 2 - 1;
-
-    const iter = quality * (image.width * image.height);
-    for (var i = 0; i < iter; i++) {
-      const transform = weightedChoice(this.transforms);
-      [x, y] = transform.apply(x, y);
-
-      // This line is the only thing that changes:
-      [x, y] = this.final.apply(x, y);
-
-      if (i > 20) {
-        plot(x, y, image);
-      }
-    }
+  step() {
+    super.step();
+    [this.x, this.y] = this.final.apply(this.x, this.y);
   }
 }
 
@@ -82,5 +68,5 @@ export function renderFinal(image: ImageData) {
     transformFinal
   );
 
-  flame.render(1, image);
+  render(flame, 1, image);
 }
