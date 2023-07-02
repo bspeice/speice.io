@@ -1,6 +1,4 @@
-import { randomInteger, renderFn } from "./0-utility";
-
-const ITER = 100_000;
+import { randomBiUnit, randomInteger, renderFn, imageIndex } from "./0-utility";
 
 function plot(x: number, y: number, image: ImageData) {
   // A trivial `plot` implementation would take the range [-1, 1],
@@ -19,10 +17,8 @@ function plot(x: number, y: number, image: ImageData) {
   var pixelX = Math.floor((-x + 1) * image.width);
   var pixelY = Math.floor((-y + 1) * image.height);
 
-  // Now translate the (x, y) pixel coordinates to a buffer index
-  // and paint it black:
-  const index = pixelY * (image.width * 4) + pixelX * 4;
-
+  // Set the pixel black:
+  const index = imageIndex(pixelX, pixelY, image.width);
   image.data[index + 0] = 0;
   image.data[index + 1] = 0;
   image.data[index + 2] = 0;
@@ -44,13 +40,13 @@ export const gasket: renderFn = (image) => {
     },
   ];
 
-  let x = Math.random() * 2 - 1;
-  let y = Math.random() * 2 - 1;
+  let x = randomBiUnit();
+  let y = randomBiUnit();
 
-  // Heuristic for iteration count
-  const iter = image.height * image.width;
+  // Plot with quality 1
+  const iterations = image.height * image.width;
 
-  for (var i = 0; i < iter; i++) {
+  for (var i = 0; i < iterations; i++) {
     const Fi = randomInteger(0, F.length);
     [x, y] = F[Fi](x, y);
 

@@ -1,5 +1,4 @@
 import {
-  Coefs,
   Flame,
   Transform,
   julia,
@@ -13,6 +12,8 @@ import {
 import { transform2Post } from "./2b-post";
 
 export class FlameFinal extends Flame {
+  didLog: boolean = false;
+
   constructor(
     transforms: [number, Transform][],
     public readonly final: Transform
@@ -20,9 +21,19 @@ export class FlameFinal extends Flame {
     super(transforms);
   }
 
-  step() {
+  override step(): void {
     super.step();
     [this.x, this.y] = this.final.apply(this.x, this.y);
+  }
+
+  override current() {
+    if (!this.didLog) {
+      this.didLog = true;
+      console.trace(`Getting final xform to plot`);
+    }
+    // NOTE: The final transform does not modify the iterator point
+    // return this.final.apply(this.x, this.y);
+    return [this.x, this.y];
   }
 }
 
@@ -38,15 +49,15 @@ export const transformFinal = new Transform(
   [[1, julia]]
 );
 
-export function renderFinal(image: ImageData) {
-  const flame = new FlameFinal(
-    [
-      [transform1Weight, transform1],
-      [transform2Weight, transform2Post],
-      [transform3Weight, transform3],
-    ],
-    transformFinal
-  );
+export const flameFinal = new FlameFinal(
+  [
+    [transform1Weight, transform1],
+    [transform2Weight, transform2Post],
+    [transform3Weight, transform3],
+  ],
+  transformFinal
+);
 
-  render(flame, 1, image);
+export function renderFinal(image: ImageData) {
+  render(flameFinal, 1, image);
 }

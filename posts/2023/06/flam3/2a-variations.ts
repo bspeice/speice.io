@@ -1,3 +1,5 @@
+import { randomBiUnit, weightedChoice } from "./0-utility";
+
 export type Variation = (
   x: number,
   y: number,
@@ -17,7 +19,7 @@ function r(x: number, y: number) {
 }
 
 function theta(x: number, y: number) {
-  return Math.atan2(y, x);
+  return Math.atan2(x, y);
 }
 
 function omega(): number {
@@ -28,10 +30,8 @@ export const linear: Variation = (x, y) => [x, y];
 
 export const julia: Variation = (x, y) => {
   const sqrtR = Math.sqrt(r(x, y));
-  return [
-    sqrtR * Math.cos(theta(x, y) / 2 + omega()),
-    sqrtR * Math.sin(theta(x, y) / 2 + omega()),
-  ];
+  const thetaVal = theta(x, y) / 2 + omega();
+  return [sqrtR * Math.cos(thetaVal), sqrtR * Math.sin(thetaVal)];
 };
 
 export const popcorn: Variation = (x, y, transformCoefs) => {
@@ -74,28 +74,9 @@ export class Transform {
   }
 }
 
-export function weightedChoice<T>(choices: [number, T][]) {
-  const weightSum = choices.reduce(
-    (current, [weight, _t]) => current + weight,
-    0
-  );
-  var choice = Math.random() * weightSum;
-
-  for (var i = 0; i < choices.length; i++) {
-    const [weight, t] = choices[i];
-    if (choice < weight) {
-      return t;
-    }
-
-    choice -= weight;
-  }
-
-  throw "unreachable";
-}
-
 export class Flame {
-  x: number = Math.random() * 2 - 1;
-  y: number = Math.random() * 2 - 1;
+  protected x: number = randomBiUnit();
+  protected y: number = randomBiUnit();
 
   constructor(public readonly transforms: [number, Transform][]) {}
 
@@ -103,17 +84,35 @@ export class Flame {
     const transform = weightedChoice(this.transforms);
     [this.x, this.y] = transform.apply(this.x, this.y);
   }
+
+  current() {
+    return [this.x, this.y];
+  }
+}
+
+export function camera(x: number, y: number, size: number): [number, number] {
+  // Assuming both:
+  //  - The origin is the intended center of the output image
+  //  - The output image is square
+  // ...then map points in the range (-scale, scale) to pixel coordinates.
+  //
+  // The way `flam3` actually calculates the "camera" for taking a point
+  // and determining which pixel to update is fairly involved. The example
+  // fractal was designed in Apophysis (which shows points in the range
+  // [-2, 2] by default) so we use that assumption to simplify the math here.
+  return [Math.floor(((x + 2) * size) / 4), Math.floor(((y + 2) * size) / 4)];
 }
 
 export function plot(x: number, y: number, image: ImageData) {
-  const pixelX = Math.floor(((x + 2) * image.width) / 4);
-  const pixelY = Math.floor(((y + 2) * image.height) / 4);
+  // "Zoom out" the camera by a factor of 2 to match the default Apophysis scaling
+  // (plot all points in the range [-2, 2])
+  const [pixelX, pixelY] = camera(x, y, image.width);
 
   if (
     pixelX < 0 ||
-    pixelX > image.width ||
+    pixelX >= image.width ||
     pixelY < 0 ||
-    pixelY > image.height
+    pixelY >= image.height
   ) {
     return;
   }
@@ -132,7 +131,8 @@ export function render(flame: Flame, quality: number, image: ImageData) {
   for (var i = 0; i < iterations; i++) {
     flame.step();
     if (i > 20) {
-      plot(flame.x, flame.y, image);
+      const [flameX, flameY] = flame.current();
+      plot(flameX, flameY, image);
     }
   }
 }
@@ -167,7 +167,6 @@ export const transform2 = new Transform(
 );
 
 export const transform3Weight = 0.42233;
-export const transform3Pdj = [1.09358, 2.13048, 2.54127, 2.37267] as const;
 export const transform3 = new Transform(
   {
     a: 1.51523,
@@ -177,7 +176,7 @@ export const transform3 = new Transform(
     e: -1.455964,
     f: -0.362059,
   },
-  [[1, pdj(...transform3Pdj)]]
+  [[1, pdj(1.09358, 2.13048, 2.54127, 2.37267)]]
 );
 
 export function renderBaseline(image: ImageData) {
