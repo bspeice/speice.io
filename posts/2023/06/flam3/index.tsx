@@ -17,17 +17,18 @@ export default function () {
   });
   return (
     <Layout>
-      {/* <div>
+      <div>
         <Canvas f={gasket} />
         <Canvas f={renderBaseline} />
       </div>
       <div>
         <Canvas f={renderPost} />
         <Canvas f={renderFinal} />
-      </div> */}
-      <Canvas f={renderBinary} />
-      <Canvas f={renderLinear} />
-      <Canvas f={renderLogarithmic} />
+      </div>
+      <div>
+        <Canvas f={renderLinear} />
+        <Canvas f={renderLogarithmic} />
+      </div>
     </Layout>
   );
 }
