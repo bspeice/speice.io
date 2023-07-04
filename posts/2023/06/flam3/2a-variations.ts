@@ -80,12 +80,12 @@ export class Flame {
 
   constructor(public readonly transforms: [number, Transform][]) {}
 
-  step() {
-    const transform = weightedChoice(this.transforms);
+  step(): void {
+    const [_index, transform] = weightedChoice(this.transforms);
     [this.x, this.y] = transform.apply(this.x, this.y);
   }
 
-  current() {
+  current(): [number, number] {
     return [this.x, this.y];
   }
 }

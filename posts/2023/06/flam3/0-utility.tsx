@@ -41,7 +41,7 @@ export function randomInteger(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-export function weightedChoice<T>(choices: [number, T][]) {
+export function weightedChoice<T>(choices: [number, T][]): [number, T] {
   const weightSum = choices.reduce(
     (current, [weight, _t]) => current + weight,
     0
@@ -51,7 +51,7 @@ export function weightedChoice<T>(choices: [number, T][]) {
   for (var i = 0; i < choices.length; i++) {
     const [weight, t] = choices[i];
     if (choice < weight) {
-      return t;
+      return [i, t];
     }
 
     choice -= weight;

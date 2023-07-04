@@ -26,7 +26,7 @@ export class FlameFinal extends Flame {
     [this.x, this.y] = this.final.apply(this.x, this.y);
   }
 
-  override current() {
+  override current(): [number, number] {
     if (!this.didLog) {
       this.didLog = true;
       console.trace(`Getting final xform to plot`);

@@ -8,6 +8,11 @@ import { renderFinal } from "./2c-final";
 import { renderBinary } from "./3a-binary";
 import { renderLinear } from "./3b-linear";
 import { renderLogarithmic } from "./3c-logarithmic";
+import {
+  renderTransform1,
+  renderTransform2,
+  renderTransform3,
+} from "./4a-solo";
 
 export default function () {
   const Layout = Blog({
@@ -17,7 +22,7 @@ export default function () {
   });
   return (
     <Layout>
-      <div>
+      {/* <div>
         <Canvas f={gasket} />
         <Canvas f={renderBaseline} />
       </div>
@@ -28,7 +33,10 @@ export default function () {
       <div>
         <Canvas f={renderLinear} />
         <Canvas f={renderLogarithmic} />
-      </div>
+      </div> */}
+      <Canvas f={renderTransform1} />
+      <Canvas f={renderTransform2} />
+      <Canvas f={renderTransform3} />
     </Layout>
   );
 }
