@@ -22,7 +22,7 @@ export default function () {
   });
   return (
     <Layout>
-      {/* <div>
+      <div>
         <Canvas f={gasket} />
         <Canvas f={renderBaseline} />
       </div>
@@ -33,10 +33,10 @@ export default function () {
       <div>
         <Canvas f={renderLinear} />
         <Canvas f={renderLogarithmic} />
-      </div> */}
-      <Canvas f={renderTransform1} />
+      </div>
+      {/* <Canvas f={renderTransform1} />
       <Canvas f={renderTransform2} />
-      <Canvas f={renderTransform3} />
+      <Canvas f={renderTransform3} /> */}
     </Layout>
   );
 }

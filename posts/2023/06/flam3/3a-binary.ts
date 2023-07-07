@@ -46,7 +46,7 @@ class AccumulateBinary extends Accumulator {
         image.data[iIdx + 0] = value;
         image.data[iIdx + 1] = value;
         image.data[iIdx + 2] = value;
-        image.data[iIdx + 3] = 0xff;
+        image.data[iIdx + 3] = value ? 0xff : 0;
       }
     }
   }
