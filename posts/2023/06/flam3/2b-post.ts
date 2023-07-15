@@ -14,6 +14,7 @@ import {
   transform2,
   transform3Weight,
   transform3,
+  identityCoefs,
 } from "./2a-variations";
 
 export class TransformPost extends Transform {
@@ -44,12 +45,15 @@ export function variationPost(coefs: Coefs, variation: Variation): Variation {
   };
 }
 
+export const transform1Post = new TransformPost(
+  transform1.coefs,
+  transform1.variations,
+  identityCoefs
+);
+
 export const transform2Post = new TransformPost(
   transform2.coefs,
-  [
-    [1, linear],
-    [1, popcorn],
-  ],
+  transform2.variations,
   {
     a: 1,
     b: 0,
@@ -58,6 +62,12 @@ export const transform2Post = new TransformPost(
     e: 1,
     f: 0.271521,
   }
+);
+
+export const transform3Post = new TransformPost(
+  transform3.coefs,
+  transform3.variations,
+  identityCoefs
 );
 
 export function renderPost(image: ImageData) {

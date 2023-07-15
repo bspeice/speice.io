@@ -32,5 +32,5 @@ export class AccumulateLogarithmic extends Accumulator {
 
 export function renderLogarithmic(image: ImageData) {
   const accumulator = new AccumulateLogarithmic(image.width, image.height);
-  render(flameFinal, 10, accumulator, image);
+  render(flameFinal, 20, accumulator, image);
 }

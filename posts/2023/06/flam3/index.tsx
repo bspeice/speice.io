@@ -1,6 +1,6 @@
 import Blog from "../../../LayoutBlog";
 
-import { Canvas } from "./0-utility";
+import { Canvas } from "./0-canvas";
 import { gasket } from "./1-gasket";
 import { renderBaseline } from "./2a-variations";
 import { renderPost } from "./2b-post";
@@ -13,6 +13,7 @@ import {
   renderTransform2,
   renderTransform3,
 } from "./4a-solo";
+import { renderColor } from "./4b-color";
 
 export default function () {
   const Layout = Blog({
@@ -31,12 +32,9 @@ export default function () {
         <Canvas f={renderFinal} />
       </div>
       <div>
-        <Canvas f={renderLinear} />
         <Canvas f={renderLogarithmic} />
+        <Canvas f={renderColor} />
       </div>
-      {/* <Canvas f={renderTransform1} />
-      <Canvas f={renderTransform2} />
-      <Canvas f={renderTransform3} /> */}
     </Layout>
   );
 }

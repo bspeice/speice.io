@@ -3,13 +3,17 @@ import {
   Transform,
   julia,
   transform1Weight,
-  transform1,
   transform2Weight,
   transform3Weight,
-  transform3,
   render,
+  identityCoefs,
 } from "./2a-variations";
-import { transform2Post } from "./2b-post";
+import {
+  TransformPost,
+  transform1Post,
+  transform2Post,
+  transform3Post,
+} from "./2b-post";
 
 export class FlameFinal extends Flame {
   didLog: boolean = false;
@@ -21,23 +25,12 @@ export class FlameFinal extends Flame {
     super(transforms);
   }
 
-  override step(): void {
-    super.step();
-    [this.x, this.y] = this.final.apply(this.x, this.y);
-  }
-
   override current(): [number, number] {
-    if (!this.didLog) {
-      this.didLog = true;
-      console.trace(`Getting final xform to plot`);
-    }
-    // NOTE: The final transform does not modify the iterator point
-    // return this.final.apply(this.x, this.y);
-    return [this.x, this.y];
+    return this.final.apply(this.x, this.y);
   }
 }
 
-export const transformFinal = new Transform(
+export const transformFinal = new TransformPost(
   {
     a: 2,
     b: 0,
@@ -46,14 +39,15 @@ export const transformFinal = new Transform(
     e: 2,
     f: 0,
   },
-  [[1, julia]]
+  [[1, julia]],
+  identityCoefs
 );
 
 export const flameFinal = new FlameFinal(
   [
-    [transform1Weight, transform1],
+    [transform1Weight, transform1Post],
     [transform2Weight, transform2Post],
-    [transform3Weight, transform3],
+    [transform3Weight, transform3Post],
   ],
   transformFinal
 );

@@ -14,6 +14,15 @@ export type Coefs = {
   f: number;
 };
 
+export const identityCoefs = {
+  a: 1,
+  b: 0,
+  c: 0,
+  d: 0,
+  e: 1,
+  f: 0,
+};
+
 function r(x: number, y: number) {
   return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
 }
@@ -59,7 +68,7 @@ export class Transform {
     public readonly variations: [number, Variation][]
   ) {}
 
-  apply(x: number, y: number) {
+  apply(x: number, y: number): [number, number] {
     const xformX = this.coefs.a * x + this.coefs.b * y + this.coefs.c;
     const xformY = this.coefs.d * x + this.coefs.e * y + this.coefs.f;
 
