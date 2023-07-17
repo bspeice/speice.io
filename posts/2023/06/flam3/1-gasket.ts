@@ -1,57 +1,86 @@
-import { randomBiUnit, randomInteger, renderFn, imageIndex } from "./0-utility";
+import {
+  randomBiUnit,
+  randomInteger,
+  imageIndex,
+  Renderer,
+  histIndex,
+} from "./0-utility";
 
-function plot(x: number, y: number, image: ImageData) {
-  // A trivial `plot` implementation would take the range [-1, 1],
-  // shift it to [0, 2], then scale by the width or height
-  // as appropriate:
-  //  pixelX = Math.floor((x + 1) * image.width / 2)
-  //  pixelY = Math.floor((y + 1) * image.height / 2)
-  //
-  // However, that produces a mirror image (across both X and Y)
-  // from the paper. We'll negate X and Y to compensate.
-  // Second, because the gasket solution only contains points in
-  // the range [0, 1), the naive plot above would waste 75% of
-  // the pixels available. We'll keep the shift by 1 (to compensate
-  // for mirroring X and Y), but scale by the full image width or
-  // height so we'll plot the specific quadrant we care about.
-  var pixelX = Math.floor((-x + 1) * image.width);
-  var pixelY = Math.floor((-y + 1) * image.height);
+type Transform = (x: number, y: number) => [number, number];
 
-  // Set the pixel black:
-  const index = imageIndex(pixelX, pixelY, image.width);
-  image.data[index + 0] = 0;
-  image.data[index + 1] = 0;
-  image.data[index + 2] = 0;
-  image.data[index + 3] = 0xff;
-}
+export class RendererGasket extends Renderer {
+  private values = new Uint8Array(this.size * this.size);
 
-type Xform = (x: number, y: number) => [number, number];
+  /**
+   * Translate values in the flame coordinate system to pixel coordinates
+   *
+   * A trivial implementation would take the range [-1, 1], shift it to [0, 2],
+   * then scale by the image size:
+   *  pixelX = Math.floor((x + 1) * this.size / 2)
+   *  pixelY = Math.floor((y + 1) * this.size / 2)
+   *
+   * However, because the gasket solution set only has values in the range [0, 1],
+   * that would lead to wasting 3/4 of the pixels. We'll instead plot just the range
+   * we care about:
+   *  pixelX = Math.floor(x * this.size)
+   *  pixelY = Math.floor(x * this.size)
+   *
+   * @param x point in the range [-1, 1]
+   * @param y point in the range [-1, 1]
+   */
+  plot(x: number, y: number): void {
+    var pixelX = Math.floor(x * this.size);
+    var pixelY = Math.floor(y * this.size);
 
-export const gasket: renderFn = (image) => {
-  const F: Xform[] = [
-    (x, y) => {
-      return [x / 2, y / 2];
-    },
-    (x, y) => {
-      return [(x + 1) / 2, y / 2];
-    },
-    (x, y) => {
-      return [x / 2, (y + 1) / 2];
-    },
-  ];
+    if (
+      pixelX < 0 ||
+      pixelX >= this.size ||
+      pixelY < 0 ||
+      pixelY >= this.size
+    ) {
+      return;
+    }
 
-  let x = randomBiUnit();
-  let y = randomBiUnit();
+    const index = histIndex(pixelX, pixelY, this.size);
+    this.values[index] = 1;
+  }
 
-  // Plot with quality 1
-  const iterations = image.height * image.width;
+  run(quality: number): void {
+    const transforms: Transform[] = [
+      (x, y) => [x / 2, y / 2],
+      (x, y) => [(x + 1) / 2, y / 2],
+      (x, y) => [x / 2, (y + 1) / 2],
+    ];
 
-  for (var i = 0; i < iterations; i++) {
-    const Fi = randomInteger(0, F.length);
-    [x, y] = F[Fi](x, y);
+    let x = randomBiUnit();
+    let y = randomBiUnit();
 
-    if (i >= 20) {
-      plot(x, y, image);
+    const iterations = quality * this.size * this.size;
+    for (var i = 0; i < iterations; i++) {
+      const transformIndex = randomInteger(0, transforms.length);
+      [x, y] = transforms[transformIndex](x, y);
+
+      if (i >= 20) {
+        this.plot(x, y);
+      }
     }
   }
-};
+
+  render(image: ImageData): void {
+    for (var pixelX = 0; pixelX < image.width; pixelX++) {
+      for (var pixelY = 0; pixelY < image.height; pixelY++) {
+        const hIndex = histIndex(pixelX, pixelY, this.size);
+        if (!this.values[hIndex]) {
+          continue;
+        }
+
+        // Set the pixel black
+        const iIndex = imageIndex(pixelX, pixelY, this.size);
+        image.data[iIndex + 0] = 0;
+        image.data[iIndex + 1] = 0;
+        image.data[iIndex + 2] = 0;
+        image.data[iIndex + 3] = 0xff;
+      }
+    }
+  }
+}

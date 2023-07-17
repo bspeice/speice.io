@@ -1,7 +1,7 @@
 import Blog from "../../../LayoutBlog";
 
-import { Canvas } from "./0-canvas";
-import { gasket } from "./1-gasket";
+import { Canvas, CanvasRenderer } from "./0-canvas";
+import { RendererGasket } from "./1-gasket";
 import { renderBaseline } from "./2a-variations";
 import { renderPost } from "./2b-post";
 import { renderFinal } from "./2c-final";
@@ -23,7 +23,16 @@ export default function () {
   });
   return (
     <Layout>
-      <div>
+      <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: new RendererGasket(400),
+          qualityMax: 10,
+          qualityStep: 0.25,
+        }}
+      />
+      {/* <div>
         <Canvas f={gasket} />
         <Canvas f={renderBaseline} />
       </div>
@@ -34,7 +43,7 @@ export default function () {
       <div>
         <Canvas f={renderLogarithmic} />
         <Canvas f={renderColor} />
-      </div>
+      </div> */}
     </Layout>
   );
 }
