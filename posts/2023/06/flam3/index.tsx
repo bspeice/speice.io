@@ -28,7 +28,7 @@ export default function () {
           defaultUrl: "",
           size: 400,
           renderer: new RendererGasket(400),
-          qualityMax: 10,
+          qualityMax: 0.25,
           qualityStep: 0.25,
         }}
       />

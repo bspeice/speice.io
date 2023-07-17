@@ -50,8 +50,6 @@ export const CanvasRenderer: React.FC<{ params: CanvasParams }> = ({
       return;
     }
 
-    console.log("Animating");
-
     const image = ctx.createImageData(params.size, params.size);
     params.renderer.run(params.qualityStep);
     params.renderer.render(image);
