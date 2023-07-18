@@ -1,3 +1,4 @@
+import { CanvasParams } from "./0-canvas";
 import {
   randomBiUnit,
   randomInteger,

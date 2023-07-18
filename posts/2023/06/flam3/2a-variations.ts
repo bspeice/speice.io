@@ -1,10 +1,17 @@
-import { randomBiUnit, weightedChoice } from "./0-utility";
+import {
+  Renderer,
+  histIndex,
+  imageIndex,
+  randomBiUnit,
+  weightedChoice,
+} from "./0-utility";
 
 export type Variation = (
   x: number,
   y: number,
   transformCoefs: Coefs
 ) => [number, number];
+
 export type Coefs = {
   a: number;
   b: number;
@@ -80,6 +87,66 @@ export class Transform {
     });
 
     return [curX, curY];
+  }
+}
+
+export class RendererFlame extends Renderer {
+  private values = new Uint8Array(this.size * this.size);
+
+  constructor(size: number, public readonly transforms: [number, Transform][]) {
+    super(size);
+  }
+
+  plot(x: number, y: number) {
+    // By default, Apophysis uses a camera that covers the range [-2, 2]
+    // (specifically, the `scale` parameter becomes `pixels_per_unit` in flam3)
+    // Shift the coordinate system to [0, 4], then scale to pixel coordinates
+    const pixelX = Math.floor(((x + 2) * this.size) / 4);
+    const pixelY = Math.floor(((y + 2) * this.size) / 4);
+
+    if (
+      pixelX < 0 ||
+      pixelX >= this.size ||
+      pixelY < 0 ||
+      pixelY >= this.size
+    ) {
+      return;
+    }
+
+    const hIndex = histIndex(pixelX, pixelY, this.size);
+    this.values[hIndex] = 1;
+  }
+
+  run(quality: number): void {
+    var x = randomBiUnit();
+    var y = randomBiUnit();
+
+    const iterations = quality * this.size * this.size;
+    for (var i = 0; i < iterations; i++) {
+      const [_, transform] = weightedChoice(this.transforms);
+      [x, y] = transform.apply(x, y);
+
+      if (i > 20) {
+        this.plot(x, y);
+      }
+    }
+  }
+
+  render(image: ImageData): void {
+    for (var x = 0; x < this.size; x++) {
+      for (var y = 0; y < this.size; y++) {
+        const hIndex = histIndex(x, y, this.size);
+        if (!this.values[hIndex]) {
+          continue;
+        }
+
+        const iIndex = imageIndex(x, y, this.size);
+        image.data[iIndex + 0] = 0;
+        image.data[iIndex + 1] = 0;
+        image.data[iIndex + 2] = 0;
+        image.data[iIndex + 3] = 0xff;
+      }
+    }
   }
 }
 
@@ -186,12 +253,10 @@ export const transform3 = new Transform(
   [[1, pdj(1.09358, 2.13048, 2.54127, 2.37267)]]
 );
 
-export function renderBaseline(image: ImageData) {
-  const flame = new Flame([
+export function rendererBaseline(size: number) {
+  return new RendererFlame(size, [
     [transform1Weight, transform1],
     [transform2Weight, transform2],
     [transform3Weight, transform3],
   ]);
-
-  render(flame, 1, image);
 }

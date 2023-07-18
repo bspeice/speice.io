@@ -2,7 +2,7 @@ import Blog from "../../../LayoutBlog";
 
 import { Canvas, CanvasRenderer } from "./0-canvas";
 import { RendererGasket } from "./1-gasket";
-import { renderBaseline } from "./2a-variations";
+import { rendererBaseline } from "./2a-variations";
 import { renderPost } from "./2b-post";
 import { renderFinal } from "./2c-final";
 import { renderBinary } from "./3a-binary";
@@ -23,13 +23,22 @@ export default function () {
   });
   return (
     <Layout>
-      <CanvasRenderer
+      {/* <CanvasRenderer
         params={{
           defaultUrl: "",
           size: 400,
           renderer: new RendererGasket(400),
-          qualityMax: 0.25,
-          qualityStep: 0.25,
+          qualityMax: 0.3,
+          qualityStep: 0.1,
+        }}
+      /> */}
+      <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => rendererBaseline(size),
+          qualityMax: 1,
+          qualityStep: 0.1,
         }}
       />
       {/* <div>

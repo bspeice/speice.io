@@ -35,14 +35,16 @@ export type CanvasParams = {
   size: number;
   qualityMax: number;
   qualityStep: number;
-  renderer: Renderer;
+  renderer: (size: number) => Renderer;
 };
 
 export const CanvasRenderer: React.FC<{ params: CanvasParams }> = ({
   params,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   var qualityCurrent: number = 0;
+  var rendererCurrent: Renderer = params.renderer(params.size);
 
   const animate = () => {
     const ctx = canvasRef.current?.getContext("2d");
@@ -51,14 +53,20 @@ export const CanvasRenderer: React.FC<{ params: CanvasParams }> = ({
     }
 
     const image = ctx.createImageData(params.size, params.size);
-    params.renderer.run(params.qualityStep);
-    params.renderer.render(image);
+    rendererCurrent.run(params.qualityStep);
+    rendererCurrent.render(image);
     ctx.putImageData(image, 0, 0);
 
-    qualityCurrent += params.qualityStep;
     if (qualityCurrent < params.qualityMax) {
+      qualityCurrent += params.qualityStep;
       requestAnimationFrame(animate);
     }
+  };
+
+  const reset = () => {
+    qualityCurrent = 0;
+    rendererCurrent = params.renderer(params.size);
+    requestAnimationFrame(animate);
   };
 
   useEffect(() => {
@@ -67,5 +75,12 @@ export const CanvasRenderer: React.FC<{ params: CanvasParams }> = ({
     }
   }, []);
 
-  return <canvas ref={canvasRef} width={params.size} height={params.size} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={params.size}
+      height={params.size}
+      onClick={reset}
+    />
+  );
 };
