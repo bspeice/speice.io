@@ -1,13 +1,8 @@
+import { randomBiUnit, weightedChoice } from "./0-utility";
 import {
   Coefs,
   Variation,
-  Flame,
   Transform,
-  linear,
-  julia,
-  popcorn,
-  pdj,
-  render,
   transform1Weight,
   transform1,
   transform2Weight,
@@ -15,6 +10,7 @@ import {
   transform3Weight,
   transform3,
   identityCoefs,
+  RendererFlame,
 } from "./2a-variations";
 
 export class TransformPost extends Transform {
@@ -33,16 +29,6 @@ export class TransformPost extends Transform {
       transformX * this.post.d + transformY * this.post.e + this.post.f,
     ];
   }
-}
-
-export function variationPost(coefs: Coefs, variation: Variation): Variation {
-  return (x, y, transformCoefs) => {
-    const [varX, varY] = variation(x, y, transformCoefs);
-    return [
-      varX * coefs.a + varY * coefs.b + coefs.c,
-      varX * coefs.d + varY * coefs.e + coefs.f,
-    ];
-  };
 }
 
 export const transform1Post = new TransformPost(
@@ -70,12 +56,12 @@ export const transform3Post = new TransformPost(
   identityCoefs
 );
 
-export function renderPost(image: ImageData) {
-  const flame = new Flame([
-    [transform1Weight, transform1],
-    [transform2Weight, transform2Post],
-    [transform3Weight, transform3],
-  ]);
+export const transformAllPost: [number, TransformPost][] = [
+  [transform1Weight, transform1Post],
+  [transform2Weight, transform2Post],
+  [transform3Weight, transform3Post],
+];
 
-  render(flame, 1, image);
+export function buildPost(size: number) {
+  return new RendererFlame(size, transformAllPost);
 }

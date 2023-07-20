@@ -1,34 +1,5 @@
-import {
-  Flame,
-  Transform,
-  julia,
-  transform1Weight,
-  transform2Weight,
-  transform3Weight,
-  render,
-  identityCoefs,
-} from "./2a-variations";
-import {
-  TransformPost,
-  transform1Post,
-  transform2Post,
-  transform3Post,
-} from "./2b-post";
-
-export class FlameFinal extends Flame {
-  didLog: boolean = false;
-
-  constructor(
-    transforms: [number, Transform][],
-    public readonly final: Transform
-  ) {
-    super(transforms);
-  }
-
-  override current(): [number, number] {
-    return this.final.apply(this.x, this.y);
-  }
-}
+import { julia, identityCoefs, RendererFlame } from "./2a-variations";
+import { TransformPost, transformAllPost } from "./2b-post";
 
 export const transformFinal = new TransformPost(
   {
@@ -43,15 +14,20 @@ export const transformFinal = new TransformPost(
   identityCoefs
 );
 
-export const flameFinal = new FlameFinal(
-  [
-    [transform1Weight, transform1Post],
-    [transform2Weight, transform2Post],
-    [transform3Weight, transform3Post],
-  ],
-  transformFinal
-);
+export class RendererFinal extends RendererFlame {
+  constructor(
+    size: number,
+    transforms: [number, TransformPost][],
+    public readonly final: TransformPost
+  ) {
+    super(size, transforms);
+  }
 
-export function renderFinal(image: ImageData) {
-  render(flameFinal, 1, image);
+  plot(x: number, y: number): void {
+    super.plot(...this.final.apply(x, y));
+  }
+}
+
+export function buildFinal(size: number) {
+  return new RendererFinal(size, transformAllPost, transformFinal);
 }

@@ -11,6 +11,8 @@ type Transform = (x: number, y: number) => [number, number];
 
 export class RendererGasket extends Renderer {
   private values = new Uint8Array(this.size * this.size);
+  private x = randomBiUnit();
+  private y = randomBiUnit();
 
   /**
    * Translate values in the flame coordinate system to pixel coordinates
@@ -53,16 +55,17 @@ export class RendererGasket extends Renderer {
       (x, y) => [x / 2, (y + 1) / 2],
     ];
 
-    let x = randomBiUnit();
-    let y = randomBiUnit();
+    // NOTE: `x` and `y` are set as fields on this class
+    // (rather than here in the main chaos game method) because
+    // we render in chunks (to avoid bogging down the browser)
 
     const iterations = quality * this.size * this.size;
     for (var i = 0; i < iterations; i++) {
       const transformIndex = randomInteger(0, transforms.length);
-      [x, y] = transforms[transformIndex](x, y);
+      [this.x, this.y] = transforms[transformIndex](this.x, this.y);
 
       if (i >= 20) {
-        this.plot(x, y);
+        this.plot(this.x, this.y);
       }
     }
   }
@@ -84,4 +87,8 @@ export class RendererGasket extends Renderer {
       }
     }
   }
+}
+
+export function buildGasket(size: number) {
+  return new RendererGasket(size);
 }

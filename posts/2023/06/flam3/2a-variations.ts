@@ -90,19 +90,40 @@ export class Transform {
   }
 }
 
+/**
+ * Translate values in the flame coordinate system to pixel coordinates
+ *
+ * The way `flam3` actually calculates the "camera" for mapping a point
+ * to its pixel coordinate is fairly involved - it also needs to calculate
+ * zoom and rotation. We'll make some simplifying assumptions:
+ * - The final image is square
+ * - We want to plot the range [-2, 2]
+ *
+ * The reference parameters were designed in Apophysis, which uses the
+ * range [-2, 2] by default (the `scale` parameter in XML defines the
+ * "pixels per unit", and with the default zoom, is chosen to give a
+ * range of [-2, 2]).
+ *
+ * @param x point in the range [-2, 2]
+ * @param y point in the range [-2, 2]
+ * @param size image size
+ * @returns pair of pixel coordinates
+ */
+export function camera(x: number, y: number, size: number): [number, number] {
+  return [Math.floor(((x + 2) * size) / 4), Math.floor(((y + 2) * size) / 4)];
+}
+
 export class RendererFlame extends Renderer {
   private values = new Uint8Array(this.size * this.size);
+  protected x = randomBiUnit();
+  protected y = randomBiUnit();
 
   constructor(size: number, public readonly transforms: [number, Transform][]) {
     super(size);
   }
 
   plot(x: number, y: number) {
-    // By default, Apophysis uses a camera that covers the range [-2, 2]
-    // (specifically, the `scale` parameter becomes `pixels_per_unit` in flam3)
-    // Shift the coordinate system to [0, 4], then scale to pixel coordinates
-    const pixelX = Math.floor(((x + 2) * this.size) / 4);
-    const pixelY = Math.floor(((y + 2) * this.size) / 4);
+    const [pixelX, pixelY] = camera(x, y, this.size);
 
     if (
       pixelX < 0 ||
@@ -118,16 +139,13 @@ export class RendererFlame extends Renderer {
   }
 
   run(quality: number): void {
-    var x = randomBiUnit();
-    var y = randomBiUnit();
-
     const iterations = quality * this.size * this.size;
     for (var i = 0; i < iterations; i++) {
       const [_, transform] = weightedChoice(this.transforms);
-      [x, y] = transform.apply(x, y);
+      [this.x, this.y] = transform.apply(this.x, this.y);
 
       if (i > 20) {
-        this.plot(x, y);
+        this.plot(this.x, this.y);
       }
     }
   }
@@ -146,67 +164,6 @@ export class RendererFlame extends Renderer {
         image.data[iIndex + 2] = 0;
         image.data[iIndex + 3] = 0xff;
       }
-    }
-  }
-}
-
-export class Flame {
-  protected x: number = randomBiUnit();
-  protected y: number = randomBiUnit();
-
-  constructor(public readonly transforms: [number, Transform][]) {}
-
-  step(): void {
-    const [_index, transform] = weightedChoice(this.transforms);
-    [this.x, this.y] = transform.apply(this.x, this.y);
-  }
-
-  current(): [number, number] {
-    return [this.x, this.y];
-  }
-}
-
-export function camera(x: number, y: number, size: number): [number, number] {
-  // Assuming both:
-  //  - The origin is the intended center of the output image
-  //  - The output image is square
-  // ...then map points in the range (-scale, scale) to pixel coordinates.
-  //
-  // The way `flam3` actually calculates the "camera" for taking a point
-  // and determining which pixel to update is fairly involved. The example
-  // fractal was designed in Apophysis (which shows points in the range
-  // [-2, 2] by default) so we use that assumption to simplify the math here.
-  return [Math.floor(((x + 2) * size) / 4), Math.floor(((y + 2) * size) / 4)];
-}
-
-export function plot(x: number, y: number, image: ImageData) {
-  const [pixelX, pixelY] = camera(x, y, image.width);
-
-  if (
-    pixelX < 0 ||
-    pixelX >= image.width ||
-    pixelY < 0 ||
-    pixelY >= image.height
-  ) {
-    return;
-  }
-
-  const index = pixelY * (image.width * 4) + pixelX * 4;
-
-  image.data[index + 0] = 0;
-  image.data[index + 1] = 0;
-  image.data[index + 2] = 0;
-  image.data[index + 3] = 0xff;
-}
-
-export function render(flame: Flame, quality: number, image: ImageData) {
-  const iterations = quality * image.width * image.height;
-
-  for (var i = 0; i < iterations; i++) {
-    flame.step();
-    if (i > 20) {
-      const [flameX, flameY] = flame.current();
-      plot(flameX, flameY, image);
     }
   }
 }
@@ -253,10 +210,12 @@ export const transform3 = new Transform(
   [[1, pdj(1.09358, 2.13048, 2.54127, 2.37267)]]
 );
 
-export function rendererBaseline(size: number) {
-  return new RendererFlame(size, [
-    [transform1Weight, transform1],
-    [transform2Weight, transform2],
-    [transform3Weight, transform3],
-  ]);
+export const transformAll: [number, Transform][] = [
+  [transform1Weight, transform1],
+  [transform2Weight, transform2],
+  [transform3Weight, transform3],
+];
+
+export function buildBaseline(size: number) {
+  return new RendererFlame(size, transformAll);
 }

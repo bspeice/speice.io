@@ -1,19 +1,16 @@
+import { build } from "vite";
 import Blog from "../../../LayoutBlog";
 
-import { Canvas, CanvasRenderer } from "./0-canvas";
-import { RendererGasket } from "./1-gasket";
-import { rendererBaseline } from "./2a-variations";
-import { renderPost } from "./2b-post";
-import { renderFinal } from "./2c-final";
-import { renderBinary } from "./3a-binary";
-import { renderLinear } from "./3b-linear";
-import { renderLogarithmic } from "./3c-logarithmic";
-import {
-  renderTransform1,
-  renderTransform2,
-  renderTransform3,
-} from "./4a-solo";
-import { renderColor } from "./4b-color";
+import { CanvasRenderer } from "./0-canvas";
+import { buildBaseline } from "./2a-variations";
+import { buildPost } from "./2b-post";
+import { buildFinal } from "./2c-final";
+import { buildBinary } from "./3a-binary";
+import { buildColor } from "./4-color";
+import { buildLinear } from "./3b-linear";
+import { buildLogarithmic } from "./3c-logarithmic";
+import { buildSolo1, buildSolo2, buildSolo3 } from "./5b-solo";
+import { buildGasketFlame } from "./5a-gasket";
 
 export default function () {
   const Layout = Blog({
@@ -32,27 +29,96 @@ export default function () {
           qualityStep: 0.1,
         }}
       /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildBaseline(size),
+          qualityMax: 1,
+          qualityStep: 0.1,
+        }}
+      /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildPost(size),
+          qualityMax: 1,
+          qualityStep: 0.1
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildFinal(size),
+          qualityMax: 1,
+          qualityStep: 0.1,
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildBinary(size),
+          qualityMax: 1,
+          qualityStep: 0.1,
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildLinear(size),
+          qualityMax: 5,
+          qualityStep: 0.1,
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildLogarithmic(size),
+          qualityMax: 5,
+          qualityStep: 0.1,
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildColor(size),
+          qualityMax: 50,
+          qualityStep: 0.1,
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildSolo1(size),
+          qualityMax: 5,
+          qualityStep: 0.1,
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildSolo2(size),
+          qualityMax: 5,
+          qualityStep: 0.1,
+        }} /> */}
+      {/* <CanvasRenderer
+        params={{
+          defaultUrl: "",
+          size: 400,
+          renderer: (size) => buildSolo3(size),
+          qualityMax: 5,
+          qualityStep: 0.1,
+        }} /> */}
       <CanvasRenderer
         params={{
           defaultUrl: "",
           size: 400,
-          renderer: (size) => rendererBaseline(size),
-          qualityMax: 1,
+          renderer: (size) => buildGasketFlame(size),
+          qualityMax: 0.3,
           qualityStep: 0.1,
         }}
       />
-      {/* <div>
-        <Canvas f={gasket} />
-        <Canvas f={renderBaseline} />
-      </div>
-      <div>
-        <Canvas f={renderPost} />
-        <Canvas f={renderFinal} />
-      </div>
-      <div>
-        <Canvas f={renderLogarithmic} />
-        <Canvas f={renderColor} />
-      </div> */}
     </Layout>
   );
 }
