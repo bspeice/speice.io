@@ -11,17 +11,29 @@ import { paramsColor } from "./4-color.js";
 import { paramsGasketFlame } from "./5a-gasket.js";
 import { paramsSolo1, paramsSolo2, paramsSolo3 } from "./5b-solo.js";
 
+// @ts-expect-error: Vite URL import
 import urlGasket from "./images/1-gasket.png";
+// @ts-expect-error: Vite URL import
 import urlBaseline from "./images/2a-baseline.png";
+// @ts-expect-error: Vite URL import
 import urlPost from "./images/2b-post.png";
+// @ts-expect-error: Vite URL import
 import urlFinal from "./images/2c-final.png";
+// @ts-expect-error: Vite URL import
 import urlBinary from "./images/3a-binary.png";
+// @ts-expect-error: Vite URL import
 import urlLinear from "./images/3b-linear.png";
+// @ts-expect-error: Vite URL import
 import urlLogarithmic from "./images/3c-logarithmic.png";
+// @ts-expect-error: Vite URL import
 import urlColor from "./images/4-color.png";
+// @ts-expect-error: Vite URL import
 import urlGasketFlame from "./images/5a-gasket.png";
+// @ts-expect-error: Vite URL import
 import urlSolo1 from "./images/5b-solo1.png";
+// @ts-expect-error: Vite URL import
 import urlSolo2 from "./images/5b-solo2.png";
+// @ts-expect-error: Vite URL import
 import urlSolo3 from "./images/5b-solo3.png";
 
 export const DEFAULT_STEP: number = 0.1;
