@@ -1,5 +1,5 @@
-import { RendererFlame, Transform, linear } from "./2a-variations";
-import { RendererLogarithmic } from "./3c-logarithmic";
+import { RenderParams } from "./0-utility.js";
+import { RendererFlame, Transform, linear } from "./2a-baseline.js";
 
 export const transformGasket1 = new Transform(
   {
@@ -43,6 +43,7 @@ export const transformGasket: [number, Transform][] = [
   [1 / 3, transformGasket3],
 ];
 
-export function buildGasketFlame(size: number) {
-  return new RendererFlame(size, transformGasket);
-}
+export const paramsGasketFlame: RenderParams = {
+  quality: 1,
+  renderer: (size) => new RendererFlame(size, transformGasket),
+};

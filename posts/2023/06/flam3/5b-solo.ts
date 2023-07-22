@@ -1,7 +1,7 @@
-import { weightedChoice } from "./0-utility";
-import { TransformPost, transformAllPost } from "./2b-post";
-import { transformFinal } from "./2c-final";
-import { RendererLogarithmic } from "./3c-logarithmic";
+import { RenderParams, weightedChoice } from "./0-utility.js";
+import { TransformPost, transformAllPost } from "./2b-post.js";
+import { transformFinal } from "./2c-final.js";
+import { RendererLogarithmic } from "./3c-logarithmic.js";
 
 export class RendererSolo extends RendererLogarithmic {
   constructor(
@@ -27,14 +27,20 @@ export class RendererSolo extends RendererLogarithmic {
   }
 }
 
-export function buildSolo1(size: number) {
-  return new RendererSolo(size, transformAllPost, transformFinal, 0);
-}
+export const paramsSolo1: RenderParams = {
+  quality: 10,
+  renderer: (size) =>
+    new RendererSolo(size, transformAllPost, transformFinal, 0),
+};
 
-export function buildSolo2(size: number) {
-  return new RendererSolo(size, transformAllPost, transformFinal, 1);
-}
+export const paramsSolo2: RenderParams = {
+  quality: 10,
+  renderer: (size) =>
+    new RendererSolo(size, transformAllPost, transformFinal, 1),
+};
 
-export function buildSolo3(size: number) {
-  return new RendererSolo(size, transformAllPost, transformFinal, 2);
-}
+export const paramsSolo3: RenderParams = {
+  quality: 10,
+  renderer: (size) =>
+    new RendererSolo(size, transformAllPost, transformFinal, 2),
+};

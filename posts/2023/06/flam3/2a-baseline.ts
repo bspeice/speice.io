@@ -1,10 +1,11 @@
 import {
+  RenderParams,
   Renderer,
   histIndex,
   imageIndex,
   randomBiUnit,
   weightedChoice,
-} from "./0-utility";
+} from "./0-utility.js";
 
 export type Variation = (
   x: number,
@@ -216,6 +217,7 @@ export const transformAll: [number, Transform][] = [
   [transform3Weight, transform3],
 ];
 
-export function buildBaseline(size: number) {
-  return new RendererFlame(size, transformAll);
-}
+export const paramsBaseline: RenderParams = {
+  quality: 1,
+  renderer: (size) => new RendererFlame(size, transformAll),
+};

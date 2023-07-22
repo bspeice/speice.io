@@ -1,4 +1,9 @@
-import { histIndex, imageIndex, weightedChoice } from "./0-utility";
+import {
+  RenderParams,
+  histIndex,
+  imageIndex,
+  weightedChoice,
+} from "./0-utility.js";
 import {
   Coefs,
   Variation,
@@ -6,14 +11,14 @@ import {
   transform1Weight,
   transform2Weight,
   transform3Weight,
-} from "./2a-variations";
+} from "./2a-baseline.js";
 import {
   TransformPost,
   transform1Post,
   transform2Post,
   transform3Post,
-} from "./2b-post";
-import { RendererFinal, transformFinal } from "./2c-final";
+} from "./2b-post.js";
+import { RendererFinal, transformFinal } from "./2c-final.js";
 
 export class TransformColor extends TransformPost {
   constructor(
@@ -171,15 +176,17 @@ export const paletteBytes = hexToBytes(paletteHex);
  */
 export const paletteNumber = paletteBytes.map((b) => b / 0xff);
 
-export function buildColor(size: number) {
-  return new RendererColor(
-    size,
-    [
-      [transform1Weight, transform1Color],
-      [transform2Weight, transform2Color],
-      [transform3Weight, transform3Color],
-    ],
-    transformFinalColor,
-    paletteNumber
-  );
-}
+export const paramsColor: RenderParams = {
+  quality: 30,
+  renderer: (size) =>
+    new RendererColor(
+      size,
+      [
+        [transform1Weight, transform1Color],
+        [transform2Weight, transform2Color],
+        [transform3Weight, transform3Color],
+      ],
+      transformFinalColor,
+      paletteNumber
+    ),
+};

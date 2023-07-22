@@ -1,0 +1,17 @@
+{
+  "name": "blog-flam3",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "render": "tsc && node ./dist/offline.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^2.11.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  }
+}

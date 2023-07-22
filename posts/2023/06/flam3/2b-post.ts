@@ -1,4 +1,4 @@
-import { randomBiUnit, weightedChoice } from "./0-utility";
+import { RenderParams } from "./0-utility.js";
 import {
   Coefs,
   Variation,
@@ -11,7 +11,7 @@ import {
   transform3,
   identityCoefs,
   RendererFlame,
-} from "./2a-variations";
+} from "./2a-baseline.js";
 
 export class TransformPost extends Transform {
   constructor(
@@ -62,6 +62,7 @@ export const transformAllPost: [number, TransformPost][] = [
   [transform3Weight, transform3Post],
 ];
 
-export function buildPost(size: number) {
-  return new RendererFlame(size, transformAllPost);
-}
+export const paramsPost: RenderParams = {
+  quality: 1,
+  renderer: (size) => new RendererFlame(size, transformAllPost),
+};

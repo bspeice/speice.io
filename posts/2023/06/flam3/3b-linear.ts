@@ -1,11 +1,14 @@
-import { histIndex, imageIndex } from "./0-utility";
-import { transformAllPost } from "./2b-post";
-import { transformFinal } from "./2c-final";
-import { RendererHistogram } from "./3a-binary";
+import { RenderParams, histIndex, imageIndex } from "./0-utility.js";
+import { transformAllPost } from "./2b-post.js";
+import { transformFinal } from "./2c-final.js";
+import { RendererHistogram } from "./3a-binary.js";
 
 class RendererLinear extends RendererHistogram {
   render(image: ImageData): void {
-    const maxHistogram = Math.max(...this.histogram);
+    const maxHistogram = this.histogram.reduce(
+      (max, v) => Math.max(max, v),
+      -Infinity
+    );
 
     for (var x = 0; x < this.size; x++) {
       for (var y = 0; y < this.size; y++) {
@@ -20,6 +23,8 @@ class RendererLinear extends RendererHistogram {
   }
 }
 
-export function buildLinear(size: number) {
-  return new RendererLinear(size, transformAllPost, transformFinal);
-}
+export const paramsLinear: RenderParams = {
+  quality: 10,
+  renderer: (size) =>
+    new RendererLinear(size, transformAllPost, transformFinal),
+};

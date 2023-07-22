@@ -1,3 +1,5 @@
+export const DEFAULT_SIZE: number = 400;
+
 /**
  * Image render manager
  *
@@ -28,7 +30,10 @@ export abstract class Renderer {
   abstract render(image: ImageData): void;
 }
 
-export type renderFn = (image: ImageData) => void;
+export type RenderParams = {
+  quality: number;
+  renderer: (size: number) => Renderer;
+};
 
 /**
  * @returns random number in the bi-unit square (-1, 1)

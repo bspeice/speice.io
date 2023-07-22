@@ -1,11 +1,11 @@
-import { CanvasParams } from "./0-canvas";
 import {
   randomBiUnit,
   randomInteger,
   imageIndex,
   Renderer,
   histIndex,
-} from "./0-utility";
+  RenderParams,
+} from "./0-utility.js";
 
 type Transform = (x: number, y: number) => [number, number];
 
@@ -89,6 +89,7 @@ export class RendererGasket extends Renderer {
   }
 }
 
-export function buildGasket(size: number) {
-  return new RendererGasket(size);
-}
+export const paramsGasket: RenderParams = {
+  quality: 1,
+  renderer: (size) => new RendererGasket(size),
+};

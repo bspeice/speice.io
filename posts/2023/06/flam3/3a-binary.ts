@@ -1,17 +1,18 @@
-import { histIndex, imageIndex } from "./0-utility";
+import { RenderParams, histIndex, imageIndex } from "./0-utility.js";
 import {
   camera,
   transform1Weight,
   transform2Weight,
   transform3Weight,
-} from "./2a-variations";
+} from "./2a-baseline.js";
 import {
   TransformPost,
   transform1Post,
   transform2Post,
   transform3Post,
-} from "./2b-post";
-import { RendererFinal, transformFinal } from "./2c-final";
+  transformAllPost,
+} from "./2b-post.js";
+import { RendererFinal, transformFinal } from "./2c-final.js";
 
 export class RendererHistogram extends RendererFinal {
   protected histogram: number[] = [];
@@ -59,14 +60,8 @@ export class RendererHistogram extends RendererFinal {
   }
 }
 
-export function buildBinary(size: number) {
-  return new RendererHistogram(
-    size,
-    [
-      [transform1Weight, transform1Post],
-      [transform2Weight, transform2Post],
-      [transform3Weight, transform3Post],
-    ],
-    transformFinal
-  );
-}
+export const paramsBinary: RenderParams = {
+  quality: 1,
+  renderer: (size) =>
+    new RendererHistogram(size, transformAllPost, transformFinal),
+};
