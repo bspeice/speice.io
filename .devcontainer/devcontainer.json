@@ -1,13 +1,19 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.245.0/containers/ruby
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
 {
-	"name": "Ruby",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
+	"name": "Node.js & TypeScript",
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
 	"runArgs": ["--userns=keep-id"],
-
-	"remoteUser": "vscode",
-	"containerUser": "vscode",
-	"workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,Z"
+	"containerUser": "node",
+	"containerEnv": {
+		"HOME": "/home/node"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ChrisChinchilla.vale-vscode"
+			]
+		}
+	},
+	"onCreateCommand": "bash -c 'mkdir -p ~/.local/bin && wget -qO- https://github.com/errata-ai/vale/releases/download/v2.21.0/vale_2.21.0_Linux_64-bit.tar.gz | tar xz -C ~/.local/bin'"
 }
