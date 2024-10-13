@@ -59,31 +59,15 @@ const config: Config = {
         srcDark: 'img/logo-dark.svg'
       },
       items: [
-        {to: '/', label: 'Blog', position: 'left'},
         {
           href: 'https://github.com/bspeice',
-          label: 'GitHub',
           position: 'right',
+          className: 'header-github-link'
         },
       ],
     },
     footer: {
-      style: 'dark',
-      links: [
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'Blog',
-              to: '/',
-            },
-            {
-              label: 'GitHub',
-              href: 'https://github.com/bspeice',
-            },
-          ],
-        },
-      ],
+      links: [],
       copyright: `Copyright © ${new Date().getFullYear()} Bradlee Speice`,
     },
     prism: {
