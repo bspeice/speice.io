@@ -1,0 +1,10 @@
+.container {
+    margin: 0 1rem;
+}
+.footer__col {
+    margin-bottom: calc(var(--ifm-spacing-vertical))
+}
+:root {
+    --ifm-container-width: 1280px;
+    --ifm-footer-padding-vertical: 1rem;
+}
