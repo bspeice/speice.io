@@ -1,0 +1,71 @@
+---
+title: Welcome, and an algorithm
+date: 2015-11-19
+last_update:
+    date: 2015-12-05
+slug: 2015/11/welcome
+authors: [bspeice]
+tags: [trading]
+---
+
+import Notebook from './_notebook.md'
+
+Hello! Glad to meet you. I'm currently a student at Columbia University
+studying Financial Engineering, and want to give an overview of the projects
+I'm working on!
+
+<!-- truncate -->
+
+To start things off, Columbia has been hosting a trading competition that
+myself and another partner are competing in. I'm including a notebook of the
+algorithm that we're using, just to give a simple overview of a miniature
+algorithm.
+
+The competition is scored in 3 areas:
+
+- Total return
+- [Sharpe ratio](https://en.wikipedia.org/wiki/Sharpe_ratio)
+- Maximum drawdown
+
+Our algorithm uses a basic momentum strategy: in the given list of potential
+portfolios, pick the stocks that have been performing well in the past 30
+days. Then, optimize for return subject to the drawdown being below a specific
+level. We didn't include the Sharpe ratio as a constraint, mostly because
+we were a bit late entering the competition.
+
+I'll be updating this post with the results of our algorithm as they come along!
+
+---
+
+**UPDATE 12/5/2015**: Now that the competition has ended, I wanted to update
+how the algorithm performed. Unfortunately, it didn't do very well. I'm planning
+to make some tweaks over the coming weeks, and do another forward test in January.
+
+- After week 1: Down .1%
+- After week 2: Down 1.4%
+- After week 3: Flat
+
+And some statistics for all teams participating in the competition:
+
+<table>
+    <tr>
+        <td>Max Return</td>
+        <td>74.1%</td>
+    </tr>
+    <tr>
+        <td>Min Return</td>
+        <td>-97.4%</td>
+    </tr>
+    <tr>
+        <td>Average Return</td>
+        <td>-.1%</td>
+    </tr>
+    <tr>
+        <td>Std Dev of Returns</td>
+        <td>19.6%</td>
+    </tr>
+</table>
+
+---
+
+<Notebook/>
