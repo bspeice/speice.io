@@ -35,6 +35,8 @@ const config: Config = {
         docs: false,
         blog: {
           routeBasePath: "/",
+          blogSidebarTitle: 'All posts',
+          blogSidebarCount: 'ALL',
           showReadingTime: true,
           showLastUpdateTime: true,
           feedOptions: {
