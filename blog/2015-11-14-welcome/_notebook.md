@@ -1,4 +1,6 @@
-**Goal: Max return given maximum Sharpe and Drawdown**
+# Trading Competition Optimization
+
+### Goal: Max return given maximum Sharpe and Drawdown
 
 
 ```python
@@ -15,7 +17,7 @@ data = {tick: Quandl.get('YAHOO/{}'.format(tick))[-lookback:] for tick in ticker
 market = Quandl.get(market_ticker)
 ```
 
-## Calculating the Return
+# Calculating the Return
 We first want to know how much each ticker returned over the prior period.
 
 
@@ -25,16 +27,16 @@ returns = {tick: data[tick][d_col].pct_change() for tick in tickers}
 display({tick: returns[tick].mean() for tick in tickers})
 ```
 
-```
+
     {'CLB': -0.0016320202164526894,
      'CVX': 0.0010319531629488911,
      'OXY': 0.00093418904454400551,
      'SLB': 0.00098431254720448159,
      'XOM': 0.00044165797556096868}
-```
 
-## Calculating the Sharpe ratio
-Sharpe: $R - R_M \over \sigma$
+
+# Calculating the Sharpe ratio
+Sharpe: ${R - R_M \over \sigma}$
 
 We use the average return over the lookback period, minus the market average return, over the ticker standard deviation to calculate the Sharpe. Shorting a stock turns a negative Sharpe positive.
 
@@ -48,15 +50,15 @@ sharpes = {tick: sharpe(returns[tick]) for tick in tickers}
 display(sharpes)
 ```
 
-```
+
     {'CLB': -0.10578734457846127,
      'CVX': 0.027303529817677398,
      'OXY': 0.022622210057414487,
      'SLB': 0.026950946344858676,
      'XOM': -0.0053519259698605499}
-```
 
-## Calculating the drawdown
+
+# Calculating the drawdown
 This one is easy - what is the maximum daily change over the lookback period? That is, because we will allow short positions, we are not concerned strictly with maximum downturn, but in general, what is the largest 1-day change?
 
 
@@ -67,25 +69,23 @@ drawdowns = {tick: drawdown(returns[tick]) for tick in tickers}
 display(drawdowns)
 ```
 
-```
+
     {'CLB': 0.043551495607375035,
      'CVX': 0.044894389686214398,
      'OXY': 0.051424517867144637,
      'SLB': 0.034774627850375328,
      'XOM': 0.035851524605672758}
-```
 
-## Performing the optimization
 
-$$
-\begin{align*}
-    max\ \ & \mu \cdot \omega \\
-    s.t.\ \ & \vec{1} \omega = 1\\
-    & \vec{S} \omega \ge s\\
-    & \vec{D} \cdot | \omega | \le d\\
-    & \left|\omega\right| \le l\\
-\end{align*}
-$$
+# Performing the optimization
+
+$\begin{align}
+max\ \ & \mu \cdot \omega\\
+s.t.\ \ & \vec{1} \omega = 1\\
+& \vec{S} \omega \ge s\\
+& \vec{D} \cdot | \omega | \le d\\
+& \left|\omega\right| \le l\\
+\end{align}$
 
 We want to maximize average return subject to having a full portfolio, Sharpe above a specific level, drawdown below a level, and leverage not too high - that is, don't have huge long/short positions.
 
@@ -156,12 +156,18 @@ display("Expected Max Drawdown: {0:.2f}%".format(expected_drawdown))
 # TODO: Calculate expected Sharpe
 ```
 
-```
+
     'Optimization terminated successfully.'
+
+
 
     "Holdings: [('XOM', 5.8337945679814904), ('CVX', 42.935064321851307), ('CLB', -124.5), ('OXY', 36.790387773552119), ('SLB', 39.940753336615096)]"
 
+
+
     'Expected Return: 32.375%'
 
+
+
     'Expected Max Drawdown: 4.34%'
-```
+
