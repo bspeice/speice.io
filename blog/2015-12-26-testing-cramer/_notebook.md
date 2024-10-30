@@ -1,0 +1,329 @@
+```python
+import requests
+import pandas as pd
+import numpy as np
+from dateutil import parser as dtparser
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+from html.parser import HTMLParser
+from copy import copy
+import Quandl
+```
+
+# Testing Cramer
+
+Pursuant to attending a graduate school studying Financial Engineering, I've been a fan of the [Mad Money][3] TV show featuring the bombastic Jim Cramer. One of the things that he's said is that you shouldn't use the futures to predict where the stock market is going to go. But he says it often enough, I've begun to wonder - who is he trying to convince?
+
+It makes sense that because futures on things like the S&P 500 are traded continuously, they would price in market information before the stock market opens. So is Cramer right to be convinced that strategies based on the futures are a poor idea? I wanted to test it out.
+
+The first question is where to get the future's data. I've been part of [Seeking Alpha][2] for a bit, and they publish the [Wall Street Breakfast][3] newsletter which contains daily future's returns as of 6:20 AM EST. I'd be interested in using that data to see if we can actually make some money.
+
+First though, let's get the data:
+
+# Downloading Futures data from Seeking Alpha
+
+We're going to define two HTML parsing classes - one to get the article URL's from a page, and one to get the actual data from each article.
+
+[1]: http://www.cnbc.com/mad-money/
+[2]: http://seekingalpha.com/
+[3]: http://seekingalpha.com/author/wall-street-breakfast?s=wall-street-breakfast
+
+
+```python
+class ArticleListParser(HTMLParser):
+    """Given a web page with articles on it, parse out the article links"""
+    
+    articles = []
+    
+    def handle_starttag(self, tag, attrs):
+        #if tag == 'div' and ("id", "author_articles_wrapper") in attrs:
+        #    self.fetch_links = True
+        if tag == 'a' and ('class', 'dashboard_article_link') in attrs:
+            href = list(filter(lambda x: x[0] == 'href', attrs))[0][1]
+            self.articles.append(href)
+            
+base_url = "http://seekingalpha.com/author/wall-street-breakfast/articles"
+article_page_urls = [base_url] + [base_url + '/{}'.format(i) for i in range(2, 20)]
+
+global_articles = []
+for page in article_page_urls:
+    # We need to switch the user agent, as SA blocks the standard requests agent
+    articles_html = requests.get(page,
+                                headers={"User-Agent": "Wget/1.13.4"})
+    parser = ArticleListParser()
+    parser.feed(articles_html.text)
+    global_articles += (parser.articles)
+```
+
+
+```python
+class ArticleReturnParser(HTMLParser):
+    "Given an article, parse out the futures returns in it"
+    
+    record_font_tags = False
+    in_font_tag = False
+    counter = 0
+    # data = {} # See __init__
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data = {}
+    
+    def handle_starttag(self, tag, attrs):
+        if tag == 'span' and ('itemprop', 'datePublished') in attrs:
+            date_string = list(filter(lambda x: x[0] == 'content', attrs))[0][1]
+            date = dtparser.parse(date_string)
+            self.data['date'] = date
+            
+        self.in_font_tag = tag == 'font'
+        
+    def safe_float(self, string):
+        try:
+            return float(string[:-1]) / 100
+        except ValueError:
+            return np.NaN
+            
+    def handle_data(self, content):
+        if not self.record_font_tags and "Futures at 6" in content:
+            self.record_font_tags = True
+            
+        if self.record_font_tags and self.in_font_tag:
+            if self.counter == 0:
+                self.data['DOW'] = self.safe_float(content)
+            elif self.counter == 1:
+                self.data['S&P'] = self.safe_float(content)
+            elif self.counter == 2:
+                self.data['NASDAQ'] = self.safe_float(content)
+            elif self.counter == 3:
+                self.data['Crude'] = self.safe_float(content)
+            elif self.counter == 4:
+                self.data['Gold'] = self.safe_float(content)
+            
+            self.counter += 1
+            
+    def handle_endtag(self, tag):
+        self.in_font_tag = False
+
+def retrieve_data(url):
+    sa = "http://seekingalpha.com"
+    article_html = requests.get(sa + url,
+                               headers={"User-Agent": "Wget/1.13.4"})
+    parser = ArticleReturnParser()
+    parser.feed(article_html.text)
+    parser.data.update({"url": url})
+    parser.data.update({"text": article_html.text})
+    return parser.data
+
+# This copy **MUST** be in place. I'm not sure why,
+# as you'd think that the data being returned would already
+# represent a different memory location. Even so, it blows up
+# if you don't do this.
+article_list = list(set(global_articles))
+article_data = [copy(retrieve_data(url)) for url in article_list]
+# If there's an issue downloading the article, drop it.
+article_df = pd.DataFrame.from_dict(article_data).dropna()
+```
+
+# Fetching the Returns data
+
+Now that we have the futures data, we're going to compare across 4 different indices - the S&P 500 index, Dow Jones Industrial, Russell 2000, and NASDAQ 100. Let's get the data off of Quandl to make things easier!
+
+
+```python
+# article_df is sorted by date, so we get the first row.
+start_date = article_df.sort_values(by='date').iloc[0]['date'] - relativedelta(days=1)
+SPY = Quandl.get("GOOG/NYSE_SPY", trim_start=start_date)
+DJIA = Quandl.get("GOOG/AMS_DIA", trim_start=start_date)
+RUSS = Quandl.get("GOOG/AMEX_IWM", trim_start=start_date)
+NASDAQ = Quandl.get("GOOG/EPA_QQQ", trim_start=start_date)
+```
+
+# Running the Comparison
+
+There are two types of tests I want to determine: How accurate each futures category is at predicting the index's opening change over the close before, and predicting the index's daily return.
+
+Let's first calculate how good each future is at predicting the opening return over the previous day. I expect that the futures will be more than 50% accurate, since the information is recorded 3 hours before the markets open.
+
+
+```python
+def calculate_opening_ret(frame):
+    # I'm not a huge fan of the appending for loop,
+    # but it's a bit verbose for a comprehension
+    data = {}
+    for i in range(1, len(frame)):
+        date = frame.iloc[i].name
+        prior_close = frame.iloc[i-1]['Close']
+        open_val = frame.iloc[i]['Open']
+        data[date] = (open_val - prior_close) / prior_close
+        
+    return data
+
+SPY_open_ret = calculate_opening_ret(SPY)
+DJIA_open_ret = calculate_opening_ret(DJIA)
+RUSS_open_ret = calculate_opening_ret(RUSS)
+NASDAQ_open_ret = calculate_opening_ret(NASDAQ)
+
+def signs_match(list_1, list_2):
+    # This is a surprisingly difficult task - we have to match
+    # up the dates in order to check if opening returns actually match
+    index_dict_dt = {key.to_datetime(): list_2[key] for key in list_2.keys()}
+    
+    matches = []
+    for row in list_1.iterrows():
+        row_dt = row[1][1]
+        row_value = row[1][0]
+        index_dt = datetime(row_dt.year, row_dt.month, row_dt.day)
+        if index_dt in list_2:
+            index_value = list_2[index_dt]
+            if (row_value > 0 and index_value > 0) or \
+                (row_value < 0 and index_value < 0) or \
+                (row_value == 0 and index_value == 0):
+                    matches += [1]
+            else:
+                matches += [0]
+            #print("{}".format(list_2[index_dt]))
+    return matches
+    
+    
+prediction_dict = {}
+matches_dict = {}
+count_dict = {}
+index_dict = {"SPY": SPY_open_ret, "DJIA": DJIA_open_ret, "RUSS": RUSS_open_ret, "NASDAQ": NASDAQ_open_ret}
+indices = ["SPY", "DJIA", "RUSS", "NASDAQ"]
+futures = ["Crude", "Gold", "DOW", "NASDAQ", "S&P"]
+for index in indices:
+    matches_dict[index] = {future: signs_match(article_df[[future, 'date']],
+                                               index_dict[index]) for future in futures}
+    count_dict[index] = {future: len(matches_dict[index][future]) for future in futures}
+    prediction_dict[index] = {future: np.mean(matches_dict[index][future])
+                              for future in futures}
+print("Articles Checked: ")
+print(pd.DataFrame.from_dict(count_dict))
+print()
+print("Prediction Accuracy:")
+print(pd.DataFrame.from_dict(prediction_dict))
+```
+
+    Articles Checked: 
+            DJIA  NASDAQ  RUSS  SPY
+    Crude    268     268   271  271
+    DOW      268     268   271  271
+    Gold     268     268   271  271
+    NASDAQ   268     268   271  271
+    S&P      268     268   271  271
+    
+    Prediction Accuracy:
+                DJIA    NASDAQ      RUSS       SPY
+    Crude   0.544776  0.522388  0.601476  0.590406
+    DOW     0.611940  0.604478  0.804428  0.841328
+    Gold    0.462687  0.455224  0.464945  0.476015
+    NASDAQ  0.615672  0.608209  0.797048  0.830258
+    S&P     0.604478  0.597015  0.811808  0.848708
+
+
+This data is very interesting. Some insights:
+
+- Both DOW and NASDAQ futures are pretty bad at predicting their actual market openings
+- NASDAQ and Dow are fairly unpredictable; Russell 2000 and S&P are very predictable
+- Gold is a poor predictor in general - intuitively Gold should move inverse to the market, but it appears to be about as accurate as a coin flip.
+
+All said though it appears that futures data is important for determining market direction for both the S&P 500 and Russell 2000. Cramer is half-right: futures data isn't very helpful for the Dow and NASDAQ indices, but is great for the S&P and Russell indices.
+
+# The next step - Predicting the close
+
+Given the code we currently have, I'd like to predict the close of the market as well. We can re-use most of the code, so let's see what happens:
+
+
+```python
+def calculate_closing_ret(frame):
+    # I'm not a huge fan of the appending for loop,
+    # but it's a bit verbose for a comprehension
+    data = {}
+    for i in range(0, len(frame)):
+        date = frame.iloc[i].name
+        open_val = frame.iloc[i]['Open']
+        close_val = frame.iloc[i]['Close']
+        data[date] = (close_val - open_val) / open_val
+        
+    return data
+
+SPY_close_ret = calculate_closing_ret(SPY)
+DJIA_close_ret = calculate_closing_ret(DJIA)
+RUSS_close_ret = calculate_closing_ret(RUSS)
+NASDAQ_close_ret = calculate_closing_ret(NASDAQ)
+
+def signs_match(list_1, list_2):
+    # This is a surprisingly difficult task - we have to match
+    # up the dates in order to check if opening returns actually match
+    index_dict_dt = {key.to_datetime(): list_2[key] for key in list_2.keys()}
+    
+    matches = []
+    for row in list_1.iterrows():
+        row_dt = row[1][1]
+        row_value = row[1][0]
+        index_dt = datetime(row_dt.year, row_dt.month, row_dt.day)
+        if index_dt in list_2:
+            index_value = list_2[index_dt]
+            if (row_value > 0 and index_value > 0) or \
+                (row_value < 0 and index_value < 0) or \
+                (row_value == 0 and index_value == 0):
+                    matches += [1]
+            else:
+                matches += [0]
+            #print("{}".format(list_2[index_dt]))
+    return matches
+    
+    
+matches_dict = {}
+count_dict = {}
+prediction_dict = {}
+index_dict = {"SPY": SPY_close_ret, "DJIA": DJIA_close_ret,
+              "RUSS": RUSS_close_ret, "NASDAQ": NASDAQ_close_ret}
+indices = ["SPY", "DJIA", "RUSS", "NASDAQ"]
+futures = ["Crude", "Gold", "DOW", "NASDAQ", "S&P"]
+for index in indices:
+    matches_dict[index] = {future: signs_match(article_df[[future, 'date']],
+                                               index_dict[index]) for future in futures}
+    count_dict[index] = {future: len(matches_dict[index][future]) for future in futures}
+    prediction_dict[index] = {future: np.mean(matches_dict[index][future])
+                              for future in futures}
+    
+print("Articles Checked:")
+print(pd.DataFrame.from_dict(count_dict))
+print()
+print("Prediction Accuracy:")
+print(pd.DataFrame.from_dict(prediction_dict))
+```
+
+    Articles Checked:
+            DJIA  NASDAQ  RUSS  SPY
+    Crude    268     268   271  271
+    DOW      268     268   271  271
+    Gold     268     268   271  271
+    NASDAQ   268     268   271  271
+    S&P      268     268   271  271
+    
+    Prediction Accuracy:
+                DJIA    NASDAQ      RUSS       SPY
+    Crude   0.533582  0.529851  0.501845  0.542435
+    DOW     0.589552  0.608209  0.535055  0.535055
+    Gold    0.455224  0.451493  0.483395  0.512915
+    NASDAQ  0.582090  0.626866  0.531365  0.538745
+    S&P     0.585821  0.608209  0.535055  0.535055
+
+
+Well, it appears that the futures data is terrible at predicting market close. NASDAQ predicting NASDAQ is the most interesting data point, but 63% accuracy isn't accurate enough to make money consistently.
+
+# Final sentiments
+
+The data bears out very close to what I expected would happen:
+
+- Futures data is more accurate than a coin flip for predicting openings, which makes sense since it is recorded only 3 hours before the actual opening
+- Futures data is about as acccurate as a coin flip for predicting closings, which means there is no money to be made in trying to predict the market direction for the day given the futures data.
+
+In summary:
+
+- Cramer is half right: Futures data is not good for predicting the market open of the Dow and NASDAQ indices. Contrary to Cramer though, it is very good for predicting the S&P and Russell indices - we can achieve an accuracy slightly over 80% for each. 
+- Making money in the market is hard. We can't just go to the futures and treat them as an oracle for where the market will close.
+
+I hope you've enjoyed this, I quite enjoyed taking a deep dive in the analytics this way. I'll be posting more soon!
