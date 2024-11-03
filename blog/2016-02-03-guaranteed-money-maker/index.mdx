@@ -1,0 +1,182 @@
+---
+slug: 2016/02/guaranteed-money-maker
+title: Guaranteed money maker
+authors: [bspeice]
+tags: []
+---
+
+Developing an investment strategy based on the Martingale betting strategy
+
+If you can see into the future, that is.
+
+<!-- truncate -->
+
+My previous class in Stochastic Calculus covered a lot of interesting topics, and the important one for today is the [Gambler's Ruin][1] problem. If you're interested in some of the theory behind it, also make sure to check out [random walks][2]. The important bit is that we studied the [Martingale Betting Strategy][3], which describes for us a **guaranteed way** to <small>eventually</small> make money.
+
+The strategy goes like this: You are going to toss a fair coin with a friend. If you guess heads or tails correctly, you get back double the money you bet. If you guess incorrectly, you lose money. How should you bet?
+
+The correct answer is that you should double your bet each time you lose. Then when you finally win, you'll be guaranteed to make back everything you lost and then &#36;1 extra! Consider the scenario:
+
+1. You bet &#36;1, and guess incorrectly. You're 1 dollar in the hole.
+2. You bet &#36;2, and guess incorrectly. You're 3 dollars in the hole now.
+3. You bet &#36;4, and guess incorrectly. You're 7 dollars in the hole.
+4. You bet &#36;8, and guess correctly! You now get back those 8 dollars you bet, plus 8 extra for winning, for a **total profit of one dollar**!
+
+Mathematically, we can prove that as long as you have unlimited money to bet, you are guaranteed to make money.
+
+# Applying the Martingale Strategy
+
+But we're all realistic people, and once you start talking about "unlimited money" eyebrows should be raised. Even still, this is an interesting strategy to investigate, and I want to apply it to the stock market. As long as we can guarantee there's a single day in which the stock goes up, we should be able to make money right? The question is just how much we have to invest to guarantee this.
+
+Now it's time for the math. We'll use the following definitions:
+
+- $o_i$ = the share price at the opening of day $i$
+- $c_i$ = the share price at the close of day $i$
+- $d_i$ = the amount of money we want to invest at the beginning of day $i$
+
+With those definitions in place, I'd like to present the formula that is **guaranteed to make you money**. I call it *Bradlee's Investment Formula*:
+
+$c_n \sum_{i=1}^n \frac{d_i}{o_i} > \sum_{i=1}^{n} d_i$
+
+It might not look like much, but if you can manage to make it so that this formula holds true, you will be guaranteed to make money. The intuition behind the formula is this: The closing share price times the number of shares you have purchased ends up greater than the amount of money you invested.
+
+That is, on day $n$, <small>if you know what the closing price will be</small> you can set up the amount of money you invest that day to **guarantee you make money**. I'll even teach you to figure out how much money that is! Take a look:
+
+$$
+\begin{align*}
+c_n \sum_{i=1}^{n-1} \frac{d_i}{o_i} + \frac{c_nd_n}{o_n} &> \sum_{i=1}^{n-1}d_i + d_n\\
+\frac{c_nd_n}{o_n} - d_n &> \sum_{i=1}^{n-1}(d_i - \frac{c_nd_i}{o_i})\\
+d_n (\frac{c_n - o_n}{o_n}) &> \sum_{i=1}^{n-1} d_i(1 - \frac{c_n}{o_i})\\
+d_n &> \frac{o_n}{c_n - o_n} \sum_{i=1}^{n-1} d_i(1 - \frac{1}{o_i})
+\end{align*}
+$$
+
+If you invest exactly $d_n$ that day, you'll break even. But if you can make sure the money you invest is greater than that quantity on the right <small>(which requires that you have a crystal ball tell you the stock's closing price)</small> you are **guaranteed to make money!**
+
+# Interesting Implications
+
+On a more serious note though, the formula above tells us a couple of interesting things:
+
+1. It's impossible to make money without the closing price at some point being greater than the opening price (or vice-versa if you are short selling) - there is no amount of money you can invest that will turn things in your favor.
+2. Close prices of the past aren't important if you're concerned about the bottom line. While chart technicians use price history to make judgment calls, in the end, the closing price on anything other than the last day is irrelevant.
+3. It's possible to make money as long as there is a single day where the closing price is greater than the opening price! You might have to invest a lot to do so, but it's possible.
+4. You must make a prediction about where the stock will close at if you want to know how much to invest. That is, we can set up our investment for the day to make money if the stock goes up 1%, but if it only goes up .5% we'll still lose money.
+5. It's possible the winning move is to scale back your position. Consider the scenario:
+    - You invest money and the stock closes down the day .5%
+    - You invest tomorrow expecting the stock to go up 1%
+    - The winning investment to break even (assuming a 1% increase) is to scale back the position, since the shares you purchased at the beginning would then be profitable
+
+# Running the simulation
+
+So now that we've defined our investment formula,we need to tweak a couple things in order to make an investment strategy we can actually work with. There are two issues we need to address:
+
+1. The formula only tells us how much to invest if we want to break even ($d_n$). If we actually want to turn a profit, we need to invest more than that, which we will refer to as the **bias**.
+2. The formula assumes we know what the closing price will be on any given day. If we don't know this, we can still invest assuming the stock price will close at a level we choose. If the price doesn't meet this objective, we try again tomorrow! This predetermined closing price will be referred to as the **expectation**.
+
+Now that we've defined our *bias* and *expectation*, we can actually build a strategy we can simulate. Much like the martingale strategy told you to bet twice your previous bet in order to make money, we've designed a system that tells us how much to bet in order to make money as well.
+
+Now, let's get to the code!
+
+[1]: https://en.wikipedia.org/wiki/Gambler's_ruin
+[2]: https://en.wikipedia.org/wiki/Random_walk
+[3]: https://en.wikipedia.org/wiki/Martingale_%28betting_system%29
+
+
+```julia
+using Quandl
+api_key = ""
+daily_investment = function(current_open, current_close, purchase_history, open_history)
+    # We're not going to safeguard against divide by 0 - that's the user's responsibility
+    t1 = current_close / current_open - 1
+    t2 = sum(purchase_history - purchase_history*current_close ./ open_history)
+    return t2 / t1
+end;
+```
+
+And let's code a way to run simulations quickly:
+
+
+```julia
+is_profitable = function(current_price, purchase_history, open_history)
+    shares = sum(purchase_history ./ open_history)
+    return current_price*shares > sum(purchase_history)
+end
+
+simulate = function(name, start, init, expected, bias)
+    ticker_info = quandlget(name, from=start, api_key=api_key)
+    open_vals = ticker_info["Open"].values
+    close_vals = ticker_info["Close"].values
+    invested = [init]
+    
+    # The simulation stops once we've made a profit
+    day = 1
+    profitable = is_profitable(close_vals[day], invested, open_vals[1:length(invested)]) ||
+        is_profitable(open_vals[day+1], invested, open_vals[1:length(invested)])
+    while !profitable
+        expected_close = open_vals[day+1] * expected
+        todays_purchase = daily_investment(open_vals[day+1], expected_close, invested, open_vals[1:day])
+        invested = [invested; todays_purchase + bias]
+        # expected_profit = expected_close * sum(invested ./ open_vals[1:length(invested)]) - sum(invested)
+        day += 1
+        profitable = is_profitable(close_vals[day], invested, open_vals[1:length(invested)]) ||
+            is_profitable(open_vals[day+1], invested, open_vals[1:length(invested)])
+    end
+    
+    shares = sum(invested ./ open_vals[1:length(invested)])
+    max_profit = max(close_vals[day], open_vals[day+1])
+    profit = shares * max_profit - sum(invested)
+    return (invested, profit)
+end
+
+sim_summary = function(investments, profit)
+    leverages = [sum(investments[1:i]) for i=1:length(investments)]
+    max_leverage = maximum(leverages) / investments[1]
+    println("Max leverage: $(max_leverage)")
+    println("Days invested: $(length(investments))")
+    println("Profit: $profit")
+end;
+```
+
+Now, let's get some data and run a simulation! Our first test:
+
+- We'll invest 100 dollars in LMT, and expect that the stock will close up 1% every day. We'll invest $d_n$ + 10 dollars every day that we haven't turned a profit, and end the simulation once we've made a profit.
+
+
+```julia
+investments, profit = simulate("YAHOO/LMT", Date(2015, 11, 29), 100, 1.01, 10)
+sim_summary(investments, profit)
+```
+
+```
+    Max leverage: 5.590373200042106
+    Days invested: 5
+    Profit: 0.6894803101560001
+```
+
+The result: We need to invest 5.6x our initial position over a period of 5 days to make approximately .69&#162;
+
+- Now let's try the same thing, but we'll assume the stock closes up 2% instead.
+
+
+```julia
+investments, profit = simulate("YAHOO/LMT", Date(2015, 11, 29), 100, 1.02, 10)
+sim_summary(investments, profit)
+```
+
+```
+    Max leverage: 1.854949900247809
+    Days invested: 25
+    Profit: 0.08304813163696423
+```
+
+In this example, we only get up to a 1.85x leveraged position, but it takes 25 days to turn a profit of 8&#162;
+
+# Summary
+
+We've defined an investment strategy that can tell us how much to invest when we know what the closing position of a stock will be. We can tweak the strategy to actually make money, but plenty of work needs to be done so that we can optimize the money invested.
+
+In the next post I'm going to post more information about some backtests and strategy tests on this strategy (unless of course this experiment actually produces a significant profit potential, and then I'm keeping it for myself).
+
+# Side note and disclaimer
+
+The claims made in this presentation about being able to guarantee making money are intended as a joke and do not constitute investment advice of any sort.
