@@ -24,7 +24,7 @@ The correct answer is that you should double your bet each time you lose. Then w
 
 Mathematically, we can prove that as long as you have unlimited money to bet, you are guaranteed to make money.
 
-# Applying the Martingale Strategy
+## Applying the Martingale Strategy
 
 But we're all realistic people, and once you start talking about "unlimited money" eyebrows should be raised. Even still, this is an interesting strategy to investigate, and I want to apply it to the stock market. As long as we can guarantee there's a single day in which the stock goes up, we should be able to make money right? The question is just how much we have to invest to guarantee this.
 
@@ -53,7 +53,7 @@ $$
 
 If you invest exactly $d_n$ that day, you'll break even. But if you can make sure the money you invest is greater than that quantity on the right <small>(which requires that you have a crystal ball tell you the stock's closing price)</small> you are **guaranteed to make money!**
 
-# Interesting Implications
+## Interesting Implications
 
 On a more serious note though, the formula above tells us a couple of interesting things:
 
@@ -66,7 +66,7 @@ On a more serious note though, the formula above tells us a couple of interestin
     - You invest tomorrow expecting the stock to go up 1%
     - The winning investment to break even (assuming a 1% increase) is to scale back the position, since the shares you purchased at the beginning would then be profitable
 
-# Running the simulation
+## Running the simulation
 
 So now that we've defined our investment formula,we need to tweak a couple things in order to make an investment strategy we can actually work with. There are two issues we need to address:
 
@@ -171,12 +171,12 @@ sim_summary(investments, profit)
 
 In this example, we only get up to a 1.85x leveraged position, but it takes 25 days to turn a profit of 8&#162;
 
-# Summary
+## Summary
 
 We've defined an investment strategy that can tell us how much to invest when we know what the closing position of a stock will be. We can tweak the strategy to actually make money, but plenty of work needs to be done so that we can optimize the money invested.
 
 In the next post I'm going to post more information about some backtests and strategy tests on this strategy (unless of course this experiment actually produces a significant profit potential, and then I'm keeping it for myself).
 
-# Side note and disclaimer
+### Side note and disclaimer
 
 The claims made in this presentation about being able to guarantee making money are intended as a joke and do not constitute investment advice of any sort.
