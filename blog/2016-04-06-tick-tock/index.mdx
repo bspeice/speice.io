@@ -1,0 +1,310 @@
+---
+slug: 2016/04/tick-tock
+title: Tick tock...
+date: 2016-04-06 12:00:00
+authors: [bspeice]
+tags: []
+---
+
+If all we have is a finite number of heartbeats left, what about me?
+
+---
+
+Warning: this one is a bit creepier. But that's what you get when you come up with data science ideas as you're drifting off to sleep.
+
+## 2.5 Billion
+
+If [PBS][1] is right, that's the total number of heartbeats we get. Approximately once every second that number goes down, and down, and down again...
+
+[1]: http://www.pbs.org/wgbh/nova/heart/heartfacts.html
+
+```python
+total_heartbeats = 2500000000
+```
+
+I got a Fitbit this past Christmas season, mostly because I was interested in the data and trying to work on some data science projects with it. This is going to be the first project, but there will likely be more (and not nearly as morbid). My idea was: If this is the final number that I'm running up against, how far have I come, and how far am I likely to go? I've currently had about 3 months' time to estimate what my data will look like, so let's go ahead and see: given a lifetime 2.5 billion heart beats, how much time do I have left?
+
+## Statistical Considerations
+
+Since I'm starting to work with health data, there are a few considerations I think are important before I start digging through my data.
+
+1. The concept of 2.5 billion as an agreed-upon number is tenuous at best. I've seen anywhere from [2.21 billion][2] to [3.4 billion][3] so even if I knew exactly how many times my heart had beaten so far, the ending result is suspect at best. I'm using 2.5 billion because that seems to be about the midpoint of the estimates I've seen so far.
+2. Most of the numbers I've seen so far are based on extrapolating number of heart beats from life expectancy. As life expectancy goes up, the number of expected heart beats goes up too.
+3. My estimation of the number of heartbeats in my life so far is based on 3 months worth of data, and I'm extrapolating an entire lifetime based on this.
+
+So while the ending number is **not useful in any medical context**, it is still an interesting project to work with the data I have on hand.
+
+## Getting the data
+
+[Fitbit](https://www.fitbit.com/) has an [API available](https://dev.fitbit.com/) for people to pull their personal data off the system. It requires registering an application, authentication with OAuth, and some other complicated things. **If you're not interested in how I fetch the data, skip [here](#Wild-Extrapolations-from-Small-Data)**.
+
+## Registering an application
+
+I've already [registered a personal application](https://dev.fitbit.com/apps/new) with Fitbit, so I can go ahead and retrieve things like the client secret from a file.
+
+[1]: http://www.pbs.org/wgbh/nova/heart/heartfacts.html
+[2]: http://gizmodo.com/5982977/how-many-heartbeats-does-each-species-get-in-a-lifetime
+[3]: http://wonderopolis.org/wonder/how-many-times-does-your-heart-beat-in-a-lifetime/
+
+
+```python
+# Import all the OAuth secret information from a local file
+from secrets import CLIENT_SECRET, CLIENT_ID, CALLBACK_URL
+```
+
+### Handling OAuth 2
+
+So, all the people that know what OAuth 2 is know what's coming next. For those who don't: OAuth is how people allow applications to access other data without having to know your password. Essentially the dialog goes like this:
+
+```
+Application: I've got a user here who wants to use my application, but I need their data.
+Fitbit: OK, what data do you need access to, and for how long?
+Application: I need all of these scopes, and for this amount of time.
+Fitbit: OK, let me check with the user to make sure they really want to do this.
+
+Fitbit: User, do you really want to let this application have your data?
+User: I do! And to prove it, here's my password.
+Fitbit: OK, everything checks out. I'll let the application access your data.
+
+Fitbit: Application, you can access the user's data. Use this special value whenever you need to request data from me.
+Application: Thank you, now give me all the data.
+```
+
+Effectively, this allows an application to gain access to a user's data without ever needing to know the user's password. That way, even if the other application is hacked, the user's original data remains safe. Plus, the user can let the data service know to stop providing the application access any time they want. All in all, very secure.
+
+It does make handling small requests a bit challenging, but I'll go through the steps here. We'll be using the [Implicit Grant](https://dev.fitbit.com/docs/oauth2/) workflow, as it requires fewer steps in processing.
+
+First, we need to set up the URL the user would visit to authenticate:
+
+
+```python
+import urllib
+
+FITBIT_URI = 'https://www.fitbit.com/oauth2/authorize'
+params = {
+    # If we need more than one scope, must be a CSV string
+    'scope': 'heartrate',
+    'response_type': 'token',
+    'expires_in': 86400, # 1 day
+    'redirect_uri': CALLBACK_URL,
+    'client_id': CLIENT_ID
+}
+
+request_url = FITBIT_URI + '?' + urllib.parse.urlencode(params)
+```
+
+Now, here you would print out the request URL, go visit it, and get the full URL that it sends you back to. Because that is very sensitive information (specifically containing my `CLIENT_ID` that I'd really rather not share on the internet), I've skipped that step in the code here, but it happens in the background.
+
+
+```python
+# The `response_url` variable contains the full URL that
+# FitBit sent back to us, but most importantly,
+# contains the token we need for authorization.
+access_token = dict(urllib.parse.parse_qsl(response_url))['access_token']
+```
+
+### Requesting the data
+
+Now that we've actually set up our access via the `access_token`, it's time to get the actual [heart rate data](https://dev.fitbit.com/docs/heart-rate/). I'll be using data from January 1, 2016 through March 31, 2016, and extrapolating wildly from that.
+
+Fitbit only lets us fetch intraday data one day at a time, so I'll create a date range using pandas and iterate through that to pull down all the data.
+
+
+```python
+from requests_oauthlib import OAuth2Session
+import pandas as pd
+from datetime import datetime
+
+session = OAuth2Session(token={
+        'access_token': access_token,
+        'token_type': 'Bearer'
+    })
+
+format_str = '%Y-%m-%d'
+start_date = datetime(2016, 1, 1)
+end_date = datetime(2016, 3, 31)
+dr = pd.date_range(start_date, end_date)
+
+url = 'https://api.fitbit.com/1/user/-/activities/heart/date/{0}/1d/1min.json'
+hr_responses = [session.get(url.format(d.strftime(format_str))) for d in dr]
+
+def record_to_df(record):
+    if 'activities-heart' not in record:
+        return None
+    date_str = record['activities-heart'][0]['dateTime']
+    df = pd.DataFrame(record['activities-heart-intraday']['dataset'])
+        
+    df.index = df['time'].apply(
+        lambda x: datetime.strptime(date_str + ' ' + x, '%Y-%m-%d %H:%M:%S'))
+    return df
+
+hr_dataframes = [record_to_df(record.json()) for record in hr_responses]
+hr_df_concat = pd.concat(hr_dataframes)
+
+
+# There are some minutes with missing data, so we need to correct that
+full_daterange = pd.date_range(hr_df_concat.index[0],
+                              hr_df_concat.index[-1],
+                              freq='min')
+hr_df_full = hr_df_concat.reindex(full_daterange, method='nearest')
+
+print("Heartbeats from {} to {}: {}".format(hr_df_full.index[0],
+                                            hr_df_full.index[-1],
+                                            hr_df_full['value'].sum()))
+```
+
+    Heartbeats from 2016-01-01 00:00:00 to 2016-03-31 23:59:00: 8139060
+
+
+And now we've retrieved all the available heart rate data for January 1<sup>st</sup> through March 31<sup>st</sup>! Let's get to the actual analysis.
+
+## Wild Extrapolations from Small Data
+
+A fundamental issue of this data is that it's pretty small. I'm using 3 months of data to make predictions about my entire life. But, purely as an exercise, I'll move forward.
+
+### How many heartbeats so far?
+
+The first step is figuring out how many of the 2.5 billion heartbeats I've used so far. We're going to try and work backward from the present day to when I was born to get that number. The easy part comes first: going back to January 1<sup>st</sup>, 1992. That's because I can generalize how many 3-month increments there were between now and then, account for leap years, and call that section done.
+
+Between January 1992 and January 2016 there were 96 quarters, and 6 leap days. The number we're looking for is:
+
+$$
+\begin{equation*}
+hr_q \cdot n - hr_d \cdot (n-m)
+\end{equation*}
+$$
+
+- $hr_q$: Number of heartbeats per quarter
+- $hr_d$: Number of heartbeats on leap day
+- $n$: Number of quarters, in this case 96
+- $m$: Number of leap days, in this case 6
+
+
+```python
+quarterly_count = hr_df_full['value'].sum()
+leap_day_count = hr_df_full[(hr_df_full.index.month == 2) &
+                            (hr_df_full.index.day == 29)]['value'].sum()
+num_quarters = 96
+leap_days = 6
+
+jan_92_jan_16 = quarterly_count * num_quarters - leap_day_count * (num_quarters - leap_days)
+jan_92_jan_16
+```
+
+```
+    773609400
+```
+
+So between January 1992 and January 2016 I've used $\approx$ 774 million heartbeats. Now, I need to go back to my exact birthday. I'm going to first find on average how many heartbeats I use in a minute, and multiply that by the number of minutes between my birthday and January 1992.
+
+For privacy purposes I'll put the code here that I'm using, but without any identifying information:
+
+
+```python
+minute_mean = hr_df_full['value'].mean()
+# Don't you wish you knew?
+# birthday_minutes = ???
+
+birthday_heartbeats = birthday_minutes * minute_mean
+
+heartbeats_until_2016 = int(birthday_heartbeats + jan_92_jan_16)
+remaining_2016 = total_heartbeats - heartbeats_until_2016
+
+print("Heartbeats so far: {}".format(heartbeats_until_2016))
+print("Remaining heartbeats: {}".format(remaining_2016))
+```
+
+```
+    Heartbeats so far: 775804660
+    Remaining heartbeats: 1724195340
+```
+
+It would appear that my heart has beaten 775,804,660 times between my moment of birth and January 1<sup>st</sup> 2016, and that I have 1.72 billion left.
+
+### How many heartbeats longer?
+
+Now comes the tricky bit. I know how many heart beats I've used so far, and how many I have remaining, so I'd like to come up with a (relatively) accurate estimate of when exactly my heart should give out. We'll do this in a few steps, increasing in granularity.
+
+First step, how many heartbeats do I use in a 4-year period? I have data for a single quarter including leap day, so I want to know:
+
+$$
+\begin{equation*}
+hr_q \cdot n - hr_d \cdot (n - m)
+\end{equation*}
+$$
+
+- $hr_q$: Heartbeats per quarter
+- $hr_d$: Heartbeats per leap day
+- $n$: Number of quarters = 16
+- $m$: Number of leap days = 1
+
+
+```python
+heartbeats_4year = quarterly_count * 16 - leap_day_count * (16 - 1)
+heartbeats_4year
+```
+
+```
+    128934900
+```
+
+Now, I can fast forward from 2016 the number of periods of 4 years I have left.
+
+```python
+four_year_periods = remaining_2016 // heartbeats_4year
+remaining_4y = remaining_2016 - four_year_periods * heartbeats_4year
+
+print("Four year periods remaining: {}".format(four_year_periods))
+print("Remaining heartbeats after 4 year periods: {}".format(remaining_4y))
+```
+
+```
+    Four year periods remaining: 13
+    Remaining heartbeats after 4 year periods: 48041640
+```
+
+Given that there are 13 four-year periods left, I can move from 2016 all the way to 2068, and find that I will have 48 million heart beats left. Let's drop down to figuring out how many quarters that is. I know that 2068 will have a leap day (unless someone finally decides to get rid of them), so I'll subtract that out first. Then, I'm left to figure out how many quarters exactly are left.
+
+```python
+remaining_leap = remaining_4y - leap_day_count
+# Ignore leap day in the data set
+heartbeats_quarter = hr_df_full[(hr_df_full.index.month != 2) &
+                                (hr_df_full.index.day != 29)]['value'].sum()
+quarters_left = remaining_leap // heartbeats_quarter
+remaining_year = remaining_leap - quarters_left * heartbeats_quarter
+
+print("Quarters left starting 2068: {}".format(quarters_left))
+print("Remaining heartbeats after that: {}".format(remaining_year))
+```
+
+```
+    Quarters left starting 2068: 8
+    Remaining heartbeats after that: 4760716
+```
+
+So, that analysis gets me through until January 1<sup>st</sup> 2070. Final step, using that minute estimate to figure out how many minutes past that I'm predicted to have:
+
+
+```python
+from datetime import timedelta
+
+base = datetime(2070, 1, 1)
+minutes_left = remaining_year // minute_mean
+
+kaput = timedelta(minutes=minutes_left)
+base + kaput
+```
+
+```
+    datetime.datetime(2070, 2, 23, 5, 28)
+```
+
+According to this, I've got until February 23<sup>rd</sup>, 2070 at 5:28 PM in the evening before my heart gives out.
+
+## Summary
+
+Well, that's kind of a creepy date to know. As I said at the top though, **this number is totally useless in any medical context**. It ignores the rate at which we continue to get better at making people live longer, and is extrapolating from 3 months' worth of data the rest of my life. Additionally, throughout my time developing this post I made many minor mistakes. I think they're all fixed now, but it's easy to mix a number up here or there and the analysis gets thrown off by a couple years.
+
+Even still, I think philosophically humans have a desire to know how much time we have left in the world. [Man is but a breath](https://www.biblegateway.com/passage/?search=psalm+144&version=ESV), and it's scary to think just how quickly that date may be coming up. This analysis asks an important question though: what are you going to do with the time you have left?
+
+Thanks for sticking with me on this one, I promise it will be much less depressing next time!
