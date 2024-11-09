@@ -100,7 +100,7 @@ preventing us from doing something that really should be legal?
 This is what is known as [fighting the borrow checker](https://doc.rust-lang.org/1.8.0/book/references-and-borrowing.html).
 Let our crusade begin.
 
-## Attempt 2: Put the `Reader` in a `Box
+## Attempt 2: Put the `Reader` in a `Box`
 
 The [`Box`](https://doc.rust-lang.org/std/boxed/struct.Box.html) type allows us to convert a pointer we have
 (in our case the `point_reader`) into an "owned" value, which should be easier to send across threads.
@@ -241,7 +241,3 @@ And while we've left Rust to do the dirty work of actually moving the `point_rea
 we could also use things like [`mpsc` channels](https://doc.rust-lang.org/std/sync/mpsc/index.html) to achieve a similar effect.
 
 So now we're able to define basic Cap'N Proto messages, and send them all around our programs.
-
-## Next steps:
-
-[Part 1: Setting up a basic Cap'N Proto Rust project](http://bspeice.github.io/captains-cookbook-part-1.html)
