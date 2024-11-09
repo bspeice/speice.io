@@ -3,6 +3,8 @@
   overflow-y: auto;
   position: sticky;
   top: calc(var(--ifm-navbar-height) + 2rem);
+  padding-right: 1px;
+  border-right: 1px solid var(--ifm-toc-border-color);
 }
 
 .sidebarItemTitle {
