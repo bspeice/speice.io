@@ -80,7 +80,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.oneLight,
       darkTheme: prismThemes.oneDark,
-      additionalLanguages: ['julia']
+      additionalLanguages: ['java', 'julia', 'nasm']
     },
   } satisfies Preset.ThemeConfig,
   plugins: [require.resolve('docusaurus-lunr-search')],
