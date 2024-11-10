@@ -98,7 +98,7 @@ The first issue
 [I ran into](https://www.reddit.com/r/rust/comments/98lpun/unable_to_load_wasm_for_electron_application/)
 while attempting to bundle everything via `webpack` is a detail in the WASM spec:
 
-> This function accepts a Response object, or a promise for one, and ... **[if it] does not match
+> This function accepts a Response object, or a promise for one, and ... **[if > it] does not match
 > the `application/wasm` MIME type**, the returned promise will be rejected with a TypeError;
 >
 > [WebAssembly - Additional Web Embedding API](https://webassembly.org/docs/web/#additional-web-embedding-api)
