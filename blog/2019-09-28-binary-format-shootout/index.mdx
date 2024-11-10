@@ -41,7 +41,7 @@ We'll discuss more in detail, but a quick preview of the results:
 - Flatbuffers: Has some quirks, but largely lived up to its "zero-copy" promises
 - SBE: Best median and worst-case performance, but the message structure has a limited feature set
 
-# Prologue: Binary Parsing with Nom
+## Prologue: Binary Parsing with Nom
 
 Our benchmark system will be a simple data processor; given depth-of-book market data from
 [IEX](https://iextrading.com/trading/market-data/#deep), serialize each message into the schema
@@ -119,7 +119,7 @@ Ultimately, because the `nom` code in this shootout was the same for all formats
 interested in its performance. Still, it's worth mentioning that building the market data parser was
 actually fun; I didn't have to write tons of boring code by hand.
 
-# Part 1: Cap'n Proto
+## Cap'n Proto
 
 Now it's time to get into the meaty part of the story. Cap'n Proto was the first format I tried
 because of how long it has supported Rust (thanks to [dwrensha](https://github.com/dwrensha) for
@@ -151,7 +151,7 @@ every read for the segment table.
 In the end, I put in significant work to make Cap'n Proto as fast as possible, but there were too
 many issues for me to feel comfortable using it long-term.
 
-# Part 2: Flatbuffers
+## Flatbuffers
 
 This is the new kid on the block. After a
 [first attempt](https://github.com/google/flatbuffers/pull/3894) didn't pan out, official support
@@ -191,7 +191,7 @@ that tag is nigh on impossible.
 Ultimately, I enjoyed using Flatbuffers, and had to do significantly less work to make it perform
 well.
 
-# Part 3: Simple Binary Encoding
+## Simple Binary Encoding
 
 Support for SBE was added by the author of one of my favorite
 [Rust blog posts](https://web.archive.org/web/20190427124806/https://polysync.io/blog/session-types-for-hearty-codecs/).
@@ -212,7 +212,7 @@ However, if you don't need union types, and can accept that schemas are XML docu
 worth using. SBE's implementation had the best streaming support of all formats I tested, and
 doesn't trigger allocation during de/serialization.
 
-# Results
+## Results
 
 After building a test harness
 [for](https://github.com/speice-io/marketdata-shootout/blob/master/src/capnp_runner.rs)
@@ -225,7 +225,7 @@ the benchmarks, and the raw results are
 below is the average of 10 runs on a single day of IEX data. Results were validated to make sure
 that each format parsed the data correctly.
 
-## Serialization
+### Serialization
 
 This test measures, on a
 [per-message basis](https://github.com/speice-io/marketdata-shootout/blob/master/src/main.rs#L268-L272),
@@ -239,7 +239,7 @@ buffer.
 | Flatbuffers          | 355ns  | 2185ns    | 3497ns      | 14.31s |
 | SBE                  | 91ns   | 1535ns    | 2423ns      | 3.91s  |
 
-## Deserialization
+### Deserialization
 
 This test measures, on a
 [per-message basis](https://github.com/speice-io/marketdata-shootout/blob/master/src/main.rs#L294-L298),
@@ -254,7 +254,7 @@ format implementation.
 | Flatbuffers          | 173ns  | 421ns     | 1007ns      | 6.00s  |
 | SBE                  | 116ns  | 286ns     | 659ns       | 4.05s  |
 
-# Conclusion
+## Conclusion
 
 Building a benchmark turned out to be incredibly helpful in making a decision; because a "union"
 type isn't important to me, I can be confident that SBE best addresses my needs.
