@@ -135,7 +135,7 @@ principle is the same: running the allocator to allocate/deallocate memory takes
 be put to better use. Understanding when your language interacts with the allocator is crucial, and
 not always obvious. For example: C++ and Rust don't allocate heap memory for iterators, but Java
 does (meaning potential GC pauses). Take time to understand heap behavior (I made a
-[a guide for Rust](/2019/02/understanding-allocations-in-rust.html)), and look into alternative
+[a guide for Rust](/2019/02/understanding-allocations-in-rust)), and look into alternative
 allocators ([jemalloc](http://jemalloc.net/),
 [tcmalloc](https://gperftools.github.io/gperftools/tcmalloc.html)) that might run faster than the
 operating system default.
