@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkspeice_io=self.webpackChunkspeice_io||[]).push([["5969"],{3807:function(e,t,n){n.r(t),n.d(t,{default:function(){return c}});var s=n(5893),u=n(4819);let c=()=>(0,s.jsx)(u.Z,{children:(0,s.jsx)("meta",{httpEquiv:"Refresh",content:"0; url='/atom.xml'"})})}}]);

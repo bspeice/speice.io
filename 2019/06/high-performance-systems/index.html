@@ -1,0 +1,267 @@
+<!doctype html><html lang=en dir=ltr class="blog-wrapper blog-post-page plugin-blog plugin-id-default" data-has-hydrated=false><meta charset=UTF-8><meta name=generator content="Docusaurus v3.6.0"><title data-rh=true>On building high performance systems | The Old Speice Guy</title><meta data-rh=true name=viewport content="width=device-width,initial-scale=1.0"><meta data-rh=true name=twitter:card content=summary_large_image><meta data-rh=true property=og:url content=https://speice.io/2019/06/high-performance-systems><meta data-rh=true property=og:locale content=en><meta data-rh=true name=docusaurus_locale content=en><meta data-rh=true name=docusaurus_tag content=default><meta data-rh=true name=docsearch:language content=en><meta data-rh=true name=docsearch:docusaurus_tag content=default><meta data-rh=true property=og:title content="On building high performance systems | The Old Speice Guy"><meta data-rh=true name=description content="Prior to working in the trading industry, my assumption was that High Frequency Trading (HFT) is"><meta data-rh=true property=og:description content="Prior to working in the trading industry, my assumption was that High Frequency Trading (HFT) is"><meta data-rh=true property=og:type content=article><meta data-rh=true property=article:published_time content=2019-07-01T12:00:00.000Z><link data-rh=true rel=icon href=/img/favicon.ico><link data-rh=true rel=canonical href=https://speice.io/2019/06/high-performance-systems><link data-rh=true rel=alternate href=https://speice.io/2019/06/high-performance-systems hreflang=en><link data-rh=true rel=alternate href=https://speice.io/2019/06/high-performance-systems hreflang=x-default><script data-rh=true type=application/ld+json>{"@context":"https://schema.org","@id":"https://speice.io/2019/06/high-performance-systems","@type":"BlogPosting","author":{"@type":"Person","name":"Bradlee Speice"},"dateModified":"2024-11-10T03:00:25.000Z","datePublished":"2019-07-01T12:00:00.000Z","description":"Prior to working in the trading industry, my assumption was that High Frequency Trading (HFT) is","headline":"On building high performance systems","isPartOf":{"@id":"https://speice.io/","@type":"Blog","name":"Blog"},"keywords":[],"mainEntityOfPage":"https://speice.io/2019/06/high-performance-systems","name":"On building high performance systems","url":"https://speice.io/2019/06/high-performance-systems"}</script><link rel=alternate type=application/rss+xml href=/rss.xml title="The Old Speice Guy RSS Feed"><link rel=alternate type=application/atom+xml href=/atom.xml title="The Old Speice Guy Atom Feed"><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css integrity=sha384-odtC+0UGzzFL/6PNoE8rX/SPcQDXBJ+uRepguP4QkPCm2LBxH3FA3y+fKSiJ+AmM crossorigin><link rel=stylesheet href=/assets/css/styles.ae6ff4a3.css><script src=/assets/js/runtime~main.751b419d.js defer></script><script src=/assets/js/main.62ce6156.js defer></script><body class=navigation-with-keyboard><script>!function(){var t,e=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();t=null!==e?e:"light",document.documentElement.setAttribute("data-theme",t)}(),function(){try{for(var[t,e]of new URLSearchParams(window.location.search).entries())if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id=__docusaurus><div role=region aria-label="Skip to main content"><a class=skipToContent_fXgn href=#__docusaurus_skipToContent_fallback>Skip to main content</a></div><nav aria-label=Main class="navbar navbar--fixed-top"><div class=navbar__inner><div class=navbar__items><button aria-label="Toggle navigation bar" aria-expanded=false class="navbar__toggle clean-btn" type=button><svg width=30 height=30 viewBox="0 0 30 30" aria-hidden=true><path stroke=currentColor stroke-linecap=round stroke-miterlimit=10 stroke-width=2 d="M4 7h22M4 15h22M4 23h22"/></svg></button><a class=navbar__brand href=/><div class=navbar__logo><img src=/img/logo.svg alt="Sierpinski Gasket" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src=/img/logo-dark.svg alt="Sierpinski Gasket" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">The Old Speice Guy</b></a></div><div class="navbar__items navbar__items--right"><a href=https://github.com/bspeice target=_blank rel="noopener noreferrer" class="navbar__item navbar__link header-github-link"></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type=button disabled title="Switch between dark and light mode (currently light mode)" aria-label="Switch between dark and light mode (currently light mode)" aria-live=polite aria-pressed=false><svg viewBox="0 0 24 24" width=24 height=24 class=lightToggleIcon_pyhR><path fill=currentColor d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"/></svg><svg viewBox="0 0 24 24" width=24 height=24 class=darkToggleIcon_wfgR><path fill=currentColor d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"/></svg></button></div><div class=navbarSearchContainer_Bca1><div class=navbar__search><span aria-label="expand searchbar" role=button class=search-icon tabindex=0></span><input id=search_input_react type=search placeholder=Loading... aria-label=Search class="navbar__search-input search-bar" disabled></div></div></div></div><div role=presentation class=navbar-sidebar__backdrop></div></nav><div id=__docusaurus_skipToContent_fallback class="main-wrapper mainWrapper_z2l0"><div class="container margin-vert--lg"><div class=row><aside class="col col--3"><nav class="sidebar_re4s thin-scrollbar" aria-label="Blog recent posts navigation"><div class="sidebarItemTitle_pO2u margin-bottom--md">All posts</div><div role=group><h3>2022</h3><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2011/11/webpack-industrial-complex>The webpack industrial complex</a></ul></div><div role=group><h3>2019</h3><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/12/release-the-gil>Release the GIL</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/09/binary-format-shootout>Binary format shootout</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a aria-current=page class="sidebarItemLink_mo7H sidebarItemLinkActive_I1ZP" href=/2019/06/high-performance-systems>On building high performance systems</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/05/making-bread>Making bread</a></ul><div role=group><h4>Allocations in Rust</h4><ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/02/understanding-allocations-in-rust>Foreword</a><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/02/the-whole-world>Global memory</a><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/02/stacking-up>Fixed memory</a><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/02/a-heaping-helping>Dynamic memory</a><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/02/08/compiler-optimizations>Compiler optimizations</a><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2019/02/summary>Summary</a></ul></ul></div></div><div role=group><h3>2018</h3><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/12/allocation-safety>QADAPT - debug_assert! for allocations</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/12/what-small-business-really-means>More "what companies really mean"</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/10/case-study-optimization>A case study in heaptrack</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/09/isomorphic-apps>Isomorphic desktop apps with Rust</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/09/primitives-in-rust-are-weird>Primitives in Rust are weird (and cool)</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/06/dateutil-parser-to-rust>What I learned porting dateutil to Rust</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/05/hello>Hello!</a></ul><div role=group><h4>Captain's Cookbook</h4><ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/01/captains-cookbook-part-1>Project setup</a><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2018/01/captains-cookbook-part-2>Practical usage</a></ul></ul></div></div><div role=group><h3>2016</h3><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/11/pca-audio-compression>PCA audio compression</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/10/rustic-repodcasting>A Rustic re-podcasting server</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/06/event-studies-and-earnings-releases>Event studies and earnings releases</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/05/the-unfair-casino>The unfair casino</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/04/tick-tock>Tick tock...</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/03/tweet-like-me>Tweet like me</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/03/predicting-santander-customer-happiness>Predicting Santander customer happiness</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/02/profitability-using-the-investment-formula>Profitability using the investment formula</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/02/guaranteed-money-maker>Guaranteed money maker</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/01/cloudy-in-seattle>Cloudy in Seattle</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2016/01/complaining-about-the-weather>Complaining about the weather</a></ul></div><div role=group><h3>2015</h3><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2015/12/testing-cramer>Testing Cramer</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2015/11/autocallable>Autocallable Bonds</a></ul><ul class="sidebarItemList_Yudw clean-list"><li class=sidebarItem__DBe><a class=sidebarItemLink_mo7H href=/2015/11/welcome>Welcome, and an algorithm</a></ul></div></nav></aside><main class="col col--7"><article><header><h1 class=title_f1Hy>On building high performance systems</h1><div class="container_mt6G margin-vert--md"><time datetime=2019-07-01T12:00:00.000Z>July 1, 2019</time> · <!-- -->13 min read</div><div class="margin-top--md margin-bottom--sm row"><div class="col col--12 authorCol_Hf19"><div class="avatar margin-bottom--sm"><div class="avatar__intro authorDetails_lV9A"><div class=avatar__name><span class=authorName_yefp>Bradlee Speice</span></div><div class=authorSocials_rSDt><a href=https://github.com/bspeice target=_blank rel="noopener noreferrer" class=authorSocialLink_owbf title=GitHub><svg viewBox="0 0 256 250" width=1em height=1em class="authorSocialLink_owbf githubSvg_Uu4N" style=--dark:#000;--light:#fff preserveAspectRatio=xMidYMid><path d="M128.001 0C57.317 0 0 57.307 0 128.001c0 56.554 36.676 104.535 87.535 121.46 6.397 1.185 8.746-2.777 8.746-6.158 0-3.052-.12-13.135-.174-23.83-35.61 7.742-43.124-15.103-43.124-15.103-5.823-14.795-14.213-18.73-14.213-18.73-11.613-7.944.876-7.78.876-7.78 12.853.902 19.621 13.19 19.621 13.19 11.417 19.568 29.945 13.911 37.249 10.64 1.149-8.272 4.466-13.92 8.127-17.116-28.431-3.236-58.318-14.212-58.318-63.258 0-13.975 5-25.394 13.188-34.358-1.329-3.224-5.71-16.242 1.24-33.874 0 0 10.749-3.44 35.21 13.121 10.21-2.836 21.16-4.258 32.038-4.307 10.878.049 21.837 1.47 32.066 4.307 24.431-16.56 35.165-13.12 35.165-13.12 6.967 17.63 2.584 30.65 1.255 33.873 8.207 8.964 13.173 20.383 13.173 34.358 0 49.163-29.944 59.988-58.447 63.157 4.591 3.972 8.682 11.762 8.682 23.704 0 17.126-.148 30.91-.148 35.126 0 3.407 2.304 7.398 8.792 6.14C219.37 232.5 256 184.537 256 128.002 256 57.307 198.691 0 128.001 0Zm-80.06 182.34c-.282.636-1.283.827-2.194.39-.929-.417-1.45-1.284-1.15-1.922.276-.655 1.279-.838 2.205-.399.93.418 1.46 1.293 1.139 1.931Zm6.296 5.618c-.61.566-1.804.303-2.614-.591-.837-.892-.994-2.086-.375-2.66.63-.566 1.787-.301 2.626.591.838.903 1 2.088.363 2.66Zm4.32 7.188c-.785.545-2.067.034-2.86-1.104-.784-1.138-.784-2.503.017-3.05.795-.547 2.058-.055 2.861 1.075.782 1.157.782 2.522-.019 3.08Zm7.304 8.325c-.701.774-2.196.566-3.29-.49-1.119-1.032-1.43-2.496-.726-3.27.71-.776 2.213-.558 3.315.49 1.11 1.03 1.45 2.505.701 3.27Zm9.442 2.81c-.31 1.003-1.75 1.459-3.199 1.033-1.448-.439-2.395-1.613-2.103-2.626.301-1.01 1.747-1.484 3.207-1.028 1.446.436 2.396 1.602 2.095 2.622Zm10.744 1.193c.036 1.055-1.193 1.93-2.715 1.95-1.53.034-2.769-.82-2.786-1.86 0-1.065 1.202-1.932 2.733-1.958 1.522-.03 2.768.818 2.768 1.868Zm10.555-.405c.182 1.03-.875 2.088-2.387 2.37-1.485.271-2.861-.365-3.05-1.386-.184-1.056.893-2.114 2.376-2.387 1.514-.263 2.868.356 3.061 1.403Z"/></svg></a></div></div></div></div></div></header><div id=__blog-post-container class=markdown><p>Prior to working in the trading industry, my assumption was that High Frequency Trading (HFT) is
+made up of people who have access to secret techniques mortal developers could only dream of. There
+had to be some secret art that could only be learned if one had an appropriately tragic backstory.</p>
+<p><img decoding=async loading=lazy alt="Kung Fu fight" src=/assets/images/kung-fu-5715f30eef7bf3aaa26770b1247024dc.webp width=426 height=240 class=img_ev3q></p>
+<blockquote>
+<p>How I assumed HFT people learn their secret techniques</p>
+</blockquote>
+<p>How else do you explain people working on systems that complete the round trip of market data in to
+orders out (a.k.a. tick-to-trade) consistently within
+<a href=https://stackoverflow.com/a/22082528/1454178 target=_blank rel="noopener noreferrer">750-800 nanoseconds</a>? In roughly the time it takes a
+computer to access
+<a href=https://people.eecs.berkeley.edu/~rcs/research/interactive_latency.html target=_blank rel="noopener noreferrer">main memory 8 times</a>,
+trading systems are capable of reading the market data packets, deciding what orders to send, doing
+risk checks, creating new packets for exchange-specific protocols, and putting those packets on the
+wire.</p>
+<p>Having now worked in the trading industry, I can confirm the developers aren't super-human; I've
+made some simple mistakes at the very least. Instead, what shows up in public discussions is that
+philosophy, not technique, separates high-performance systems from everything else.
+Performance-critical systems don't rely on "this one cool C++ optimization trick" to make code fast
+(though micro-optimizations have their place); there's a lot more to worry about than just the code
+written for the project.</p>
+<p>The framework I'd propose is this: <strong>If you want to build high-performance systems, focus first on
+reducing performance variance</strong> (reducing the gap between the fastest and slowest runs of the same
+code), <strong>and only look at average latency once variance is at an acceptable level</strong>.</p>
+<p>Don't get me wrong, I'm a much happier person when things are fast. Computer goes from booting in 20
+seconds down to 10 because I installed a solid-state drive? Awesome. But if every fifth day it takes
+a full minute to boot because of corrupted sectors? Not so great. Average speed over the course of a
+week is the same in each situation, but you're painfully aware of that minute when it happens. When
+it comes to code, the principal is the same: speeding up a function by an average of 10 milliseconds
+doesn't mean much if there's a 100ms difference between your fastest and slowest runs. When
+performance matters, you need to respond quickly <em>every time</em>, not just in aggregate.
+High-performance systems should first optimize for time variance. Once you're consistent at the time
+scale you care about, then focus on improving average time.</p>
+<p>This focus on variance shows up all the time in industry too (emphasis added in all quotes below):</p>
+<ul>
+<li>
+<p>In <a href=https://business.nasdaq.com/market-tech/marketplaces/trading target=_blank rel="noopener noreferrer">marketing materials</a> for
+NASDAQ's matching engine, the most performance-sensitive component of the exchange, dependability
+is highlighted in addition to instantaneous metrics:</p>
+<blockquote>
+<p>Able to <strong>consistently sustain</strong> an order rate of over 100,000 orders per second at sub-40
+microsecond average latency</p>
+</blockquote>
+</li>
+<li>
+<p>The <a href=https://github.com/real-logic/aeron target=_blank rel="noopener noreferrer">Aeron</a> message bus has this to say about performance:</p>
+<blockquote>
+<p>Performance is the key focus. Aeron is designed to be the highest throughput with the lowest and
+<strong>most predictable latency possible</strong> of any messaging system</p>
+</blockquote>
+</li>
+<li>
+<p>The company PolySync, which is working on autonomous vehicles,
+<a href=https://polysync.io/blog/session-types-for-hearty-codecs/ target=_blank rel="noopener noreferrer">mentions why</a> they picked their
+specific messaging format:</p>
+<blockquote>
+<p>In general, high performance is almost always desirable for serialization. But in the world of
+autonomous vehicles, <strong>steady timing performance is even more important</strong> than peak throughput.
+This is because safe operation is sensitive to timing outliers. Nobody wants the system that
+decides when to slam on the brakes to occasionally take 100 times longer than usual to encode
+its commands.</p>
+</blockquote>
+</li>
+<li>
+<p><a href=https://solarflare.com/ target=_blank rel="noopener noreferrer">Solarflare</a>, which makes highly-specialized network hardware, points out
+variance (jitter) as a big concern for
+<a href=https://solarflare.com/electronic-trading/ target=_blank rel="noopener noreferrer">electronic trading</a>:</p>
+<blockquote>
+<p>The high stakes world of electronic trading, investment banks, market makers, hedge funds and
+exchanges demand the <strong>lowest possible latency and jitter</strong> while utilizing the highest
+bandwidth and return on their investment.</p>
+</blockquote>
+</li>
+</ul>
+<p>And to further clarify: we're not discussing <em>total run-time</em>, but variance of total run-time. There
+are situations where it's not reasonably possible to make things faster, and you'd much rather be
+consistent. For example, trading firms use
+<a href=https://sniperinmahwah.wordpress.com/2017/06/07/network-effects-part-i/ target=_blank rel="noopener noreferrer">wireless networks</a> because
+the speed of light through air is faster than through fiber-optic cables. There's still at <em>absolute
+minimum</em> a <a href=http://tinyurl.com/y2vd7tn8 target=_blank rel="noopener noreferrer">~33.76 millisecond</a> delay required to send data between,
+say,
+<a href=https://www.theice.com/market-data/connectivity-and-feeds/wireless/tokyo-chicago target=_blank rel="noopener noreferrer">Chicago and Tokyo</a>.
+If a trading system in Chicago calls the function for "send order to Tokyo" and waits to see if a
+trade occurs, there's a physical limit to how long that will take. In this situation, the focus is
+on keeping variance of <em>additional processing</em> to a minimum, since speed of light is the limiting
+factor.</p>
+<p>So how does one go about looking for and eliminating performance variance? To tell the truth, I
+don't think a systematic answer or flow-chart exists. There's no substitute for (A) building a deep
+understanding of the entire technology stack, and (B) actually measuring system performance (though
+(C) watching a lot of <a href=https://www.youtube.com/channel/UCMlGfpWw-RUdWX_JbLCukXg target=_blank rel="noopener noreferrer">CppCon</a> videos for
+inspiration never hurt). Even then, every project cares about performance to a different degree; you
+may need to build an entire
+<a href="https://www.youtube.com/watch?v=NH1Tta7purM&feature=youtu.be&t=3015" target=_blank rel="noopener noreferrer">replica production system</a> to
+accurately benchmark at nanosecond precision, or you may be content to simply
+<a href="https://www.youtube.com/watch?v=BD9cRbxWQx8&feature=youtu.be&t=1335" target=_blank rel="noopener noreferrer">avoid garbage collection</a> in
+your Java code.</p>
+<p>Even though everyone has different needs, there are still common things to look for when trying to
+isolate and eliminate variance. In no particular order, these are my focus areas when thinking about
+high-performance systems:</p>
+<p><strong>Update 2019-09-21</strong>: Added notes on <code>isolcpus</code> and <code>systemd</code> affinity.</p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id=language-specific>Language-specific<a href=#language-specific class=hash-link aria-label="Direct link to Language-specific" title="Direct link to Language-specific">​</a></h2>
+<p><strong>Garbage Collection</strong>: How often does garbage collection happen? When is it triggered? What are the
+impacts?</p>
+<ul>
+<li><a href=https://rushter.com/blog/python-garbage-collector/ target=_blank rel="noopener noreferrer">In Python</a>, individual objects are collected
+if the reference count reaches 0, and each generation is collected if
+<code>num_alloc - num_dealloc > gc_threshold</code> whenever an allocation happens. The GIL is acquired for
+the duration of generational collection.</li>
+<li>Java has
+<a href=https://docs.oracle.com/en/java/javase/12/gctuning/parallel-collector1.html#GUID-DCDD6E46-0406-41D1-AB49-FB96A50EB9CE target=_blank rel="noopener noreferrer">many</a>
+<a href=https://docs.oracle.com/en/java/javase/12/gctuning/garbage-first-garbage-collector.html#GUID-ED3AB6D3-FD9B-4447-9EDF-983ED2F7A573 target=_blank rel="noopener noreferrer">different</a>
+<a href=https://docs.oracle.com/en/java/javase/12/gctuning/garbage-first-garbage-collector-tuning.html#GUID-90E30ACA-8040-432E-B3A0-1E0440AB556A target=_blank rel="noopener noreferrer">collection</a>
+<a href=https://docs.oracle.com/en/java/javase/12/gctuning/z-garbage-collector1.html#GUID-A5A42691-095E-47BA-B6DC-FB4E5FAA43D0 target=_blank rel="noopener noreferrer">algorithms</a>
+to choose from, each with different characteristics. The default algorithms (Parallel GC in Java
+8, G1 in Java 9) freeze the JVM while collecting, while more recent algorithms
+(<a href=https://wiki.openjdk.java.net/display/zgc target=_blank rel="noopener noreferrer">ZGC</a> and
+<a href=https://wiki.openjdk.java.net/display/shenandoah target=_blank rel="noopener noreferrer">Shenandoah</a>) are designed to keep "stop the
+world" to a minimum by doing collection work in parallel.</li>
+</ul>
+<p><strong>Allocation</strong>: Every language has a different way of interacting with "heap" memory, but the
+principle is the same: running the allocator to allocate/deallocate memory takes time that can often
+be put to better use. Understanding when your language interacts with the allocator is crucial, and
+not always obvious. For example: C++ and Rust don't allocate heap memory for iterators, but Java
+does (meaning potential GC pauses). Take time to understand heap behavior (I made a
+<a href=/2019/02/understanding-allocations-in-rust>a guide for Rust</a>), and look into alternative
+allocators (<a href=http://jemalloc.net/ target=_blank rel="noopener noreferrer">jemalloc</a>,
+<a href=https://gperftools.github.io/gperftools/tcmalloc.html target=_blank rel="noopener noreferrer">tcmalloc</a>) that might run faster than the
+operating system default.</p>
+<p><strong>Data Layout</strong>: How your data is arranged in memory matters;
+<a href="https://www.youtube.com/watch?v=yy8jQgmhbAU" target=_blank rel="noopener noreferrer">data-oriented design</a> and
+<a href="https://www.youtube.com/watch?v=2EWejmkKlxs&feature=youtu.be&t=1185" target=_blank rel="noopener noreferrer">cache locality</a> can have huge
+impacts on performance. The C family of languages (C, value types in C#, C++) and Rust all have
+guarantees about the shape every object takes in memory that others (e.g. Java and Python) can't
+make. <a href=http://valgrind.org/docs/manual/cg-manual.html target=_blank rel="noopener noreferrer">Cachegrind</a> and kernel
+<a href=https://perf.wiki.kernel.org/index.php/Main_Page target=_blank rel="noopener noreferrer">perf</a> counters are both great for understanding
+how performance relates to memory layout.</p>
+<p><strong>Just-In-Time Compilation</strong>: Languages that are compiled on the fly (LuaJIT, C#, Java, PyPy) are
+great because they optimize your program for how it's actually being used, rather than how a
+compiler expects it to be used. However, there's a variance problem if the program stops executing
+while waiting for translation from VM bytecode to native code. As a remedy, many languages support
+ahead-of-time compilation in addition to the JIT versions
+(<a href=https://github.com/dotnet/corert target=_blank rel="noopener noreferrer">CoreRT</a> in C# and <a href=https://www.graalvm.org/ target=_blank rel="noopener noreferrer">GraalVM</a> in Java).
+On the other hand, LLVM supports
+<a href=https://clang.llvm.org/docs/UsersManual.html#profile-guided-optimization target=_blank rel="noopener noreferrer">Profile Guided Optimization</a>,
+which theoretically brings JIT benefits to non-JIT languages. Finally, be careful to avoid comparing
+apples and oranges during benchmarks; you don't want your code to suddenly speed up because the JIT
+compiler kicked in.</p>
+<p><strong>Programming Tricks</strong>: These won't make or break performance, but can be useful in specific
+circumstances. For example, C++ can use
+<a href="https://www.youtube.com/watch?v=NH1Tta7purM&feature=youtu.be&t=1206" target=_blank rel="noopener noreferrer">templates instead of branches</a>
+in critical sections.</p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id=kernel>Kernel<a href=#kernel class=hash-link aria-label="Direct link to Kernel" title="Direct link to Kernel">​</a></h2>
+<p>Code you wrote is almost certainly not the <em>only</em> code running on your hardware. There are many ways
+the operating system interacts with your program, from interrupts to system calls, that are
+important to watch for. These are written from a Linux perspective, but Windows does typically have
+equivalent functionality.</p>
+<p><strong>Scheduling</strong>: The kernel is normally free to schedule any process on any core, so it's important
+to reserve CPU cores exclusively for the important programs. There are a few parts to this: first,
+limit the CPU cores that non-critical processes are allowed to run on by excluding cores from
+scheduling
+(<a href=https://www.linuxtopia.org/online_books/linux_kernel/kernel_configuration/re46.html target=_blank rel="noopener noreferrer"><code>isolcpus</code></a>
+kernel command-line option), or by setting the <code>init</code> process CPU affinity
+(<a href=https://access.redhat.com/solutions/2884991 target=_blank rel="noopener noreferrer"><code>systemd</code> example</a>). Second, set critical processes
+to run on the isolated cores by setting the
+<a href=https://en.wikipedia.org/wiki/Processor_affinity target=_blank rel="noopener noreferrer">processor affinity</a> using
+<a href=https://linux.die.net/man/1/taskset target=_blank rel="noopener noreferrer">taskset</a>. Finally, use
+<a href=https://github.com/torvalds/linux/blob/master/Documentation/timers/NO_HZ.txt target=_blank rel="noopener noreferrer"><code>NO_HZ</code></a> or
+<a href=https://linux.die.net/man/1/chrt target=_blank rel="noopener noreferrer"><code>chrt</code></a> to disable scheduling interrupts. Turning off
+hyper-threading is also likely beneficial.</p>
+<p><strong>System calls</strong>: Reading from a UNIX socket? Writing to a file? In addition to not knowing how long
+the I/O operation takes, these all trigger expensive
+<a href=https://en.wikipedia.org/wiki/System_call target=_blank rel="noopener noreferrer">system calls (syscalls)</a>. To handle these, the CPU must
+<a href=https://en.wikipedia.org/wiki/Context_switch target=_blank rel="noopener noreferrer">context switch</a> to the kernel, let the kernel
+operation complete, then context switch back to your program. We'd rather keep these
+<a href=https://www.destroyallsoftware.com/talks/the-birth-and-death-of-javascript target=_blank rel="noopener noreferrer">to a minimum</a> (see
+timestamp 18:20). <a href=https://linux.die.net/man/1/strace target=_blank rel="noopener noreferrer">Strace</a> is your friend for understanding when
+and where syscalls happen.</p>
+<p><strong>Signal Handling</strong>: Far less likely to be an issue, but signals do trigger a context switch if your
+code has a handler registered. This will be highly dependent on the application, but you can
+<a href="https://www.linuxprogrammingblog.com/all-about-linux-signals?page=show#Blocking_signals" target=_blank rel="noopener noreferrer">block signals</a>
+if it's an issue.</p>
+<p><strong>Interrupts</strong>: System interrupts are how devices connected to your computer notify the CPU that
+something has happened. The CPU will then choose a processor core to pause and context switch to the
+OS to handle the interrupt. Make sure that
+<a href=http://www.alexonlinux.com/smp-affinity-and-proper-interrupt-handling-in-linux target=_blank rel="noopener noreferrer">SMP affinity</a> is
+set so that interrupts are handled on a CPU core not running the program you care about.</p>
+<p><strong><a href=https://www.kernel.org/doc/html/latest/vm/numa.html target=_blank rel="noopener noreferrer">NUMA</a></strong>: While NUMA is good at making
+multi-cell systems transparent, there are variance implications; if the kernel moves a process
+across nodes, future memory accesses must wait for the controller on the original node. Use
+<a href=https://linux.die.net/man/8/numactl target=_blank rel="noopener noreferrer">numactl</a> to handle memory-/cpu-cell pinning so this doesn't
+happen.</p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id=hardware>Hardware<a href=#hardware class=hash-link aria-label="Direct link to Hardware" title="Direct link to Hardware">​</a></h2>
+<p><strong>CPU Pipelining/Speculation</strong>: Speculative execution in modern processors gave us vulnerabilities
+like Spectre, but it also gave us performance improvements like
+<a href=https://stackoverflow.com/a/11227902/1454178 target=_blank rel="noopener noreferrer">branch prediction</a>. And if the CPU mis-speculates
+your code, there's variance associated with rewind and replay. While the compiler knows a lot about
+how your CPU <a href="https://youtu.be/nAbCKa0FzjQ?t=4467" target=_blank rel="noopener noreferrer">pipelines instructions</a>, code can be
+<a href="https://www.youtube.com/watch?v=NH1Tta7purM&feature=youtu.be&t=755" target=_blank rel="noopener noreferrer">structured to help</a> the branch
+predictor.</p>
+<p><strong>Paging</strong>: For most systems, virtual memory is incredible. Applications live in their own worlds,
+and the CPU/<a href=https://en.wikipedia.org/wiki/Memory_management_unit target=_blank rel="noopener noreferrer">MMU</a> figures out the details.
+However, there's a variance penalty associated with memory paging and caching; if you access more
+memory pages than the <a href=https://en.wikipedia.org/wiki/Translation_lookaside_buffer target=_blank rel="noopener noreferrer">TLB</a> can store,
+you'll have to wait for the page walk. Kernel perf tools are necessary to figure out if this is an
+issue, but using <a href=https://blog.pythian.com/performance-tuning-hugepages-in-linux/ target=_blank rel="noopener noreferrer">huge pages</a> can
+reduce TLB burdens. Alternately, running applications in a hypervisor like
+<a href=https://github.com/siemens/jailhouse target=_blank rel="noopener noreferrer">Jailhouse</a> allows one to skip virtual memory entirely, but
+this is probably more work than the benefits are worth.</p>
+<p><strong>Network Interfaces</strong>: When more than one computer is involved, variance can go up dramatically.
+Tuning kernel
+<a href=https://github.com/leandromoreira/linux-network-performance-parameters target=_blank rel="noopener noreferrer">network parameters</a> may be
+helpful, but modern systems more frequently opt to skip the kernel altogether with a technique
+called <a href=https://blog.cloudflare.com/kernel-bypass/ target=_blank rel="noopener noreferrer">kernel bypass</a>. This typically requires
+specialized hardware and <a href=https://www.openonload.org/ target=_blank rel="noopener noreferrer">drivers</a>, but even industries like
+<a href=https://www.bbc.co.uk/rd/blog/2018-04-high-speed-networking-open-source-kernel-bypass target=_blank rel="noopener noreferrer">telecom</a> are
+finding the benefits.</p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id=networks>Networks<a href=#networks class=hash-link aria-label="Direct link to Networks" title="Direct link to Networks">​</a></h2>
+<p><strong>Routing</strong>: There's a reason financial firms are willing to pay
+<a href=https://sniperinmahwah.wordpress.com/2019/03/26/4-les-moeres-english-version/ target=_blank rel="noopener noreferrer">millions of euros</a>
+for rights to a small plot of land - having a straight-line connection from point A to point B means
+the path their data takes is the shortest possible. In contrast, there are currently 6 computers in
+between me and Google, but that may change at any moment if my ISP realizes a
+<a href=https://en.wikipedia.org/wiki/Border_Gateway_Protocol target=_blank rel="noopener noreferrer">more efficient route</a> is available. Whether
+it's using
+<a href=https://sniperinmahwah.wordpress.com/2018/05/07/shortwave-trading-part-i-the-west-chicago-tower-mystery/ target=_blank rel="noopener noreferrer">research-quality equipment</a>
+for shortwave radio, or just making sure there's no data inadvertently going between data centers,
+routing matters.</p>
+<p><strong>Protocol</strong>: TCP as a network protocol is awesome: guaranteed and in-order delivery, flow control,
+and congestion control all built in. But these attributes make the most sense when networking
+infrastructure is lossy; for systems that expect nearly all packets to be delivered correctly, the
+setup handshaking and packet acknowledgment are just overhead. Using UDP (unicast or multicast) may
+make sense in these contexts as it avoids the chatter needed to track connection state, and
+<a href=https://iextrading.com/docs/IEX%20Transport%20Specification.pdf target=_blank rel="noopener noreferrer">gap-fill</a>
+<a href=http://www.nasdaqtrader.com/content/technicalsupport/specifications/dataproducts/moldudp64.pdf target=_blank rel="noopener noreferrer">strategies</a>
+can handle the rest.</p>
+<p><strong>Switching</strong>: Many routers/switches handle packets using "store-and-forward" behavior: wait for the
+whole packet, validate checksums, and then send to the next device. In variance terms, the time
+needed to move data between two nodes is proportional to the size of that data; the switch must
+"store" all data before it can calculate checksums and "forward" to the next node. With
+<a href=https://www.networkworld.com/article/2241573/latency-and-jitter--cut-through-design-pays-off-for-arista--blade.html target=_blank rel="noopener noreferrer">"cut-through"</a>
+designs, switches will begin forwarding data as soon as they know where the destination is,
+checksums be damned. This means there's a fixed cost (at the switch) for network traffic, no matter
+the size.</p>
+<h2 class="anchor anchorWithStickyNavbar_LWe7" id=final-thoughts>Final Thoughts<a href=#final-thoughts class=hash-link aria-label="Direct link to Final Thoughts" title="Direct link to Final Thoughts">​</a></h2>
+<p>High-performance systems, regardless of industry, are not magical. They do require extreme precision
+and attention to detail, but they're designed, built, and operated by regular people, using a lot of
+tools that are publicly available. Interested in seeing how context switching affects performance of
+your benchmarks? <code>taskset</code> should be installed in all modern Linux distributions, and can be used to
+make sure the OS never migrates your process. Curious how often garbage collection triggers during a
+crucial operation? Your language of choice will typically expose details of its operations
+(<a href=https://docs.python.org/3/library/gc.html target=_blank rel="noopener noreferrer">Python</a>,
+<a href=https://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html#DebuggingOptions target=_blank rel="noopener noreferrer">Java</a>).
+Want to know how hard your program is stressing the TLB? Use <code>perf record</code> and look for
+<code>dtlb_load_misses.miss_causes_a_walk</code>.</p>
+<p>Two final guiding questions, then: first, before attempting to apply some of the technology above to
+your own systems, can you first identify
+<a href=http://wiki.c2.com/?PrematureOptimization target=_blank rel="noopener noreferrer">where/when you care</a> about "high-performance"? As an
+example, if parts of a system rely on humans pushing buttons, CPU pinning won't have any measurable
+effect. Humans are already far too slow to react in time. Second, if you're using benchmarks, are
+they being designed in a way that's actually helpful? Tools like
+<a href=http://www.serpentine.com/criterion/ target=_blank rel="noopener noreferrer">Criterion</a> (also in
+<a href=https://github.com/bheisler/criterion.rs target=_blank rel="noopener noreferrer">Rust</a>) and Google's
+<a href=https://github.com/google/benchmark target=_blank rel="noopener noreferrer">Benchmark</a> output not only average run time, but variance as
+well; your benchmarking environment is subject to the same concerns your production environment is.</p>
+<p>Finally, I believe high-performance systems are a matter of philosophy, not necessarily technique.
+Rigorous focus on variance is the first step, and there are plenty of ways to measure and mitigate
+it; once that's at an acceptable level, then optimize for speed.</div></article><nav class="pagination-nav docusaurus-mt-lg" aria-label="Blog post page navigation"><a class="pagination-nav__link pagination-nav__link--prev" href=/2019/05/making-bread><div class=pagination-nav__sublabel>Older post</div><div class=pagination-nav__label>Making bread</div></a><a class="pagination-nav__link pagination-nav__link--next" href=/2019/09/binary-format-shootout><div class=pagination-nav__sublabel>Newer post</div><div class=pagination-nav__label>Binary format shootout</div></a></nav></main><div class="col col--2"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href=#language-specific class="table-of-contents__link toc-highlight">Language-specific</a><li><a href=#kernel class="table-of-contents__link toc-highlight">Kernel</a><li><a href=#hardware class="table-of-contents__link toc-highlight">Hardware</a><li><a href=#networks class="table-of-contents__link toc-highlight">Networks</a><li><a href=#final-thoughts class="table-of-contents__link toc-highlight">Final Thoughts</a></ul></div></div></div></div></div><footer class=footer><div class="container container-fluid"><div class="footer__bottom text--center"><div class=footer__copyright>Copyright © 2024 Bradlee Speice</div></div></div></footer></div>
