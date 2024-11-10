@@ -1,8 +1,7 @@
-.bundle/
-.ipynb_checkpoints/
-.jekyll-metadata
-.sass-cache/
-.swp
-.vscode/
 _site/
+.swp
+.sass-cache/
+.jekyll-metadata
+.bundle/
 vendor/
+.vscode/
