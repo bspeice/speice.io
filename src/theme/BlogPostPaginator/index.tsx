@@ -1,3 +1,7 @@
+/**
+ * Docusaurus typically puts the newer post on the left button,
+ * and older posts on the right. This file exists to swap them.
+ */
 import React from 'react';
 import Translate, {translate} from '@docusaurus/Translate';
 import PaginatorNavLink from '@theme/PaginatorNavLink';

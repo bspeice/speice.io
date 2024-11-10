@@ -1,11 +1,11 @@
 ---
+slug: 2015/11/welcome
 title: Welcome, and an algorithm
 date: 2015-11-19 12:00:00
 last_update:
     date: 2015-12-05 12:00:00
-slug: 2015/11/welcome
 authors: [bspeice]
-tags: [trading]
+tags: []
 ---
 
 Hello! Glad to meet you. I'm currently a student at Columbia University studying Financial Engineering, and want to give an overview of the projects I'm working on!
@@ -17,7 +17,7 @@ To start things off, Columbia has been hosting a trading competition that myself
 The competition is scored in 3 areas:
 
 - Total return
-- [Sharpe ratio](1)
+- [Sharpe ratio](https://en.wikipedia.org/wiki/Sharpe_ratio)
 - Maximum drawdown
 
 Our algorithm uses a basic momentum strategy: in the given list of potential portfolios, pick the stocks that have been performing well in the past 30 days. Then, optimize for return subject to the drawdown being below a specific level. We didn't include the Sharpe ratio as a constraint, mostly because we were a bit late entering the competition.

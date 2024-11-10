@@ -1,6 +1,8 @@
 :root {
     --ifm-container-width: 1280px;
+    --ifm-container-width-xl: 1440px;
     --ifm-footer-padding-vertical: .5rem;
+    --ifm-spacing-horizontal: .8rem;
 }
 
 .header-github-link:hover {
