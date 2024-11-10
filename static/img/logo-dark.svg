@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="48"
+   height="48"
+   viewBox="0 0 12.7 12.7"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.1 (9b9bdc1480, 2023-11-25, custom)"
+   sodipodi:docname="logo-dark.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="7.2045964"
+     inkscape:cx="31.438264"
+     inkscape:cy="16.378433"
+     inkscape:window-width="1452"
+     inkscape:window-height="1203"
+     inkscape:window-x="598"
+     inkscape:window-y="76"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="powermask"
+       id="path-effect12"
+       is_visible="true"
+       lpeversion="1"
+       uri="#mask-powermask-path-effect12"
+       invert="false"
+       hide_mask="false"
+       background="true"
+       background_color="#ffffffff" />
+    <filter
+       id="mask-powermask-path-effect1_inverse"
+       inkscape:label="filtermask-powermask-path-effect1"
+       style="color-interpolation-filters:sRGB"
+       height="100"
+       width="100"
+       x="-50"
+       y="-50">
+      <feColorMatrix
+         id="mask-powermask-path-effect1_primitive1"
+         values="1"
+         type="saturate"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="mask-powermask-path-effect1_primitive2"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 "
+         in="fbSourceGraphic" />
+    </filter>
+    <filter
+       id="mask-powermask-path-effect1-1_inverse"
+       inkscape:label="filtermask-powermask-path-effect1-1"
+       style="color-interpolation-filters:sRGB"
+       height="100"
+       width="100"
+       x="-50"
+       y="-50">
+      <feColorMatrix
+         id="mask-powermask-path-effect1-1_primitive1"
+         values="1"
+         type="saturate"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="mask-powermask-path-effect1-1_primitive2"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 "
+         in="fbSourceGraphic" />
+    </filter>
+    <mask
+       maskUnits="userSpaceOnUse"
+       id="mask-powermask-path-effect12">
+      <path
+         id="mask-powermask-path-effect12_box"
+         style="fill:#ffffff;fill-opacity:1"
+         d="M -1,-1 H 13.7 V 13.7 H -1 Z" />
+      <g
+         id="g12"
+         transform="translate(-6.3500001,-6.3500001)"
+         style="">
+        <path
+           id="path9"
+           style="mix-blend-mode:normal;stroke-width:0.0225112"
+           d="M 12.7,6.3500001 V 12.7 H 6.3500001"
+           sodipodi:nodetypes="ccc" />
+        <path
+           id="path10"
+           style="mix-blend-mode:normal;stroke-width:0.0112556"
+           d="m 9.5250001,12.7 v 3.175 h -3.175"
+           sodipodi:nodetypes="ccc" />
+        <path
+           id="path11"
+           style="mix-blend-mode:normal;stroke-width:0.0112556"
+           d="M 9.5250001,6.3500001 V 9.525 h -3.175"
+           sodipodi:nodetypes="ccc" />
+        <path
+           id="path12"
+           style="mix-blend-mode:normal;stroke-width:0.0112556"
+           d="M 15.875,6.3500001 V 9.525 H 12.7"
+           sodipodi:nodetypes="ccc" />
+      </g>
+    </mask>
+    <filter
+       id="mask-powermask-path-effect12_inverse"
+       inkscape:label="filtermask-powermask-path-effect12"
+       style="color-interpolation-filters:sRGB"
+       height="100"
+       width="100"
+       x="-50"
+       y="-50">
+      <feColorMatrix
+         id="mask-powermask-path-effect12_primitive1"
+         values="1"
+         type="saturate"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="mask-powermask-path-effect12_primitive2"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 "
+         in="fbSourceGraphic" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="rect1"
+       style="stroke-width:0.0450225;fill:#ffffff"
+       d="M 0,12.7 V 0 h 12.7"
+       sodipodi:nodetypes="ccc"
+       mask="url(#mask-powermask-path-effect12)"
+       inkscape:path-effect="#path-effect12"
+       inkscape:original-d="M 0,12.7 V 0 h 12.7" />
+  </g>
+</svg>
