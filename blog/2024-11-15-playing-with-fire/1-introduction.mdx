@@ -1,0 +1,215 @@
+---
+slug: 2024/11/playing-with-fire
+title: "Playing with fire: Introduction"
+date: 2024-11-15 12:00:00
+authors: [bspeice]
+tags: []
+---
+
+Wikipedia [describes](https://en.wikipedia.org/wiki/Fractal_flame) fractal flames as:
+
+> a member of the iterated function system class of fractals
+
+I think of them a different way: beauty in mathematics.
+
+import isDarkMode from "@site/src/isDarkMode";
+import bannerDark from "./banner-dark.png"
+import bannerLight from "./banner-light.png"
+
+<center>
+    <!-- Why are these backwards? -->
+    <img src={bannerLight} hidden={isDarkMode()}/>
+    <img src={bannerDark} hidden={!isDarkMode()}/>
+</center>
+
+<!-- truncate -->
+
+I don't remember exactly when or how I originally came across fractal flames, but I do remember becoming entranced by the images they created.
+I also remember their unique appeal to my young engineering mind; this was an art form I could actively participate in.
+
+The [paper](https://flam3.com/flame_draves.pdf) describing their mathematical structure was too much
+for me to handle at the time (I was ~12 years old), and I was content to play around and enjoy the pictures.
+But the desire to understand it stuck with me, so I wanted to try again. With a graduate degree in Financial Engineering under my belt,
+maybe it would be easier this time.
+
+---
+
+## Iterated function systems
+
+Let's begin by defining an "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system)" (IFS).
+We'll start at the end and work backwards to build a practical understanding. In mathematical notation, an IFS is:
+
+$$
+S = \bigcup_{i=0}^{n-1} F_i(S) \\[0.6cm]
+S \in \mathbb{R}^2 \\
+F_i(S) \in \mathbb{R}^2 \rightarrow \mathbb{R}^2
+$$
+
+### Stationary point
+
+First, $S$. We're generating images, so everything is in two dimensions: $S \in \mathbb{R}^2$. The set $S$ is
+all points that are "in the system." To generate our final image, we just plot every point in the system
+like a coordinate chart.
+
+For example, if we say $S = \{(0,0), (1, 1), (2, 2)\}$, there are three points to plot:
+
+import Plot from "react-plotly.js"
+
+<center>
+    <Plot
+        data={[
+            {
+                x: [0, 1, 2],
+                y: [0, 1, 2],
+                type: 'scatter',
+                mode: 'markers',
+                marker: { size: 15 }
+            }
+        ]}
+        layout={{
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        }}
+        config={{
+            staticPlot: true
+        }}
+    />
+</center>
+
+For fractal flames, we just need to figure out which points are in $S$ and plot them. While there are
+technically an infinite number of points, if we find _enough_ points and plot them, we end up with a nice picture.
+
+### Transformation functions
+
+Second, $F_i(S)$. At their most basic, each $F_i$ is a function that takes in a 2-dimensional point and transforms
+it into a new 2-dimensional point: $F_i \in \mathbb{R}^2 \rightarrow \mathbb{R}^2$. It's worth discussing
+these functions, but not critical, so **this section is optional**.
+
+In mathematical terms, each $F_i$ is a special kind of function called an [affine transformation](https://en.wikipedia.org/wiki/Affine_transformation).
+We can think of them like mapping from one coordinate system to another. For example, we can define a coordinate system
+where everything is shifted over:
+
+$$
+F_{shift}(x, y) = (x + 1, y)
+$$
+
+That is, for an input point $(x, y)$, the output point will be $(x + 1, y)$:
+
+<center>
+    <Plot
+        data={[
+            {
+                x: [0, 1, 2],
+                y: [0, 1, 2],
+                type: 'scatter',
+                mode: 'markers',
+                marker: { size: 12 },
+                name: "(x, y)"
+            },
+            {
+                x: [1, 2, 3],
+                y: [0, 1, 2],
+                type: 'scatter',
+                mode: 'markers',
+                marker: { size: 12 },
+                name: "(x+1, y)"
+            },
+            {
+                x: [0, 1],
+                y: [0, 0],
+                mode: 'lines+markers',
+                marker: {
+                    size: 12,
+                    symbol: 'arrow-bar-up',
+                    angleref: 'previous',
+                    color: 'rgb(0,0,0)'
+                },
+                type: 'scatter',
+                showlegend: false
+            },
+            {
+                x: [1, 2],
+                y: [1, 1],
+                mode: 'lines+markers',
+                marker: {
+                    size: 12,
+                    symbol: 'arrow-bar-up',
+                    angleref: 'previous',
+                    color: 'rgb(0,0,0)'
+                },
+                type: 'scatter',
+                showlegend: false
+            },
+            {
+                x: [2, 3],
+                y: [2, 2],
+                mode: 'lines+markers',
+                marker: {
+                    size: 12,
+                    symbol: 'arrow-bar-up',
+                    angleref: 'previous',
+                    color: 'rgb(0,0,0)'
+                },
+                type: 'scatter',
+                showlegend: false
+            }
+        ]}
+        layout={{
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            paper_bgcolor: 'rgba(0,0,0,0)'
+        }}
+        config={{
+            staticPlot: true
+        }}
+    />
+</center>
+
+This is a simple example designed to illustrate the principle. In general, $F_i$ functions have the form:
+
+$$
+F_i(x,y) = (a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
+$$
+
+The parameters ($a_i$, $b_i$, etc.) are values we get to choose. In the example above, we can represent our shift
+function using these parameters:
+
+$$
+a_i = 1 \hspace{0.5cm} b_i = 0 \hspace{0.5cm} c_i = 1 \\
+d_i = 0 \hspace{0.5cm} e_i = 1 \hspace{0.5cm} f_i = 0 \\
+$$
+
+$$
+\begin{align*}
+F_{shift}(x,y) &= (1 \cdot x + 0 \cdot y + 1, 0 \cdot x + 1 \cdot y + 0) \\
+F_{shift}(x,y) &= (x + 1, y)
+\end{align*}
+$$
+
+Fractal flames use more complex functions to produce a wide variety of images, but all follow this same format.
+
+## Sierpinski's gasket
+
+Using these definitions, we can build the first image. The paper defines a function system we can use as-is:
+
+$$
+F_0(x, y) = \left({x \over 2}, {y \over 2} \right)
+\hspace{0.8cm}
+F_1(x, y) = \left({{x + 1} \over 2}, {y \over 2} \right)
+\hspace{0.8cm}
+F_2(x, y) = \left({x \over 2}, {{y + 1} \over 2} \right)
+$$
+
+### The chaos game
+
+Next, how do we find out all the points in $S$? The paper lays out an algorithm called the "chaos game":
+
+$$
+\begin{align*}
+&(x, y) = \text{a random point in the bi-unit square} \\
+&\text{iterate } \{ \\
+&\hspace{1cm} i = \text{a random integer from 0 to } n - 1 \text{ inclusive} \\
+&\hspace{1cm} (x,y) = F_i(x,y) \\
+&\hspace{1cm} \text{plot}(x,y) \text{ except during the first 20 iterations} \\
+\}
+\end{align*}
+$$
