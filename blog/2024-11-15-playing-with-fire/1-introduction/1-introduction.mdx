@@ -1,6 +1,6 @@
 ---
 slug: 2024/11/playing-with-fire
-title: "Playing with fire: Introduction"
+title: "Playing with fire: The fractal flame algorithm"
 date: 2024-11-15 12:00:00
 authors: [bspeice]
 tags: []
@@ -12,9 +12,9 @@ Wikipedia [describes](https://en.wikipedia.org/wiki/Fractal_flame) fractal flame
 
 I think of them a different way: beauty in mathematics.
 
-import isDarkMode from "@site/src/isDarkMode";
-import bannerDark from "./banner-dark.png"
-import bannerLight from "./banner-light.png"
+import isDarkMode from '@site/src/isDarkMode'
+import bannerDark from '../banner-dark.png'
+import bannerLight from '../banner-light.png'
 
 <center>
     <!-- Why are these backwards? -->
@@ -201,6 +201,8 @@ $$
 
 ### The chaos game
 
+import CodeBlock from '@theme/CodeBlock'
+
 Next, how do we find out all the points in $S$? The paper lays out an algorithm called the "chaos game":
 
 $$
@@ -213,3 +215,32 @@ $$
 \}
 \end{align*}
 $$
+
+Let's turn this into code, one piece at a time.
+
+First, the "bi-unit square" is the range $[-1, 1]$. We can pick a random point like this:
+
+import biunitSource from '!!raw-loader!./biunit'
+
+<CodeBlock language="typescript">{biunitSource}</CodeBlock>
+
+Next, we need to choose a random integer from $0$ to $n - 1$:
+
+import randintSource from '!!raw-loader!./randint'
+
+<CodeBlock language="typescript">{randintSource}</CodeBlock>
+
+Finally, implementing the `plot` function. Web browsers have a [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+we can use for 2D graphics. In our case, the plot function will take an $(x,y)$ coordinate and plot it by
+coloring the corresponding pixel in an [ImageData](https://developer.mozilla.org/en-US/docs/Web/API/ImageData):
+
+import plotSource from '!!raw-loader!./plot'
+
+<CodeBlock language="typescript">{plotSource}</CodeBlock>
+
+import Playground from '@theme/Playground'
+import Scope from './scope'
+
+import Gasket from '!!raw-loader!./Gasket'
+
+<Playground scope={Scope}>{Gasket}</Playground>

@@ -28,13 +28,14 @@ const config: Config = {
     locales: ['en'],
   },
 
+  themes: ['@docusaurus/theme-live-codeblock'],
   presets: [
     [
       'classic',
       {
         docs: false,
         blog: {
-          routeBasePath: "/",
+          routeBasePath: '/',
           blogSidebarTitle: 'All posts',
           blogSidebarCount: 'ALL',
           showReadingTime: true,
