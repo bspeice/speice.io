@@ -23,7 +23,10 @@
     no-repeat;
 }
 
-/* Dark mode for Plotly, copied from https://github.com/plotly/plotly.js/issues/2006#issuecomment-2081535168 */
-[data-theme='dark'] .plot-container {
+/*
+Inspired by https://github.com/plotly/plotly.js/issues/2006#issuecomment-2081535168,
+adapted for Victory charts
+ */
+[data-theme='dark'] .VictoryContainer {
     filter: invert(75%) hue-rotate(180deg);
 }

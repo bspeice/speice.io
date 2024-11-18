@@ -53,28 +53,16 @@ like a coordinate chart.
 
 For example, if we say $S = \{(0,0), (1, 1), (2, 2)\}$, there are three points to plot:
 
-import Plot from "react-plotly.js"
+import {VictoryChart, VictoryTheme, VictoryScatter, VictoryLegend} from "victory";
+export const simpleData = [
+    {x: 0, y: 0},
+    {x: 1, y: 1},
+    {x: 2, y: 2}
+]
 
-<center>
-    <Plot
-        data={[
-            {
-                x: [0, 1, 2],
-                y: [0, 1, 2],
-                type: 'scatter',
-                mode: 'markers',
-                marker: { size: 15 }
-            }
-        ]}
-        layout={{
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            paper_bgcolor: 'rgba(0,0,0,0)'
-        }}
-        config={{
-            staticPlot: true
-        }}
-    />
-</center>
+<VictoryChart theme={VictoryTheme.clean}>
+    <VictoryScatter data={simpleData} size={5} style={{data: {fill: "blue"}}}/>
+</VictoryChart>
 
 For fractal flames, we just need to figure out which points are in $S$ and plot them. While there are
 technically an infinite number of points, if we find _enough_ points and plot them, we end up with a nice picture.
@@ -95,74 +83,21 @@ $$
 
 That is, for an input point $(x, y)$, the output point will be $(x + 1, y)$:
 
-<center>
-    <Plot
+export const shiftData = simpleData.map(({x, y}) => { return {x: x + 1, y} })
+
+<VictoryChart theme={VictoryTheme.clean}>
+    <VictoryScatter data={simpleData} size={5} style={{data: {fill: "blue"}}}/>
+    <VictoryScatter data={shiftData} size={5} style={{data: {fill: "orange"}}}/>
+    <VictoryLegend
         data={[
-            {
-                x: [0, 1, 2],
-                y: [0, 1, 2],
-                type: 'scatter',
-                mode: 'markers',
-                marker: { size: 12 },
-                name: "(x, y)"
-            },
-            {
-                x: [1, 2, 3],
-                y: [0, 1, 2],
-                type: 'scatter',
-                mode: 'markers',
-                marker: { size: 12 },
-                name: "(x+1, y)"
-            },
-            {
-                x: [0, 1],
-                y: [0, 0],
-                mode: 'lines+markers',
-                marker: {
-                    size: 12,
-                    symbol: 'arrow-bar-up',
-                    angleref: 'previous',
-                    color: 'rgb(0,0,0)'
-                },
-                type: 'scatter',
-                showlegend: false
-            },
-            {
-                x: [1, 2],
-                y: [1, 1],
-                mode: 'lines+markers',
-                marker: {
-                    size: 12,
-                    symbol: 'arrow-bar-up',
-                    angleref: 'previous',
-                    color: 'rgb(0,0,0)'
-                },
-                type: 'scatter',
-                showlegend: false
-            },
-            {
-                x: [2, 3],
-                y: [2, 2],
-                mode: 'lines+markers',
-                marker: {
-                    size: 12,
-                    symbol: 'arrow-bar-up',
-                    angleref: 'previous',
-                    color: 'rgb(0,0,0)'
-                },
-                type: 'scatter',
-                showlegend: false
-            }
+            {name: "(x,y)", symbol: {fill: "blue"}},
+            {name: "F(x,y)", symbol: {fill: "orange"}}
         ]}
-        layout={{
-            plot_bgcolor: 'rgba(0,0,0,0)',
-            paper_bgcolor: 'rgba(0,0,0,0)'
-        }}
-        config={{
-            staticPlot: true
-        }}
+        orientation={"vertical"}
+        x={75}
+        y={10}
     />
-</center>
+</VictoryChart>
 
 This is a simple example designed to illustrate the principle. In general, $F_i$ functions have the form:
 
@@ -243,4 +178,11 @@ import Scope from './scope'
 
 import Gasket from '!!raw-loader!./Gasket'
 
-<Playground scope={Scope}>{Gasket}</Playground>
+<Playground scope={Scope} noInline={true}>{Gasket}</Playground>
+
+<hr/>
+
+<small>
+Note: The image our chaos game generates is different than the fractal flame paper, but I think the version displayed
+here is correct. As confirmation, the next post will re-create the same image using a different method.
+</small>
