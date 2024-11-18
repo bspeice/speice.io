@@ -1,7 +1,7 @@
 // Hint: try increasing the iteration count
 const iterations = 10000;
 
-// Hint: negating `x` and `y` also creates some interesting images
+// Hint: negating `x` and `y` creates some interesting images
 const functions = [
     (x, y) => [x / 2, y / 2],
     (x, y) => [(x + 1) / 2, y / 2],
