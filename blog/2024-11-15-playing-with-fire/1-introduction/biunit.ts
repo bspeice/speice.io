@@ -1,3 +1,3 @@
-export default function randomBiUnit(): number {
+export default function randomBiUnit() {
     return Math.random() * 2 - 1;
 }

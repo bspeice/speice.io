@@ -1,0 +1,150 @@
+---
+slug: 2024/11/playing-with-fire-transforms
+title: "Playing with fire: Transforms and variations"
+date: 2024-11-15 13:00:00
+authors: [bspeice]
+tags: []
+---
+
+Now that we have a basic chaos game in place, it's time to spice things up. Transforms and variations create the
+interesting patterns that fractal flames are known for.
+
+<!-- truncate -->
+
+This blog post uses a set of reference parameters ([available here](../params.flame)) to demonstrate a practical
+implementation of the fractal flame algorithm. If you're interested in tweaking the parameters, or generating
+your own art, [Apophysis](https://sourceforge.net/projects/apophysis/) is a good introductory tool.
+
+## Transforms and variations
+
+import CodeBlock from '@theme/CodeBlock'
+
+We previously introduced "transforms" as the "functions" of an "iterated function system." Their general format is:
+
+$$
+F_i(x,y) = (a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
+$$
+
+Let's also start defining some types we can use in our code. The transform coefficients are a good place to start:
+
+```typescript
+interface Coefs {
+    a: number, b: number, c: number,
+    d: number, e: number, f: number
+}
+```
+
+We also introduced the Sierpinski Gasket functions ($F_0$, $F_1$, and $F_2$), demonstrating how they are related to
+the general format. For example:
+
+$$
+\begin{align*}
+F_0(x,y) &= \left({x \over 2}, {y \over 2}\right) \\
+&= (a_0 \cdot x + b_0 \cdot y + c_o, d_0 \cdot x + e_0 \cdot y + f_0) \\
+& a_0 = 0.5 \hspace{0.2cm} b_0 = 0 \hspace{0.2cm} c_0 = 0 \\
+& d_0 = 0 \hspace{0.2cm} e_0 = 0.5 \hspace{0.2cm} f_0 = 0
+\end{align*}
+$$
+
+However, these transforms are pretty boring. We can build more exciting images by using some additional functions
+within the transform. These "sub-functions" are called "variations":
+
+$$
+F_i(x, y) = V_j(a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
+$$
+
+The fractal flame paper lists 49 variation functions ($V_j$ above), but the sky's the limit here.
+For example, the official `flam3` implementation supports
+[98 variations](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/variations.c).
+
+In code, variations are pretty easy:
+
+```typescript
+type Variation = (x: number, y: number) => [number, number];
+````
+
+Our reference image will focus on just four variations:
+
+### Linear (variation 0)
+
+This variation returns the $x$ and $y$ coordinates as-is. In a way, the Sierpinski Gasket is
+a fractal flame using only the linear variation.
+
+$$
+V_0(x,y) = (x,y)
+$$
+
+```typescript
+function linear(x: number, y: number) {
+    return [x, y];
+}
+```
+
+### Julia (variation 13)
+
+This variation still uses just the $x$ and $y$ coordinates, but does some crazy things with them:
+
+<small>TODO: Is this related to the Julia set?</small>
+
+$$
+\begin{align*}
+r &= \sqrt{x^2 + y^2} \\
+\theta &= \text{arctan}(x / y) \\
+\Omega &= \left\{
+    \begin{array}{lr}
+    0 \hspace{0.4cm} \text{w.p. } 0.5 \\
+    \pi \hspace{0.4cm} \text{w.p. } 0.5 \\
+    \end{array}
+\right\} \\
+
+V_{13}(x, y) &= \sqrt{r} \cdot (\text{cos} ( \theta / 2 + \Omega ), \text{sin} ( \theta / 2 + \Omega ))
+\end{align*}
+$$
+
+```typescript
+function julia(x: number, y: number) {
+    const r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+    const theta = Math.atan2(x, y);
+    const omega = Math.random() > 0.5 ? 0 : Math.PI;
+
+    return [
+        r * Math.cos(theta / 2 + omega),
+        r * Math.sin(theta / 2 + omega)
+    ]
+}
+```
+
+### Popcorn (variation 17)
+
+This is known as a "dependent variation" because it depends on knowing the transform coefficients:
+
+$$
+V_{17}(x,y) = (x + c \cdot \text{sin}(\text{tan }3y), y + f \cdot \text{sin}(\text{tan }3x))
+$$
+
+```typescript
+function popcorn({c, f}: Coefs) {
+    return (x: number, y: number) => [
+        x + c * Math.sin(Math.tan(3 * y)),
+        y + f * Math.sin(Math.tan(3 * x))
+    ]
+}
+```
+
+### PDJ (variation 24)
+
+This is known as a "parametric" variation because it has additional parameters given to it:
+
+$$
+p_1 = \text{pdj.a} \hspace{0.2cm} p_2 = \text{pdj.b} \hspace{0.2cm} p_3 = \text{pdj.c} \hspace{0.2cm} p_4 = \text{pdj.d} \\
+V_{24} = (\text{sin}(p_1 \cdot y) - \text{cos}(p_2 \cdot x), \text{sin}(p_3 \cdot x) - \text{cos}(p_4 \cdot y))
+$$
+
+```typescript
+function pdj(a: number, b: number, c: number, d: number) {
+    return (x: number, y: number) => [
+        Math.sin(a * y) - Math.cos(b * x),
+        Math.sin(c * x) - Math.cos(d * y)
+    ]
+}
+```
