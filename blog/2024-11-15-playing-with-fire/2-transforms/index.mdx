@@ -25,15 +25,6 @@ $$
 F_i(x,y) = (a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
 $$
 
-Let's also start defining some types we can use in our code. The transform coefficients are a good place to start:
-
-```typescript
-interface Coefs {
-    a: number, b: number, c: number,
-    d: number, e: number, f: number
-}
-```
-
 We also introduced the Sierpinski Gasket functions ($F_0$, $F_1$, and $F_2$), demonstrating how they are related to
 the general format. For example:
 
@@ -57,18 +48,12 @@ The fractal flame paper lists 49 variation functions ($V_j$ above), but the sky'
 For example, the official `flam3` implementation supports
 [98 variations](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/variations.c).
 
-In code, variations are pretty easy:
-
-```typescript
-type Variation = (x: number, y: number) => [number, number];
-````
-
 Our reference image will focus on just four variations:
 
 ### Linear (variation 0)
 
-This variation returns the $x$ and $y$ coordinates as-is. In a way, the Sierpinski Gasket is
-a fractal flame using only the linear variation.
+This variation returns the $x$ and $y$ coordinates as-is. As mentioned, the Sierpinski Gasket is
+a fractal flame using only the linear variation:
 
 $$
 V_0(x,y) = (x,y)
@@ -82,7 +67,7 @@ function linear(x: number, y: number) {
 
 ### Julia (variation 13)
 
-This variation still uses just the $x$ and $y$ coordinates, but does some crazy things with them:
+This variation still uses just the $x$ and $y$ coordinates, but does crazy things with them:
 
 <small>TODO: Is this related to the Julia set?</small>
 
@@ -116,17 +101,18 @@ function julia(x: number, y: number) {
 
 ### Popcorn (variation 17)
 
-This is known as a "dependent variation" because it depends on knowing the transform coefficients:
+This is known as a "dependent variation" because it depends on knowing the transform coefficients
+(specifically, $c$ and $f$):
 
 $$
 V_{17}(x,y) = (x + c \cdot \text{sin}(\text{tan }3y), y + f \cdot \text{sin}(\text{tan }3x))
 $$
 
 ```typescript
-function popcorn({c, f}: Coefs) {
+function popcorn(coefs: {c: number, f: number}) {
     return (x: number, y: number) => [
-        x + c * Math.sin(Math.tan(3 * y)),
-        y + f * Math.sin(Math.tan(3 * x))
+        x + coefs.c * Math.sin(Math.tan(3 * y)),
+        y + coefs.f * Math.sin(Math.tan(3 * x))
     ]
 }
 ```
