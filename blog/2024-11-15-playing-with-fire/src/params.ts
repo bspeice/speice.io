@@ -3,8 +3,12 @@
  * translated into something that's easier to work with.
  */
 
-import {Coefs, Transform} from "./types";
-import { julia, linear, pdj, popcorn } from "./variation";
+import { Coefs } from './coefs';
+import { Transform } from './transform';
+import { linear } from './linear'
+import { julia } from './julia'
+import { popcorn } from './popcorn'
+import { pdj } from './pdj'
 
 export const identityCoefs: Coefs = {
     a: 1, b: 0, c: 0,
@@ -12,53 +16,51 @@ export const identityCoefs: Coefs = {
 }
 
 export const xform1Weight = 0.56453495;
-export const xform1: Transform = {
-    coefs: {
-        a: -1.381068, b: -1.381068, c: 0,
-        d: 1.381068, e: -1.381068, f: 0,
-    },
-    coefsPost: identityCoefs,
-    variations: [[1, julia]],
-    color: 0
+export const xform1Coefs = {
+    a: -1.381068, b: -1.381068, c: 0,
+    d: 1.381068, e: -1.381068, f: 0,
 }
+export const xform1CoefsPost = identityCoefs;
+export const xform1Variations = [
+    [1, julia]
+]
+export const xform1Color = 0;
 
-const xform2Weight = 0.013135;
-export const xform2: Transform = {
-    coefs: {
-        a: 0.031393, b: 0.031367, c: 0,
-        d: -0.031367, e: 0.031393, f: 0,
-    },
-    coefsPost: {
-        a: 1, b: 0, c: 0.241352,
-        d: 0, e: 1, f: 0.271521,
-    },
-    variations: [
-        [1, linear],
-        [1, popcorn]
-    ],
-    color: 0.844
+export const xform2Weight = 0.013135;
+export const xform2Coefs = {
+    a: 0.031393, b: 0.031367, c: 0,
+    d: -0.031367, e: 0.031393, f: 0,
 }
+export const xform2CoefsPost = {
+    a: 1, b: 0, c: 0.241352,
+    d: 0, e: 1, f: 0.271521,
+}
+export const xform2Variations = [
+    [1, linear],
+    [1, popcorn(xform2Coefs)]
+]
+export const xform2Color = 0.844;
 
 export const xform3Weight = 0.42233;
-export const xform3: Transform = {
-    coefs: {
-        a: 1.51523, b: -3.048677, c: 0.724135,
-        d: 0.740356, e: -1.455964, f: -0.362059,
-    },
-    coefsPost: identityCoefs,
-    variations: [[1, pdj(1.09358, 2.13048, 2.54127, 2.37267)]],
-    color: 0.349
+export const xform3Coefs = {
+    a: 1.51523, b: -3.048677, c: 0.724135,
+    d: 0.740356, e: -1.455964, f: -0.362059,
 }
+export const xform3CoefsPost = identityCoefs;
+export const xform3Variations = [
+    [1, pdj(1.09358, 2.13048, 2.54127, 2.37267)]
+];
+export const xform3Color = 0.349;
 
-export const xformFinal: Transform = {
-    coefs: {
-        a: 2, b: 0, c: 0,
-        d: 0, e: 2, f: 0
-    },
-    coefsPost: identityCoefs,
-    variations: [[1, julia]],
-    color: 0
+export const xformFinalCoefs = {
+    a: 2, b: 0, c: 0,
+    d: 0, e: 2, f: 0
 }
+export const xformFinalCoefsPost = identityCoefs;
+export const xformFinalVariations = [
+    [1, julia]
+]
+export const xformFinalColor = 0;
 
 export const palette =
     "7E3037762C45722B496E2A4E6A2950672853652754632656" +

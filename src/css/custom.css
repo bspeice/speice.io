@@ -30,3 +30,10 @@ adapted for Victory charts
 [data-theme='dark'] .VictoryContainer {
     filter: invert(75%) hue-rotate(180deg);
 }
+
+/*
+Custom magic comment for Prism - hide parts of the code in display
+ */
+.code-block-hidden {
+    display: none;
+}

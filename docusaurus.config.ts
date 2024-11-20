@@ -81,7 +81,19 @@ const config: Config = {
     prism: {
       theme: prismThemes.oneLight,
       darkTheme: prismThemes.oneDark,
-      additionalLanguages: ['bash', 'java', 'julia', 'nasm']
+      additionalLanguages: ['bash', 'java', 'julia', 'nasm'],
+      magicComments: [
+        // Remember to extend the default highlight class name as well!
+        {
+          className: 'theme-code-block-highlighted-line',
+          line: 'highlight-next-line',
+          block: {start: 'highlight-start', end: 'highlight-end'},
+        },
+        {
+          className: 'code-block-hidden',
+          block: {start: 'hidden-start', end: 'hidden-end'}
+        }
+      ]
     },
   } satisfies Preset.ThemeConfig,
   plugins: [require.resolve('docusaurus-lunr-search')],

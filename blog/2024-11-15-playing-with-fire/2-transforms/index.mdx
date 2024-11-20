@@ -25,6 +25,10 @@ $$
 F_i(x,y) = (a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
 $$
 
+import coefsSrc from '!!raw-loader!../src/coefs'
+
+<CodeBlock language={'typescript'}>{coefsSrc}</CodeBlock>
+
 We also introduced the Sierpinski Gasket functions ($F_0$, $F_1$, and $F_2$), demonstrating how they are related to
 the general format. For example:
 
@@ -37,7 +41,7 @@ F_0(x,y) &= \left({x \over 2}, {y \over 2}\right) \\
 \end{align*}
 $$
 
-However, these transforms are pretty boring. We can build more exciting images by using some additional functions
+However, these transforms are pretty boring. We can build more exciting images by using additional functions
 within the transform. These "sub-functions" are called "variations":
 
 $$
@@ -52,18 +56,18 @@ Our reference image will focus on just four variations:
 
 ### Linear (variation 0)
 
-This variation returns the $x$ and $y$ coordinates as-is. As mentioned, the Sierpinski Gasket is
-a fractal flame using only the linear variation:
+This variation returns the $x$ and $y$ coordinates as-is:
 
 $$
 V_0(x,y) = (x,y)
 $$
 
-```typescript
-function linear(x: number, y: number) {
-    return [x, y];
-}
-```
+import linearSrc from '!!raw-loader!../src/linear'
+
+<CodeBlock language={'typescript'}>{linearSrc}</CodeBlock>
+
+Before we move on, it's worth mentioning the relationship between this variation and the Sierpinski Gasket.
+Specifically, we can think of the Gasket as a fractal flame that uses only the linear variation.
 
 ### Julia (variation 13)
 
@@ -86,18 +90,9 @@ V_{13}(x, y) &= \sqrt{r} \cdot (\text{cos} ( \theta / 2 + \Omega ), \text{sin} (
 \end{align*}
 $$
 
-```typescript
-function julia(x: number, y: number) {
-    const r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-    const theta = Math.atan2(x, y);
-    const omega = Math.random() > 0.5 ? 0 : Math.PI;
+import juliaSrc from '!!raw-loader!../src/julia'
 
-    return [
-        r * Math.cos(theta / 2 + omega),
-        r * Math.sin(theta / 2 + omega)
-    ]
-}
-```
+<CodeBlock language={'typescript'}>{juliaSrc}</CodeBlock>
 
 ### Popcorn (variation 17)
 
@@ -108,14 +103,9 @@ $$
 V_{17}(x,y) = (x + c \cdot \text{sin}(\text{tan }3y), y + f \cdot \text{sin}(\text{tan }3x))
 $$
 
-```typescript
-function popcorn(coefs: {c: number, f: number}) {
-    return (x: number, y: number) => [
-        x + coefs.c * Math.sin(Math.tan(3 * y)),
-        y + coefs.f * Math.sin(Math.tan(3 * x))
-    ]
-}
-```
+import popcornSrc from '!!raw-loader!../src/popcorn'
+
+<CodeBlock language={'typescript'}>{popcornSrc}</CodeBlock>
 
 ### PDJ (variation 24)
 
@@ -126,11 +116,27 @@ p_1 = \text{pdj.a} \hspace{0.2cm} p_2 = \text{pdj.b} \hspace{0.2cm} p_3 = \text{
 V_{24} = (\text{sin}(p_1 \cdot y) - \text{cos}(p_2 \cdot x), \text{sin}(p_3 \cdot x) - \text{cos}(p_4 \cdot y))
 $$
 
-```typescript
-function pdj(a: number, b: number, c: number, d: number) {
-    return (x: number, y: number) => [
-        Math.sin(a * y) - Math.cos(b * x),
-        Math.sin(c * x) - Math.cos(d * y)
-    ]
-}
-```
+import pdjSrc from '!!raw-loader!../src/pdj'
+
+<CodeBlock language={'typescript'}>{pdjSrc}</CodeBlock>
+
+### Blending
+
+Now, one variation is fun, but we can also combine variations in a single transform by "blending."
+First, each variation is assigned a value that describes how much it affects the transform function ($v_j$).
+Afterward, sum up the $x$ and $y$ values respectively:
+
+$$
+F_i(x,y) = \sum_{j} v_{ij} V_j(a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
+$$
+
+The formula looks intimidating, but it's not hard to implement:
+
+import baselineSrc from '!!raw-loader!./baseline'
+
+<CodeBlock language={'typescript'}>{baselineSrc}</CodeBlock>
+
+TODO: Mention that the Sierpinski Gasket is just a blend with linear weight 1, all others 0. Maybe replace comment above about Sierpinski Gasket and linear transform?
+
+And with that in place, we have enough to render a first full fractal flame:
+
