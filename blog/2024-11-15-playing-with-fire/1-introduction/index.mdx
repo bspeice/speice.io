@@ -157,15 +157,15 @@ Let's turn this into code, one piece at a time.
 
 First, the "bi-unit square" is the range $[-1, 1]$. We can pick a random point like this:
 
-import biunitSource from '!!raw-loader!./biunit'
+import randomBiunitSource from '!!raw-loader!../src/randomBiunit'
 
-<CodeBlock language="typescript">{biunitSource}</CodeBlock>
+<CodeBlock language="typescript">{randomBiunitSource}</CodeBlock>
 
 Next, we need to choose a random integer from $0$ to $n - 1$:
 
-import randintSource from '!!raw-loader!./randint'
+import randomIntegerSource from '!!raw-loader!../src/randomInteger'
 
-<CodeBlock language="typescript">{randintSource}</CodeBlock>
+<CodeBlock language="typescript">{randomIntegerSource}</CodeBlock>
 
 Finally, implementing the `plot` function. Web browsers have a [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
 we can use for 2D graphics. In our case, the plot function will take an $(x,y)$ coordinate and plot it by

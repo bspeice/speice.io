@@ -4,6 +4,7 @@ import { Variation } from './variations'
 export interface Transform {
     coefs: Coefs,
     variations: [number, Variation][],
-    coefsPost: Coefs,
-    color: number
+    enabled: boolean,
+    coefsPost?: Coefs,
+    color?: number
 }

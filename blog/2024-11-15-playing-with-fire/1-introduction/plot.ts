@@ -1,32 +1,40 @@
-export default function plot(x: number, y: number, image: ImageData) {
-    // Translate (x,y) coordinates to pixel coordinates.
-    // The display range we care about is x=[0, 1], y=[0, 1],
-    // so our pixelX and pixelY coordinates are easy to calculate:
-    const pixelX = Math.floor(x * image.width);
-    const pixelY = Math.floor(y * image.height);
+export function imageIndex(x: number, y: number, width: number, stride: number): number {
+    return y * (width * stride) + x * 4;
+}
 
-    // If we have an (x,y) coordinate outside the display range,
-    // skip it
-    if (
-        pixelX < 0 ||
-        pixelX > image.width ||
-        pixelY < 0 ||
-        pixelY > image.height
-    ) {
-        return;
+export class Plotter {
+    private readonly pixels: Array<boolean>;
+
+    constructor(private readonly width: number, private readonly height: number) {
+        this.pixels = new Array(width * height).fill(false);
     }
 
-    // ImageData is an array that contains four bytes per pixel
-    // (one for each of the red, green, blue, and alpha values).
-    // The (pixelX, pixelY) coordinates are used to find where
-    // in the image we need to write.
-    const index = pixelY * (image.width * 4) + pixelX * 4;
+    public plot(x: number, y: number) {
+        // Translate (x,y) coordinates to pixel coordinates.
+        // The display range we care about is x=[0, 1], y=[0, 1],
+        // so our pixelX and pixelY coordinates are easy to calculate:
+        const pixelX = Math.floor(x * this.width);
+        const pixelY = Math.floor(y * this.height);
 
-    // Set the pixel to black by writing a 0 to the first three
-    // bytes (red, green, blue), and 256 to the last byte (alpha),
-    // starting at our index:
-    image.data[index] = 0;
-    image.data[index + 1] = 0;
-    image.data[index + 2] = 0;
-    image.data[index + 3] = 0xff;
+        // Translate the pixel coordinates into an index
+        const pixelIndex = imageIndex(pixelX, pixelY, this.width, 1);
+
+        // If the index is valid, enable that pixel
+        if (0 <= pixelIndex && pixelIndex < this.pixels.length) {
+            this.pixels[pixelIndex] = true;
+        }
+    }
+
+    public paint(image: ImageData) {
+        // "Paint" all our pixels by setting their value to black
+        for (var pixelIndex = 0; pixelIndex < this.pixels.length; pixelIndex++) {
+            if (this.pixels[pixelIndex]) {
+                const imageIndex = pixelIndex * 4;
+                image.data[imageIndex] = 0; // red
+                image.data[imageIndex + 1] = 0; // green
+                image.data[imageIndex + 2] = 0; // blue
+                image.data[imageIndex + 3] = 0xff; // alpha
+            }
+        }
+    }
 }

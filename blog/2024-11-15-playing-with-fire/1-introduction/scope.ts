@@ -1,13 +1,13 @@
 import React from 'react';
 
-import randomBiUnit from './biunit';
-import plot from './plot';
-import randomInteger from './randint';
+import { randomBiUnit } from '../src/randomBiunit';
+import { Plotter } from './plot';
+import { randomInteger } from '../src/randomInteger';
 import Canvas from './Canvas';
 
 const Scope = {
     React,
-    plot,
+    Plotter,
     randomBiUnit,
     randomInteger,
     Canvas
