@@ -9,7 +9,6 @@ const functions = [
 ]
 
 function chaosGame(image) {
-    var plotter = new Plotter(image.width, image.height);
     var [x, y] = [randomBiUnit(), randomBiUnit()];
 
     for (var count = 0; count < iterations; count++) {
@@ -17,11 +16,9 @@ function chaosGame(image) {
         [x, y] = functions[i](x, y);
 
         if (count > 20) {
-            plotter.plot(x, y);
+            plot(x, y, image);
         }
     }
-
-    plotter.paint(image);
 }
 
 render(<Canvas renderFn={chaosGame}/>)
