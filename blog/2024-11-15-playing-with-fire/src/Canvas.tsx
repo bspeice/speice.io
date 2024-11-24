@@ -1,49 +1,54 @@
-import React, {createContext, useCallback, useContext, useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useColorMode} from "@docusaurus/theme-common";
-
-interface IImageContext {
-    width: number;
-    height: number;
-    setImage: (image: ImageData) => void;
-}
-export const ImageContext = createContext<IImageContext>(null);
 
 interface Props {
     width: number;
     height: number;
+    painter: Iterator<ImageData>;
     children?: React.ReactNode;
 }
-export default function Canvas({width, height, children}) {
-    const [canvasCtx, setCanvasCtx] = useState<CanvasRenderingContext2D | null>(null);
+export default function Canvas({width, height, painter, children}: Props) {
+    const {colorMode} = useColorMode();
+    const [image, setImage] = useState<[ImageData]>(null);
+
+    const [canvasCtx, setCanvasCtx] = useState<CanvasRenderingContext2D>(null);
     const canvasRef = useCallback(node => {
         if (node !== null) {
             setCanvasCtx(node.getContext("2d"));
         }
     }, []);
 
-    const {colorMode} = useColorMode();
-    const [image, setImage] = useState<ImageData>(new ImageData(width, height));
     const paintImage = new ImageData(width, height);
-
-    useEffect(() => {
-        if (!canvasCtx) {
+    const paint = () => {
+        if (!canvasCtx || !image) {
             return;
         }
 
-        for (const [index, value] of image.data.entries()) {
-            // If dark mode is active, invert the color scheme
-            const adjustValue = colorMode === 'light' ? value : 255 - value;
-
-            // Alpha values never change
-            paintImage.data[index] = index % 4 === 3 ? value : adjustValue;
+        for (const [index, value] of image[0].data.entries()) {
+            if (index % 4 === 3) {
+                // Alpha values are copied as-is
+                paintImage.data[index] = value;
+            } else {
+                // If dark mode is active, invert the color
+                paintImage.data[index] = colorMode === 'light' ? value : 255 - value;
+            }
         }
 
-        console.log("Painting image");
         canvasCtx.putImageData(paintImage, 0, 0);
-    }, [canvasCtx, colorMode, image]);
+    }
+    useEffect(paint, [colorMode, image]);
+
+    const animate = () => {
+        const nextImage = painter.next().value;
+        if (nextImage) {
+            setImage([nextImage])
+            requestAnimationFrame(animate);
+        }
+    }
+    useEffect(animate, [canvasCtx]);
 
     return (
-        <ImageContext.Provider value={{width, height, setImage}}>
+        <>
             <canvas
                 ref={canvasRef}
                 width={width}
@@ -54,6 +59,6 @@ export default function Canvas({width, height, children}) {
                 }}
             />
             {children}
-        </ImageContext.Provider>
+        </>
     )
 }
