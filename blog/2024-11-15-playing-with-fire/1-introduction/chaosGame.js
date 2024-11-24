@@ -21,4 +21,4 @@ function chaosGame(image) {
     }
 }
 
-render(<Canvas renderFn={chaosGame}/>)
+render(<Gasket renderFn={chaosGame}/>)
