@@ -66,9 +66,6 @@ import linearSrc from '!!raw-loader!../src/linear'
 
 <CodeBlock language={'typescript'}>{linearSrc}</CodeBlock>
 
-Before we move on, it's worth mentioning the relationship between this variation and the Sierpinski Gasket.
-Specifically, we can think of the Gasket as a fractal flame that uses only the linear variation.
-
 ### Julia (variation 13)
 
 This variation still uses just the $x$ and $y$ coordinates, but does crazy things with them:
@@ -132,11 +129,6 @@ $$
 
 The formula looks intimidating, but it's not hard to implement:
 
-import baselineSrc from '!!raw-loader!./baseline'
-
-<CodeBlock language={'typescript'}>{baselineSrc}</CodeBlock>
-
-TODO: Mention that the Sierpinski Gasket is just a blend with linear weight 1, all others 0. Maybe replace comment above about Sierpinski Gasket and linear transform?
+TODO: Blending implementation?
 
 And with that in place, we have enough to render a first full fractal flame:
-

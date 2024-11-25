@@ -1,6 +1,6 @@
-import randomBiUnit from './biunit';
-import plot from './plot';
-import randomInteger from './randint';
+import { plot } from './plot';
+import { randomBiUnit } from '../src/randomBiUnit';
+import { randomInteger } from '../src/randomInteger';
 import Canvas from "../src/Canvas";
 
 const Scope = {

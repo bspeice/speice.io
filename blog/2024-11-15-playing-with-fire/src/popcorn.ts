@@ -1,6 +1,6 @@
 // hidden-start
 import {Coefs} from './coefs'
-import {Variation} from './variations'
+import {Variation} from './variation'
 // hidden-end
 export function popcorn({c, f}: Coefs): Variation {
     return (x, y) => [

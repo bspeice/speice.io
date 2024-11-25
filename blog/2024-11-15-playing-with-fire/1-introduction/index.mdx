@@ -126,7 +126,7 @@ Fractal flames use more complex functions to produce a wide variety of images, b
 
 ## Sierpinski's gasket
 
-Using these definitions, we can build the first image. The paper defines a function system we can use as-is:
+Using these definitions, we can build the first image. The paper defines a function system for us:
 
 $$
 F_0(x, y) = \left({x \over 2}, {y \over 2} \right)
@@ -157,13 +157,13 @@ Let's turn this into code, one piece at a time.
 
 First, the "bi-unit square" is the range $[-1, 1]$. We can pick a random point like this:
 
-import biunitSource from '!!raw-loader!./biunit'
+import biunitSource from '!!raw-loader!../src/randomBiUnit'
 
 <CodeBlock language="typescript">{biunitSource}</CodeBlock>
 
 Next, we need to choose a random integer from $0$ to $n - 1$:
 
-import randintSource from '!!raw-loader!./randint'
+import randintSource from '!!raw-loader!../src/randomInteger'
 
 <CodeBlock language="typescript">{randintSource}</CodeBlock>
 
@@ -185,8 +185,22 @@ import chaosGameSource from '!!raw-loader!./chaosGame'
 <hr/>
 
 <small>
-Note: The image our chaos game generates is different than the fractal flame paper, but I think the version displayed
-here is correct. As confirmation, the next post will re-create the same image using a different method.
+Note: The image here is different than the fractal flame paper, but I think the paper has an error.
 </small>
 
-TODO: Explanation of function weights $w_i$
+## Weights
+
+Finally, we'll introduce a "weight" parameter ($w_i$) assigned to each function, which controls
+how often that function is used:
+
+import randomChoiceSource from '!!raw-loader!../src/randomChoice'
+
+<CodeBlock language={'typescript'}>{randomChoiceSource}</CodeBlock>
+
+import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
+
+<CodeBlock language={'typescript'}>{chaosGameWeightedSource}</CodeBlock>
+
+import GasketWeighted from "./GasketWeighted"
+
+<GasketWeighted/>

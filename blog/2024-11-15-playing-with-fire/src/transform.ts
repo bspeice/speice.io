@@ -1,5 +1,5 @@
 import { Coefs } from './coefs'
-import { Variation } from './variations'
+import { Variation } from './variation'
 
 export interface Transform {
     coefs: Coefs,

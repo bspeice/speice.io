@@ -1,5 +1,5 @@
 // hidden-start
-import { Variation } from './variations'
+import { Variation } from './variation'
 //hidden-end
 export function pdj(a: number, b: number, c: number, d: number): Variation {
     return (x, y) => [

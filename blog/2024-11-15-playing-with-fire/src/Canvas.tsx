@@ -39,13 +39,18 @@ export default function Canvas({width, height, painter, children}: Props) {
     useEffect(paint, [colorMode, image]);
 
     const animate = () => {
+        if (!painter) {
+            return;
+        }
+
+        console.log("Animating");
         const nextImage = painter.next().value;
         if (nextImage) {
             setImage([nextImage])
             requestAnimationFrame(animate);
         }
     }
-    useEffect(animate, [canvasCtx]);
+    useEffect(animate, [painter, canvasCtx]);
 
     return (
         <>

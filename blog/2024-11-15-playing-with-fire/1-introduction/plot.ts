@@ -1,4 +1,4 @@
-export default function plot(x: number, y: number, image: ImageData) {
+export function plot(x: number, y: number, image: ImageData) {
     // Translate (x,y) coordinates to pixel coordinates.
     // The display range we care about is x=[0, 1], y=[0, 1],
     // so our pixelX and pixelY coordinates are easy to calculate:

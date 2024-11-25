@@ -1,5 +1,5 @@
 // hidden-start
-import { Variation } from './variations'
+import { Variation } from './variation'
 // hidden-end
 export const julia: Variation = (x, y) => {
     const r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));

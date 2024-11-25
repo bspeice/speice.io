@@ -4,7 +4,6 @@
  */
 
 import { Coefs } from './coefs';
-import { Transform } from './transform';
 import { linear } from './linear'
 import { julia } from './julia'
 import { popcorn } from './popcorn'
