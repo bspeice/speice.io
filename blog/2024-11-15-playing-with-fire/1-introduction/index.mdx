@@ -201,6 +201,9 @@ import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
 
 <CodeBlock language={'typescript'}>{chaosGameWeightedSource}</CodeBlock>
 
+import BrowserOnly from "@docusaurus/BrowserOnly";
 import GasketWeighted from "./GasketWeighted"
 
-<GasketWeighted/>
+<BrowserOnly>
+    <GasketWeighted/>
+</BrowserOnly>
