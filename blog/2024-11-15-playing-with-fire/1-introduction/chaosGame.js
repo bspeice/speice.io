@@ -27,10 +27,4 @@ function* chaosGame() {
 }
 
 // Wiring so the code above displays properly
-function Gasket() {
-    const {setPainter} = useContext(PainterContext);
-    setPainter(chaosGame());
-
-    return (<></>)
-}
-render(<Gasket/>)
+render(<Gasket f={chaosGame()}/>)
