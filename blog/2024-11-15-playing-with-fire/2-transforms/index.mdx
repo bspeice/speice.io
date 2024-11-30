@@ -138,9 +138,10 @@ import blendSource from "!!raw-loader!./blend";
 
 And with that in place, we have enough to render a first full fractal flame:
 
+import BrowserOnly from "@docusaurus/BrowserOnly";
 import Canvas from "../src/Canvas";
 import FlameBlend from "./FlameBlend";
 
 <Canvas width={500} height={500}>
-    <FlameBlend/>
+    <BrowserOnly>{() => <FlameBlend/>}</BrowserOnly>
 </Canvas>
