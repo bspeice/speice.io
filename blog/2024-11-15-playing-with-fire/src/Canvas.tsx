@@ -55,29 +55,28 @@ export default function Canvas({width, height, children}: CanvasProps) {
         }
     }, []);
 
-    const {colorMode} = useColorMode();
-
     // Holder objects are used to force re-painting even if the iterator
     // returns a modified image with the same reference
     type ImageHolder = { image?: ImageData };
-    const [imageHolder, setImageHolder] = useState<ImageHolder>({ image: null });
-    useEffect(() => {
-        const image = imageHolder.image;
-        if (!image) {
-            // No image is available, leave the canvas as-is
-            return;
-        }
 
-        if (!canvasCtx) {
-            // Canvas is not ready for the image we have,
-            // re-submit the image and wait for the ref to populate
-            setImageHolder({ image });
+    const [paintImage, setPaintImage] = useState<ImageHolder>({ image: null });
+    useEffect(() => {
+        if (paintImage.image && canvasCtx) {
+            canvasCtx.putImageData(paintImage.image, 0, 0);
+        }
+    }, [paintImage, canvasCtx]);
+
+    const {colorMode} = useColorMode();
+    const [renderImage, setRenderImage] = useState<ImageHolder>({ image: null });
+    useEffect(() => {
+        const image = renderImage.image;
+        if (!image) {
             return;
         }
 
         // If light mode is active, paint the image as-is
         if (colorMode === 'light') {
-            canvasCtx.putImageData(image, 0, 0);
+            setPaintImage({ image });
             return;
         }
 
@@ -89,8 +88,8 @@ export default function Canvas({width, height, children}: CanvasProps) {
             const isAlpha = index % 4 === 3;
             paintImage.data[index] = isAlpha ? value : 255 - value;
         })
-        canvasCtx.putImageData(paintImage, 0, 0);
-    }, [colorMode, imageHolder]);
+        setPaintImage({ image: paintImage });
+    }, [colorMode, renderImage]);
 
     // Image iterators (painters) are also in a holder; this allows
     // re-submitting the existing iterator to draw the next frame,
@@ -115,7 +114,7 @@ export default function Canvas({width, height, children}: CanvasProps) {
 
         const image = painter.next().value;
         if (image) {
-            setImageHolder({ image });
+            setRenderImage({ image });
             setAnimHolder({ painter });
         } else {
             setAnimHolder({ painter: null });
