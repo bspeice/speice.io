@@ -4,9 +4,7 @@
  * The way `flam3` actually calculates the "camera" for mapping a point
  * to its pixel coordinate is fairly involved - it also needs to calculate
  * zoom and rotation (see the bucket accumulator code in rect.c).
- * We'll make some simplifying assumptions:
- * - The final image is square
- * - We want to plot the range [-2, 2]
+ * We simplify things here by assuming a square image
  *
  * The reference parameters were designed in Apophysis, which uses the
  * range [-2, 2] by default (the `scale` parameter in XML defines the
@@ -15,7 +13,7 @@
  *
  * @param x point in the range [-2, 2]
  * @param y point in the range [-2, 2]
- * @param size image size
+ * @param size image width/height in pixels
  * @returns pair of pixel coordinates
  */
 export function camera(x: number, y: number, size: number): [number, number] {

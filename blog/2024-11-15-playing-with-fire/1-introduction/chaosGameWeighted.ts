@@ -2,15 +2,12 @@
 import { randomBiUnit } from "../src/randomBiUnit";
 import { randomChoice } from "../src/randomChoice";
 import { plot } from "./plot"
-export type Transform = (x: number, y: number) => [number, number];
-export type Params = {
-    transforms: [number, Transform][],
-    image: ImageData,
-    iterations: number,
-    step: number
-}
+import {Transform} from "../src/transform";
+const iterations = 50_000;
+const step = 1000;
 // hidden-end
-export function* chaosGameWeighted({transforms, image, iterations, step}: Params) {
+export function* chaosGameWeighted(transforms: [number, Transform][]) {
+    let image = new ImageData(500, 500);
     var [x, y] = [randomBiUnit(), randomBiUnit()];
 
     for (let i = 0; i < iterations; i++) {

@@ -177,7 +177,9 @@ import Scope from './scope'
 
 import chaosGameSource from '!!raw-loader!./chaosGame'
 
+<!--
 <Playground scope={Scope} noInline={true}>{chaosGameSource}</Playground>
+-->
 
 <hr/>
 
@@ -198,7 +200,9 @@ import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
 
 <CodeBlock language={'typescript'}>{chaosGameWeightedSource}</CodeBlock>
 
-import BrowserOnly from "@docusaurus/BrowserOnly";
 import GasketWeighted from "./GasketWeighted"
+import Canvas from "../src/Canvas"
 
-<BrowserOnly>{() => <GasketWeighted/>}</BrowserOnly>
+<Canvas width={500} height={500}>
+    <GasketWeighted/>
+</Canvas>

@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import { blend } from "./blend";
 import { applyCoefs, Coefs } from "../src/coefs"
 import {randomBiUnit} from "../src/randomBiUnit";
@@ -19,7 +19,7 @@ import {
 } from "../src/params";
 import {randomChoice} from "../src/randomChoice";
 import {plotBinary} from "../src/plotBinary"
-import Canvas from "../src/Canvas"
+import {PainterContext} from "../src/Canvas"
 
 import styles from "../src/css/styles.module.css"
 
@@ -31,9 +31,10 @@ type VariationBlend = {
 }
 
 export default function FlameBlend() {
-    const image = new ImageData(400, 400);
     const quality = 2;
     const step = 5000;
+
+    const {width, height, setPainter} = useContext(PainterContext);
 
     const xform1Default: VariationBlend = {
         linear: 0,
@@ -73,6 +74,7 @@ export default function FlameBlend() {
         }
     }
 
+    const image = new ImageData(width, height);
     function* chaosGame() {
         let [x, y] = [randomBiUnit(), randomBiUnit()];
         const transforms: [number, Transform][] = [
@@ -97,6 +99,7 @@ export default function FlameBlend() {
 
         yield image;
     }
+    useEffect(() => setPainter(chaosGame()), [xform1Variations, xform2Variations, xform3Variations]);
 
     const variationEditor = (title, variations, setVariations) => {
         return (
@@ -127,16 +130,10 @@ export default function FlameBlend() {
     }
 
     return (
-        <>
-            <Canvas
-                width={image.width}
-                height={image.height}
-                painter={chaosGame()}/>
-            <div style={{paddingTop: '1em', display: 'grid', gridTemplateColumns: 'auto auto auto auto'}}>
-                {variationEditor("Transform 1", xform1Variations, setXform1Variations)}
-                {variationEditor("Transform 2", xform2Variations, setXform2Variations)}
-                {variationEditor("Transform 3", xform3Variations, setXform3Variations)}
-            </div>
-        </>
+        <div style={{paddingTop: '1em', display: 'grid', gridTemplateColumns: 'auto auto auto auto'}}>
+            {variationEditor("Transform 1", xform1Variations, setXform1Variations)}
+            {variationEditor("Transform 2", xform2Variations, setXform2Variations)}
+            {variationEditor("Transform 3", xform3Variations, setXform3Variations)}
+        </div>
     )
 }

@@ -1,12 +1,15 @@
+import {useContext} from "react";
 import { plot } from './plot';
 import { randomBiUnit } from '../src/randomBiUnit';
 import { randomInteger } from '../src/randomInteger';
-import Canvas from "../src/Canvas";
+import Canvas, {PainterContext} from "../src/Canvas";
 
 const Scope = {
+    Canvas,
+    PainterContext,
     plot,
     randomBiUnit,
     randomInteger,
-    Canvas
+    useContext,
 }
 export default Scope;

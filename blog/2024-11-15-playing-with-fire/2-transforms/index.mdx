@@ -119,7 +119,7 @@ import pdjSrc from '!!raw-loader!../src/pdj'
 
 <CodeBlock language={'typescript'}>{pdjSrc}</CodeBlock>
 
-### Blending
+## Blending
 
 Now, one variation is fun, but we can also combine variations in a single transform by "blending."
 Each variation receives the same $x$ and $y$ inputs, and we add together each variation's $x$ and $y$ outputs.
@@ -132,10 +132,15 @@ $$
 
 The formula looks intimidating, but it's not hard to implement:
 
-TODO: Blending implementation?
+import blendSource from "!!raw-loader!./blend";
+
+<CodeBlock language={'typescript'}>{blendSource}</CodeBlock>
 
 And with that in place, we have enough to render a first full fractal flame:
 
+import Canvas from "../src/Canvas";
 import FlameBlend from "./FlameBlend";
 
-<FlameBlend/>
+<Canvas width={500} height={500}>
+    <FlameBlend/>
+</Canvas>
