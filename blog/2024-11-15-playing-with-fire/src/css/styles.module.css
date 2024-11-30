@@ -21,3 +21,8 @@
 .inputElement > p {
     margin: 0
 }
+
+.inputReset {
+    display: flex;
+    float: right;
+}

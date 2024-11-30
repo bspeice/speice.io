@@ -24,9 +24,14 @@ import {buildTransform} from "./buildTransform";
 export default function FlamePost() {
     const {width, height, setPainter} = useContext(PainterContext);
 
-    const [xform1CoefsPost, setXform1PostCoefs] = useState<Coefs>(xform1CoefsPostDefault);
-    const [xform2CoefsPost, setXform2PostCoefs] = useState<Coefs>(xform2CoefsPostDefault);
-    const [xform3CoefsPost, setXform3PostCoefs] = useState<Coefs>(xform3CoefsPostDefault);
+    const [xform1CoefsPost, setXform1CoefsPost] = useState<Coefs>(xform1CoefsPostDefault);
+    const resetXform1CoefsPost = () => setXform1CoefsPost(xform1CoefsPostDefault);
+
+    const [xform2CoefsPost, setXform2CoefsPost] = useState<Coefs>(xform2CoefsPostDefault);
+    const resetXform2CoefsPost = () => setXform2CoefsPost(xform2CoefsPostDefault);
+
+    const [xform3CoefsPost, setXform3CoefsPost] = useState<Coefs>(xform3CoefsPostDefault);
+    const resetXform3CoefsPost = () => setXform1CoefsPost(xform3CoefsPostDefault);
 
     const identityXform: Transform = (x, y) => [x, y];
 
@@ -38,9 +43,12 @@ export default function FlamePost() {
 
     return (
         <>
-            <CoefEditor title={"Transform 1 Post"} isPost={true} coefs={xform1CoefsPost} setCoefs={setXform1PostCoefs}/>
-            <CoefEditor title={"Transform 2 Post"} isPost={true} coefs={xform2CoefsPost} setCoefs={setXform2PostCoefs}/>
-            <CoefEditor title={"Transform 3 Post"} isPost={true} coefs={xform3CoefsPost} setCoefs={setXform3PostCoefs}/>
+            <CoefEditor title={"Transform 1 Post"} isPost={true} coefs={xform1CoefsPost} setCoefs={setXform1CoefsPost}
+                        resetCoefs={resetXform1CoefsPost}/>
+            <CoefEditor title={"Transform 2 Post"} isPost={true} coefs={xform2CoefsPost} setCoefs={setXform2CoefsPost}
+                        resetCoefs={resetXform2CoefsPost}/>
+            <CoefEditor title={"Transform 3 Post"} isPost={true} coefs={xform3CoefsPost} setCoefs={setXform3CoefsPost}
+                        resetCoefs={resetXform3CoefsPost}/>
         </>
     )
 }

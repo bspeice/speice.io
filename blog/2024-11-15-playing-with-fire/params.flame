@@ -2,7 +2,7 @@
 <flame name="post xform" version="Apophysis 2.08 beta" size="600 600" center="0 0" scale="150" oversample="1" filter="0.2" quality="1" background="0 0 0" brightness="4" gamma="4" >
    <xform weight="0.422330042096567" color="0" pdj="1" coefs="1.51523 0.740356 -3.048677 -1.455964 0.724135 -0.362059" pdj_a="1.09358" pdj_b="2.13048" pdj_c="2.54127" pdj_d="2.37267" />
    <xform weight="0.564534951145298" color="0" julia="1" coefs="-1.381068 1.381068 -1.381068 -1.381068 0 0" />
-   <xform weight="0.0131350067581356" color="0" linear="1" popcorn="1" coefs="0.031393 -0.031367 0.031367 0.031393 0 0" post="1 0 0 1 0.241352 0.271521" />
+   <xform weight="0.0131350067581356" color="0" linear="1" popcorn="1" coefs="0.031393 -0.031367 0.031367 0.031393 0 0" post="1 0 0 1 0.24 0.27" />
    <palette count="256" format="RGB">
       3A78875998AA5E9DAC78B1C2599BAB36798A2252601B3438
       1823270D1215080705010101000000000002080A090A0809
@@ -80,7 +80,7 @@
 <flame name="final xform" version="Apophysis 2.08 beta" size="600 600" center="0 0" scale="150" oversample="1" filter="0.2" quality="1" background="1 1 1" brightness="4" gamma="4" >
    <xform weight="0.422330042096567" color="0.349" pdj="1" coefs="1.51523 0.740356 -3.048677 -1.455964 0.724135 -0.362059" pdj_a="1.09358" pdj_b="2.13048" pdj_c="2.54127" pdj_d="2.37267" />
    <xform weight="0.564534951145298" color="0" julia="1" coefs="-1.381068 1.381068 -1.381068 -1.381068 0 0" />
-   <xform weight="0.0131350067581356" color="0.844" linear="1" popcorn="1" coefs="0.031393 -0.031367 0.031367 0.031393 0 0" post="1 0 0 1 0.241352 0.271521" />
+   <xform weight="0.0131350067581356" color="0.844" linear="1" popcorn="1" coefs="0.031393 -0.031367 0.031367 0.031393 0 0" post="1 0 0 1 0.24 0.27" />
    <finalxform color="0" symmetry="1" julia="1" coefs="2 0 0 2 0 0" />
    <palette count="256" format="RGB">
       7E3037762C45722B496E2A4E6A2950672853652754632656

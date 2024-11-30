@@ -11,12 +11,15 @@ export interface Props {
     title: String;
     variations: VariationProps;
     setVariations: (variations: VariationProps) => void;
+    resetVariations: () => void;
 }
 
-export const VariationEditor = ({title, variations, setVariations}: Props) => {
+export const VariationEditor = ({title, variations, setVariations, resetVariations}: Props) => {
+    const resetButton = <button className={styles.inputReset} onClick={resetVariations}>Reset</button>
+
     return (
         <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: 'auto auto auto auto'}}>
-            <p className={styles.inputTitle} style={{gridColumn: '1/-1'}}>{title}</p>
+            <p className={styles.inputTitle} style={{gridColumn: '1/-1'}}>{title} {resetButton}</p>
             <div className={styles.inputElement}>
                 <span>Linear: {variations.linear}</span>
                 <input type={'range'} min={0} max={1} step={0.01} style={{width: '100%'}} value={variations.linear}

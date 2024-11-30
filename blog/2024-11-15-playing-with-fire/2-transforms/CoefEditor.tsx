@@ -8,11 +8,14 @@ export interface Props {
     isPost: boolean;
     coefs: Coefs;
     setCoefs: (coefs: Coefs) => void;
+    resetCoefs: () => void;
 }
-export const CoefEditor = ({title, isPost, coefs, setCoefs}: Props) => {
+export const CoefEditor = ({title, isPost, coefs, setCoefs, resetCoefs}: Props) => {
+    const resetButton = <button className={styles.inputReset} onClick={resetCoefs}>Reset</button>
+
     return (
         <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: 'auto auto auto'}}>
-            <p className={styles.inputTitle} style={{gridColumn: '1/-1'}}>{title}</p>
+            <p className={styles.inputTitle} style={{gridColumn: '1/-1'}}>{title} {resetButton}</p>
             <div className={styles.inputElement}>
                 <p>{isPost ? <TeX>\alpha</TeX> : 'a'}: {coefs.a}</p>
                 <input type={'range'} min={0} max={2} step={0.01} style={{width: '100%'}} value={coefs.a}

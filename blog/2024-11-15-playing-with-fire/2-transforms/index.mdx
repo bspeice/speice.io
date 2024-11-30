@@ -146,9 +146,7 @@ import BrowserOnly from "@docusaurus/BrowserOnly";
 import Canvas from "../src/Canvas";
 import FlameBlend from "./FlameBlend";
 
-<Canvas width={500} height={500}>
-    <BrowserOnly>{() => <FlameBlend/>}</BrowserOnly>
-</Canvas>
+<Canvas><BrowserOnly>{() => <FlameBlend/>}</BrowserOnly></Canvas>
 
 ## Post transforms
 
@@ -163,14 +161,10 @@ $$
 
 import FlamePost from "./FlamePost";
 
-<Canvas width={500} height={500}>
-    <BrowserOnly>{() => <FlamePost/>}</BrowserOnly>
-</Canvas>
+<Canvas><BrowserOnly>{() => <FlamePost/>}</BrowserOnly></Canvas>
 
 ## Final transform
 
 import FlameFinal from "./FlameFinal";
 
-<Canvas width={500} height={500}>
-    <BrowserOnly>{() => <FlameFinal/>}</BrowserOnly>
-</Canvas>
+<Canvas><BrowserOnly>{() => <FlameFinal/>}</BrowserOnly></Canvas>

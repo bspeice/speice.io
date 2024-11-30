@@ -202,6 +202,4 @@ import BrowserOnly from "@docusaurus/BrowserOnly";
 import GasketWeighted from "./GasketWeighted";
 import Canvas from "../src/Canvas";
 
-<Canvas width={500} height={500}>
-    <BrowserOnly>{() => <GasketWeighted/>}</BrowserOnly>
-</Canvas>
+<Canvas><BrowserOnly>{() => <GasketWeighted/>}</BrowserOnly></Canvas>

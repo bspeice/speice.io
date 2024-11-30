@@ -14,8 +14,8 @@ export interface PainterProps {
 export const PainterContext = createContext<PainterProps>(null);
 
 interface CanvasProps {
-    width: number;
-    height: number;
+    width?: number;
+    height?: number;
     children?: React.ReactNode;
 }
 
@@ -125,6 +125,8 @@ export default function Canvas({width, height, children}: CanvasProps) {
     const [painter, setPainter] = useState<Iterator<ImageData>>(null);
     useEffect(() => setAnimHolder({ painter }), [painter]);
 
+    width = width ?? 500;
+    height = height ?? 500;
     return (
         <>
             <center>

@@ -28,6 +28,7 @@ export default function FlameFinal() {
     const {width, height, setPainter} = useContext(PainterContext);
 
     const [xformFinalCoefs, setXformFinalCoefs] = useState<Coefs>(xformFinalCoefsDefault);
+    const resetXformFinalCoefs = () => setXformFinalCoefs(xformFinalCoefsDefault);
 
     const xformFinalVariationsDefault: VariationProps = {
         linear: 0,
@@ -36,8 +37,10 @@ export default function FlameFinal() {
         pdj: 0
     }
     const [xformFinalVariations, setXformFinalVariations] = useState<VariationProps>(xformFinalVariationsDefault);
+    const resetXformFinalVariations = () => setXformFinalVariations(xformFinalVariationsDefault);
 
     const [xformFinalCoefsPost, setXformFinalCoefsPost] = useState<Coefs>(xformFinalCoefsPostDefault);
+    const resetXformFinalCoefsPost = () => setXformFinalCoefsPost(xformFinalCoefsPostDefault);
 
     useEffect(() => {
         const transforms: [number, Transform][] = [
@@ -55,10 +58,12 @@ export default function FlameFinal() {
 
     return (
         <>
-            <CoefEditor title={"Final Transform"} isPost={false} coefs={xformFinalCoefs} setCoefs={setXformFinalCoefs}/>
+            <CoefEditor title={"Final Transform"} isPost={false} coefs={xformFinalCoefs} setCoefs={setXformFinalCoefs}
+                        resetCoefs={resetXformFinalCoefs}/>
             <VariationEditor title={"Final Transform Variations"} variations={xformFinalVariations}
-                             setVariations={setXformFinalVariations}/>
-            <CoefEditor title={"Final Transform Post"} isPost={true} coefs={xformFinalCoefsPost} setCoefs={setXformFinalCoefsPost}/>
+                             setVariations={setXformFinalVariations} resetVariations={resetXformFinalVariations}/>
+            <CoefEditor title={"Final Transform Post"} isPost={true} coefs={xformFinalCoefsPost}
+                        setCoefs={setXformFinalCoefsPost} resetCoefs={resetXformFinalCoefsPost}/>
         </>
     )
 }

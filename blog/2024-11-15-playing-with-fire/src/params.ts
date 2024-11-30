@@ -36,8 +36,8 @@ export const xform2Coefs = {
     d: -0.031367, e: 0.031393, f: 0,
 }
 export const xform2CoefsPost = {
-    a: 1, b: 0, c: 0.241352,
-    d: 0, e: 1, f: 0.271521,
+    a: 1, b: 0, c: 0.24,
+    d: 0, e: 1, f: 0.27,
 }
 export const xform2Variations: VariationBlend = [
     [1, linear],
