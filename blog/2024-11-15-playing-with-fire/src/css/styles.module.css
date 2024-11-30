@@ -1,4 +1,23 @@
-.inputDiv {
+.inputGroup {
+    padding: .5em;
+    margin: .5em;
+    border: 1px solid;
+    border-radius: var(--ifm-global-radius);
+    border-color: var(--ifm-color-emphasis-500);
+}
+
+.inputTitle {
+    border: 0 solid;
+    border-bottom: 1px solid;
+    border-color: var(--ifm-color-emphasis-500);
+    margin-bottom: .5em;
+}
+
+.inputElement {
     padding-left: .5em;
     padding-right: 1em;
+}
+
+.inputElement > p {
+    margin: 0
 }

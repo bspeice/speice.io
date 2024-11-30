@@ -3,7 +3,7 @@ export interface Coefs {
     d: number, e: number, f: number
 }
 
-export function applyCoefs(x: number, y: number, coefs: Coefs) {
+export function applyCoefs(x: number, y: number, coefs: Coefs): [number, number] {
     return [
         (x * coefs.a + y * coefs.b + coefs.c),
         (x * coefs.d + y * coefs.e + coefs.f)

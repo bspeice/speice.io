@@ -28,8 +28,8 @@ export default function GasketWeighted() {
 
     const weightInput = (title, weight, setWeight) => (
         <>
-            <div className={styles.inputDiv}>
-                <p><TeX>{title}</TeX> weight:<span style={{float: 'right'}}>{weight}</span></p>
+            <div className={styles.inputElement}>
+                <p><TeX>{title}</TeX> weight: {weight}</p>
                 <input type={'range'} min={0} max={1} step={.01} style={{width: '100%'}} value={weight}
                     onInput={e => setWeight(Number(e.currentTarget.value))}/>
             </div>
@@ -38,7 +38,7 @@ export default function GasketWeighted() {
 
     return (
         <>
-            <div style={{paddingTop: '1em', display: 'grid', gridTemplateColumns: 'auto auto auto'}}>
+            <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: 'auto auto auto'}}>
                 {weightInput("F_0", f0Weight, setF0Weight)}
                 {weightInput("F_1", f1Weight, setF1Weight)}
                 {weightInput("F_2", f2Weight, setF2Weight)}

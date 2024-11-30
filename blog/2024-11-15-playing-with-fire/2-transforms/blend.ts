@@ -1,7 +1,10 @@
 // hidden-start
-import { Variation } from "../src/variation"
+import {VariationBlend} from "../src/variationBlend";
 // hidden-end
-export function blend(x: number, y: number, variations: [number, Variation][]): [number, number] {
+export function blend(
+    x: number,
+    y: number,
+    variations: VariationBlend): [number, number] {
     let [finalX, finalY] = [0, 0];
 
     for (const [weight, variation] of variations) {

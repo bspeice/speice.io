@@ -37,11 +37,13 @@ the general format. For example:
 $$
 \begin{align*}
 F_0(x,y) &= \left({x \over 2}, {y \over 2}\right) \\
-&= (a_0 \cdot x + b_0 \cdot y + c_o, d_0 \cdot x + e_0 \cdot y + f_0) \\
+&= (a_0 \cdot x + b_0 \cdot y + c_0, d_0 \cdot x + e_0 \cdot y + f_0) \\
 & a_0 = 0.5 \hspace{0.2cm} b_0 = 0 \hspace{0.2cm} c_0 = 0 \\
 & d_0 = 0 \hspace{0.2cm} e_0 = 0.5 \hspace{0.2cm} f_0 = 0
 \end{align*}
 $$
+
+TODO: Explain the applyCoefs function
 
 However, these transforms are pretty boring. We can build more exciting images by using additional functions
 within the transform. These "sub-functions" are called "variations":
@@ -79,10 +81,10 @@ $$
 r &= \sqrt{x^2 + y^2} \\
 \theta &= \text{arctan}(x / y) \\
 \Omega &= \left\{
-    \begin{array}{lr}
-    0 \hspace{0.4cm} \text{w.p. } 0.5 \\
-    \pi \hspace{0.4cm} \text{w.p. } 0.5 \\
-    \end{array}
+\begin{array}{lr}
+0 \hspace{0.4cm} \text{w.p. } 0.5 \\
+\pi \hspace{0.4cm} \text{w.p. } 0.5 \\
+\end{array}
 \right\} \\
 
 V_{13}(x, y) &= \sqrt{r} \cdot (\text{cos} ( \theta / 2 + \Omega ), \text{sin} ( \theta / 2 + \Omega ))
@@ -123,8 +125,7 @@ import pdjSrc from '!!raw-loader!../src/pdj'
 
 Now, one variation is fun, but we can also combine variations in a single transform by "blending."
 Each variation receives the same $x$ and $y$ inputs, and we add together each variation's $x$ and $y$ outputs.
-We'll also give each variation a weight ($v_j$) that scales the output, which allows us to control
-how much each variation contributes to the transform:
+We'll also give each variation a weight ($v_{ij}$) to control how much it contributes to the transform:
 
 $$
 F_i(x,y) = \sum_{j} v_{ij} V_j(a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
@@ -136,7 +137,10 @@ import blendSource from "!!raw-loader!./blend";
 
 <CodeBlock language={'typescript'}>{blendSource}</CodeBlock>
 
-And with that in place, we have enough to render a first full fractal flame:
+And with that in place, we have enough to render a first full fractal flame.
+The sliders below change the variation weights for each transform (the $v_{ij}$ parameters);
+try changing them around to see which parts of the image are controlled by
+each transform.
 
 import BrowserOnly from "@docusaurus/BrowserOnly";
 import Canvas from "../src/Canvas";
@@ -144,4 +148,29 @@ import FlameBlend from "./FlameBlend";
 
 <Canvas width={500} height={500}>
     <BrowserOnly>{() => <FlameBlend/>}</BrowserOnly>
+</Canvas>
+
+## Post transforms
+
+After variation blending, we apply a second set of transform coordinates.
+
+The fractal flame below starts with the same initial transforms/variations as the previous fractal flame,
+but allows modifying the post-transform coefficients.
+
+$$
+P_i(x, y) = (\alpha_i x + \beta_i y + \gamma_i, \delta_i x + \epsilon_i y + \zeta_i)
+$$
+
+import FlamePost from "./FlamePost";
+
+<Canvas width={500} height={500}>
+    <BrowserOnly>{() => <FlamePost/>}</BrowserOnly>
+</Canvas>
+
+## Final transform
+
+import FlameFinal from "./FlameFinal";
+
+<Canvas width={500} height={500}>
+    <BrowserOnly>{() => <FlameFinal/>}</BrowserOnly>
 </Canvas>

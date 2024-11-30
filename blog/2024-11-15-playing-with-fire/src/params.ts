@@ -4,11 +4,11 @@
  */
 
 import { Coefs } from './coefs';
+import {VariationBlend} from "./variationBlend";
 import { linear } from './linear'
 import { julia } from './julia'
 import { popcorn } from './popcorn'
 import {pdj, PdjParams} from './pdj'
-import {Variation} from "./variation"
 
 export const identityCoefs: Coefs = {
     a: 1, b: 0, c: 0,
@@ -25,7 +25,7 @@ export const xform1Coefs = {
     d: 1.381068, e: -1.381068, f: 0,
 }
 export const xform1CoefsPost = identityCoefs;
-export const xform1Variations = [
+export const xform1Variations: VariationBlend = [
     [1, julia]
 ]
 export const xform1Color = 0;
@@ -39,7 +39,7 @@ export const xform2CoefsPost = {
     a: 1, b: 0, c: 0.241352,
     d: 0, e: 1, f: 0.271521,
 }
-export const xform2Variations = [
+export const xform2Variations: VariationBlend = [
     [1, linear],
     [1, popcorn(xform2Coefs)]
 ]
@@ -51,7 +51,7 @@ export const xform3Coefs = {
     d: 0.740356, e: -1.455964, f: -0.362059,
 }
 export const xform3CoefsPost = identityCoefs;
-export const xform3Variations = [
+export const xform3Variations: VariationBlend = [
     [1, pdj(pdjParams)]
 ];
 export const xform3Color = 0.349;
@@ -61,7 +61,7 @@ export const xformFinalCoefs = {
     d: 0, e: 2, f: 0
 }
 export const xformFinalCoefsPost = identityCoefs;
-export const xformFinalVariations = [
+export const xformFinalVariations: VariationBlend = [
     [1, julia]
 ]
 export const xformFinalColor = 0;
