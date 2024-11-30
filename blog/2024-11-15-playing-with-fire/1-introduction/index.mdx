@@ -13,13 +13,10 @@ Wikipedia [describes](https://en.wikipedia.org/wiki/Fractal_flame) fractal flame
 I think of them a different way: beauty in mathematics.
 
 import isDarkMode from '@site/src/isDarkMode'
-import bannerDark from '../banner-dark.png'
-import bannerLight from '../banner-light.png'
+import banner from '../banner.png'
 
 <center>
-    <!-- Why are these backwards? -->
-    <img src={bannerLight} hidden={isDarkMode()}/>
-    <img src={bannerDark} hidden={!isDarkMode()}/>
+    <img src={banner} style={{filter: isDarkMode() ? '' : 'invert(1)'}}/>
 </center>
 
 <!-- truncate -->
@@ -204,6 +201,4 @@ import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 import GasketWeighted from "./GasketWeighted"
 
-<BrowserOnly>
-    <GasketWeighted/>
-</BrowserOnly>
+<BrowserOnly>{() => <GasketWeighted/>}</BrowserOnly>

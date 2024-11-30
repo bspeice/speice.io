@@ -19,13 +19,11 @@ export function* chaosGameWeighted({transforms, image, iterations, step}: Params
         // highlight-end
         [x, y] = transform(x, y);
 
-        if (i > 20) {
+        if (i > 20)
             plot(x, y, image);
-        }
 
-        if (i % step === 0) {
+        if (i % step === 0)
             yield image;
-        }
     }
 
     yield image;

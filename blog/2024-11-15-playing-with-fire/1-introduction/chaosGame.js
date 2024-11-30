@@ -2,9 +2,6 @@ function Gasket() {
     // Hint: try increasing the iteration count
     const iterations = 10000;
 
-    // Display the progress every `step` iterations
-    const step = 1000;
-
     // Hint: negating `x` and `y` creates some interesting images
     const transforms = [
         (x, y) => [x / 2, y / 2],
@@ -21,16 +18,12 @@ function Gasket() {
             const i = randomInteger(0, transforms.length);
             [x, y] = transforms[i](x, y);
 
-            if (count > 20) {
+            if (count > 20)
                 plot(x, y, image);
-            }
 
-            if (count % 1000 === 0) {
+            if (count % 1000 === 0)
                 yield image;
-            }
         }
-
-        yield image;
     }
 
     return (
@@ -40,5 +33,4 @@ function Gasket() {
             painter={chaosGame()}/>
     )
 }
-
 render(<Gasket/>)

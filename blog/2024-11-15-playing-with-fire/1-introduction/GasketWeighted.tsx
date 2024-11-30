@@ -3,16 +3,9 @@ import Canvas from "../src/Canvas";
 import { Params, chaosGameWeighted } from "./chaosGameWeighted";
 import TeX from '@matejmazur/react-katex';
 
-type Transform = (x: number, y: number) => [number, number];
+import styles from "../src/css/styles.module.css"
 
-function WeightInput({value, setValue, children}) {
-    return (
-        <div style={{paddingLeft: '1.5em', paddingRight: '1.5em'}}>
-            {children}
-            <input type={'range'} min={0} max={1} step={.01} style={{width: '100%'}} value={value} onInput={e => setValue(Number(e.currentTarget.value))}/>
-        </div>
-    )
-}
+type Transform = (x: number, y: number) => [number, number];
 
 export default function GasketWeighted() {
     const image = new ImageData(600, 600);
@@ -42,19 +35,23 @@ export default function GasketWeighted() {
         setGame(chaosGameWeighted(params))
     }, [f0Weight, f1Weight, f2Weight]);
 
+    const weightInput = (title, weight, setWeight) => (
+        <>
+            <div className={styles.inputDiv}>
+                <p><TeX>{title}</TeX> weight:<span style={{float: 'right'}}>{weight}</span></p>
+                <input type={'range'} min={0} max={1} step={.01} style={{width: '100%'}} value={weight}
+                    onInput={e => setWeight(Number(e.currentTarget.value))}/>
+            </div>
+        </>
+    )
+
     return (
         <>
             <Canvas width={image.width} height={image.height} painter={game}/>
             <div style={{paddingTop: '1em', display: 'grid', gridTemplateColumns: 'auto auto auto'}}>
-                <WeightInput value={f0Weight} setValue={setF0Weight}>
-                    <p><TeX>F_0</TeX> weight:<span style={{float: 'right'}}>{f0Weight}</span></p>
-                </WeightInput>
-                <WeightInput value={f1Weight} setValue={setF1Weight}>
-                    <p><TeX>F_1</TeX> weight:<span style={{float: 'right'}}>{f1Weight}</span></p>
-                </WeightInput>
-                <WeightInput value={f2Weight} setValue={setF2Weight}>
-                    <p><TeX>F_2</TeX> weight:<span style={{float: 'right'}}>{f2Weight}</span></p>
-                </WeightInput>
+                {weightInput("F_0", f0Weight, setF0Weight)}
+                {weightInput("F_1", f1Weight, setF1Weight)}
+                {weightInput("F_2", f2Weight, setF2Weight)}
             </div>
         </>
     )

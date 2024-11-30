@@ -7,11 +7,16 @@ import { Coefs } from './coefs';
 import { linear } from './linear'
 import { julia } from './julia'
 import { popcorn } from './popcorn'
-import { pdj } from './pdj'
+import {pdj, PdjParams} from './pdj'
+import {Variation} from "./variation"
 
 export const identityCoefs: Coefs = {
     a: 1, b: 0, c: 0,
     d: 0, e: 1, f: 0,
+}
+
+export const pdjParams: PdjParams = {
+    a: 1.09358, b: 2.13048, c: 2.54127, d: 2.37267
 }
 
 export const xform1Weight = 0.56453495;
@@ -47,7 +52,7 @@ export const xform3Coefs = {
 }
 export const xform3CoefsPost = identityCoefs;
 export const xform3Variations = [
-    [1, pdj(1.09358, 2.13048, 2.54127, 2.37267)]
+    [1, pdj(pdjParams)]
 ];
 export const xform3Color = 0.349;
 

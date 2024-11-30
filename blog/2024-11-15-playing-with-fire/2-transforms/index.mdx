@@ -15,6 +15,8 @@ This blog post uses a set of reference parameters ([available here](../params.fl
 implementation of the fractal flame algorithm. If you're interested in tweaking the parameters, or generating
 your own art, [Apophysis](https://sourceforge.net/projects/apophysis/) is a good introductory tool.
 
+TODO: Include the reference image here
+
 ## Transforms and variations
 
 import CodeBlock from '@theme/CodeBlock'
@@ -120,8 +122,9 @@ import pdjSrc from '!!raw-loader!../src/pdj'
 ### Blending
 
 Now, one variation is fun, but we can also combine variations in a single transform by "blending."
-First, each variation is assigned a value that describes how much it affects the transform function ($v_j$).
-Afterward, sum up the $x$ and $y$ values respectively:
+Each variation receives the same $x$ and $y$ inputs, and we add together each variation's $x$ and $y$ outputs.
+We'll also give each variation a weight ($v_j$) that scales the output, which allows us to control
+how much each variation contributes to the transform:
 
 $$
 F_i(x,y) = \sum_{j} v_{ij} V_j(a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
@@ -132,3 +135,7 @@ The formula looks intimidating, but it's not hard to implement:
 TODO: Blending implementation?
 
 And with that in place, we have enough to render a first full fractal flame:
+
+import FlameBlend from "./FlameBlend";
+
+<FlameBlend/>

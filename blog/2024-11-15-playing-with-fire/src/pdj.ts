@@ -1,7 +1,8 @@
 // hidden-start
 import { Variation } from './variation'
 //hidden-end
-export function pdj(a: number, b: number, c: number, d: number): Variation {
+export type PdjParams = {a: number, b: number, c: number, d: number};
+export function pdj({a, b, c, d}: PdjParams): Variation {
     return (x, y) => [
         Math.sin(a * y) - Math.cos(b * x),
         Math.sin(c * x) - Math.cos(d * y)
