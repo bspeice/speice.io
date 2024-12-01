@@ -142,11 +142,10 @@ The sliders below change the variation weights for each transform (the $v_{ij}$ 
 try changing them around to see which parts of the image are controlled by
 each transform.
 
-import BrowserOnly from "@docusaurus/BrowserOnly";
 import Canvas from "../src/Canvas";
 import FlameBlend from "./FlameBlend";
 
-<Canvas><BrowserOnly>{() => <FlameBlend/>}</BrowserOnly></Canvas>
+<Canvas><FlameBlend/></Canvas>
 
 ## Post transforms
 
@@ -161,10 +160,10 @@ $$
 
 import FlamePost from "./FlamePost";
 
-<Canvas><BrowserOnly>{() => <FlamePost/>}</BrowserOnly></Canvas>
+<Canvas><FlamePost/></Canvas>
 
 ## Final transform
 
 import FlameFinal from "./FlameFinal";
 
-<Canvas><BrowserOnly>{() => <FlameFinal/>}</BrowserOnly></Canvas>
+<Canvas><FlameFinal/></Canvas>

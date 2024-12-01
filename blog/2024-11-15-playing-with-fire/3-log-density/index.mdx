@@ -23,6 +23,13 @@ We'll render the reference image again, but this time, counting the times
 we tried to turn on a pixel.
 
 import CodeBlock from "@theme/CodeBlock";
-import plotHistogramSource from "!!raw-loader!./PlotHistogram";
+import plotHistogramSource from "!!raw-loader!./plotHistogram";
 
 <CodeBlock language="typescript">{plotHistogramSource}</CodeBlock>
+
+import Canvas from "../src/Canvas";
+import FlameHistogram from "./FlameHistogram";
+
+<Canvas width={400} height={400} hidden={true}>
+    <FlameHistogram/>
+</Canvas>

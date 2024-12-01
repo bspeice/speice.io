@@ -198,8 +198,7 @@ import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
 
 <CodeBlock language={'typescript'}>{chaosGameWeightedSource}</CodeBlock>
 
-import BrowserOnly from "@docusaurus/BrowserOnly";
 import GasketWeighted from "./GasketWeighted";
 import Canvas from "../src/Canvas";
 
-<Canvas><BrowserOnly>{() => <GasketWeighted/>}</BrowserOnly></Canvas>
+<Canvas><GasketWeighted/></Canvas>

@@ -24,6 +24,12 @@ import {VariationEditor, VariationProps} from "./VariationEditor";
 import {CoefEditor} from "./CoefEditor";
 import {Transform} from "../src/transform";
 
+export const transforms: [number, Transform][] = [
+    [xform1Weight, transformPost(buildTransform(xform1Coefs, xform1Variations), xform1CoefsPost)],
+    [xform2Weight, transformPost(buildTransform(xform2Coefs, xform2Variations), xform2CoefsPost)],
+    [xform3Weight, transformPost(buildTransform(xform3Coefs, xform3Variations), xform3CoefsPost)]
+];
+
 export default function FlameFinal() {
     const {width, height, setPainter} = useContext(PainterContext);
 
@@ -43,12 +49,6 @@ export default function FlameFinal() {
     const resetXformFinalCoefsPost = () => setXformFinalCoefsPost(xformFinalCoefsPostDefault);
 
     useEffect(() => {
-        const transforms: [number, Transform][] = [
-            [xform1Weight, transformPost(buildTransform(xform1Coefs, xform1Variations), xform1CoefsPost)],
-            [xform2Weight, transformPost(buildTransform(xform2Coefs, xform2Variations), xform2CoefsPost)],
-            [xform3Weight, transformPost(buildTransform(xform3Coefs, xform3Variations), xform3CoefsPost)]
-        ];
-
         const finalBlend = buildBlend(xformFinalCoefs, xformFinalVariations);
         const finalTransform = buildTransform(xformFinalCoefs, finalBlend);
         const finalPost = transformPost(finalTransform, xformFinalCoefsPost);

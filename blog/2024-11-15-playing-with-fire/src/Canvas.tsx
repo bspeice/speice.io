@@ -1,23 +1,80 @@
 import React, {useCallback, useEffect, useState, createContext} from "react";
 import {useColorMode} from "@docusaurus/theme-common";
+import BrowserOnly from "@docusaurus/BrowserOnly";
 
-export interface PainterProps {
-    readonly width: number;
-    readonly height: number;
-    readonly setPainter: (painter: Iterator<ImageData>) => void;
+function invertImage(sourceImage: ImageData): ImageData {
+    const image = new ImageData(sourceImage.width, sourceImage.height);
+    image.data.forEach((value, index) =>
+        image.data[index] = index % 4 === 3 ? value : 0xff - value)
+
+    return image;
+}
+
+type InvertibleCanvasProps = {
+    width: number,
+    height: number,
+    hidden?: boolean,
+    // NOTE: Images are provided as a single-element array
+    //so we can allow re-painting with the same (modified) ImageData reference.
+    image?: [ImageData],
 }
 
 /**
- * Context provider for child elements to submit image iterator functions
- * (painters) for rendering
+ * Draw images to a canvas, automatically inverting colors as needed.
+ *
+ * @param width Canvas width
+ * @param height Canvas height
+ * @param hidden Hide the canvas element
+ * @param image Image data to draw on the canvas
  */
+const InvertibleCanvas: React.FC<InvertibleCanvasProps> = ({width, height, hidden, image}) => {
+    const [canvasCtx, setCanvasCtx] = useState<CanvasRenderingContext2D>(null);
+    const canvasRef = useCallback(node => {
+        if (node !== null) {
+            setCanvasCtx(node.getContext("2d"));
+        }
+    }, []);
+
+    const [paintImage, setPaintImage] = useState<[ImageData]>(null);
+    useEffect(() => {
+        if (canvasCtx && paintImage) {
+            canvasCtx.putImageData(paintImage[0], 0, 0);
+        }
+    }, [canvasCtx, paintImage]);
+
+    const {colorMode} = useColorMode();
+    useEffect(() => {
+        if (image) {
+            setPaintImage(colorMode === 'light' ? image : [invertImage(image[0])]);
+        }
+    }, [image, colorMode]);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            width={width}
+            height={height}
+            hidden={hidden ?? false}
+            style={{
+                aspectRatio: width / height,
+                width: '75%'
+            }}
+        />
+    )
+}
+
+type PainterProps = {
+    width: number;
+    height: number;
+    setPainter: (painter: Iterator<ImageData>) => void;
+}
 export const PainterContext = createContext<PainterProps>(null);
 
 interface CanvasProps {
     width?: number;
     height?: number;
     hidden?: boolean;
-    children?: React.ReactNode;
+    children?: React.ReactElement;
 }
 
 /**
@@ -27,131 +84,61 @@ interface CanvasProps {
  * a couple problems at once:
  *  - Incrementally drawing an image to the canvas
  *  - Interrupting drawing with new parameters
- *  - Dark mode
  *
  * Running a full render is labor-intensive, so we model it
  * as an iterator that yields an image of the current system.
  * Internally, that iterator is re-queued on each new image;
- * so long as that image is returned quickly, we keep
- * the main loop running even with CPU-heavy code.
+ * so long as retrieving each image happens quickly,
+ * we keep the main loop running even with CPU-heavy code.
+ * As a side benefit, this also animates the chaos game nicely.
+ * TODO(bspeice): This also causes React to complain about maximum update depth
+ * Would this be better off spawning a `useEffect` animator
+ * that has access to a `setState` queue?
  *
  * To interrupt drawing, children set the active iterator
  * through the context provider. This component doesn't care
  * about which iterator is in progress, it exists only
  * to fetch the next image and paint it to our canvas.
  *
- * Finally, we make a distinction between "render" and "paint" buffers.
- * The render image is provided by the iterator, and then:
- *  - If light mode is active, draw it to the canvas as-is
- *  - If dark mode is active, copy the "render" buffer to the "paint" buffer,
- *    invert colors, and then draw the image
- *
  * TODO(bspeice): Can we make this "re-queueing iterator" pattern generic?
  * It would be nice to have iterators returning arbitrary objects,
- * but we rely on contexts to manage the iterator, and there's
- * no good way to make those generic.
- *
- * @param width Canvas draw width
- * @param height Canvas draw height
- * @param hidden Hide the canvas
- * @param children Child elements
+ * but we rely on contexts to manage the iterator, and I can't find
+ * a good way to make those generic.
  */
 export default function Canvas({width, height, hidden, children}: CanvasProps) {
-    const [canvasCtx, setCanvasCtx] = useState<CanvasRenderingContext2D>(null);
-    const canvasRef = useCallback(node => {
-        if (node !== null) {
-            setCanvasCtx(node.getContext("2d"));
-        }
-    }, []);
-
-    // Holder objects are used to force re-painting even if the iterator
-    // returns a modified image with the same reference
-    type ImageHolder = { image?: ImageData };
-
-    const [paintImage, setPaintImage] = useState<ImageHolder>({ image: null });
+    const [image, setImage] = useState<[ImageData]>(null);
+    const [painterHolder, setPainterHolder] = useState<[Iterator<ImageData>]>(null);
     useEffect(() => {
-        if (paintImage.image && canvasCtx) {
-            canvasCtx.putImageData(paintImage.image, 0, 0);
-        }
-    }, [paintImage, canvasCtx]);
-
-    const {colorMode} = useColorMode();
-    const [renderImage, setRenderImage] = useState<ImageHolder>({ image: null });
-    useEffect(() => {
-        const image = renderImage.image;
-        if (!image) {
+        if (!painterHolder) {
             return;
         }
 
-        // If light mode is active, paint the image as-is
-        if (colorMode === 'light') {
-            setPaintImage({ image });
-            return;
-        }
-
-        // If dark mode is active, copy the image into a new buffer
-        // and invert colors prior to painting.
-        // Copy alpha values as-is.
-        const paintImage = new ImageData(image.width, image.height);
-        image.data.forEach((value, index) => {
-            const isAlpha = index % 4 === 3;
-            paintImage.data[index] = isAlpha ? value : 255 - value;
-        })
-        setPaintImage({ image: paintImage });
-    }, [colorMode, renderImage]);
-
-    // Image iterators (painters) are also in a holder; this allows
-    // re-submitting the existing iterator to draw the next frame,
-    // and also allows child components to over-write the iterator
-    // if a new set of parameters becomes available
-    // TODO(bspeice): Potential race condition?
-    // Not sure if it's possible for painters submitted by children
-    // to be over-ridden as a result re-submitting the
-    // existing iterator
-    type PainterHolder = { painter?: Iterator<ImageData> };
-    const [animHolder, setAnimHolder] = useState<PainterHolder>({ painter: null });
-    useEffect(() => {
-        const painter = animHolder.painter;
-        if (!painter) {
-            return;
-        }
-
-        if (!canvasCtx) {
-            setAnimHolder({ painter });
-            return;
-        }
-
-        const image = painter.next().value;
-        if (image) {
-            setRenderImage({ image });
-            setAnimHolder({ painter });
+        const painter = painterHolder[0];
+        const nextImage = painter.next().value;
+        if (nextImage) {
+            setImage([nextImage]);
+            setPainterHolder([painter]);
         } else {
-            setAnimHolder({ painter: null });
+            setPainterHolder(null);
         }
-    }, [animHolder, canvasCtx]);
+    }, [painterHolder]);
 
-    // Finally, child elements submit painters through a context provider
     const [painter, setPainter] = useState<Iterator<ImageData>>(null);
-    useEffect(() => setAnimHolder({ painter }), [painter]);
+    useEffect(() => {
+        if (painter) {
+            setPainterHolder([painter]);
+        }
+    }, [painter]);
 
     width = width ?? 500;
     height = height ?? 500;
     return (
         <>
             <center>
-                <canvas
-                    ref={canvasRef}
-                    width={width}
-                    height={height}
-                    hidden={hidden ?? false}
-                    style={{
-                        aspectRatio: width / height,
-                        width: '80%'
-                    }}
-                />
+                <InvertibleCanvas width={width} height={height} hidden={hidden} image={image}/>
             </center>
             <PainterContext.Provider value={{width, height, setPainter}}>
-                {children}
+                <BrowserOnly>{() => children}</BrowserOnly>
             </PainterContext.Provider>
         </>
     )
