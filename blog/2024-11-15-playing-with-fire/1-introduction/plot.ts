@@ -1,5 +1,7 @@
 export function plot(x: number, y: number, image: ImageData) {
-    // Translate (x,y) coordinates to pixel coordinates.
+    // Translate (x,y) coordinates to pixel coordinates;
+    // also known as a "camera" function.
+    //
     // The display range we care about is x=[0, 1], y=[0, 1],
     // so our pixelX and pixelY coordinates are easy to calculate:
     const pixelX = Math.floor(x * image.width);

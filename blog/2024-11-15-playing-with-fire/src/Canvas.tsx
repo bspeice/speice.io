@@ -16,6 +16,7 @@ export const PainterContext = createContext<PainterProps>(null);
 interface CanvasProps {
     width?: number;
     height?: number;
+    hidden?: boolean;
     children?: React.ReactNode;
 }
 
@@ -23,31 +24,39 @@ interface CanvasProps {
  * Draw fractal flames to a canvas.
  *
  * This component is a bit involved because it attempts to solve
- * a couple problems at the same time:
+ * a couple problems at once:
  *  - Incrementally drawing an image to the canvas
- *  - Interrupting drawing with new parameters on demand
+ *  - Interrupting drawing with new parameters
  *  - Dark mode
  *
- * Image iterators provide a means to draw incremental images;
- * iterators can easily checkpoint state, and this component will
- * request the next image on the next animation frame. As a result,
- * the browser should be responsive even though we run CPU-heavy
- * code on the main thread.
+ * Running a full render is labor-intensive, so we model it
+ * as an iterator that yields an image of the current system.
+ * Internally, that iterator is re-queued on each new image;
+ * so long as that image is returned quickly, we keep
+ * the main loop running even with CPU-heavy code.
  *
- * Swapping a new iterator allows interrupting a render in progress,
- * as the canvas completely repaints on each provided image.
+ * To interrupt drawing, children set the active iterator
+ * through the context provider. This component doesn't care
+ * about which iterator is in progress, it exists only
+ * to fetch the next image and paint it to our canvas.
  *
- * Finally, check whether dark mode is active, and invert the most
- * recent image prior to painting if so.
+ * Finally, we make a distinction between "render" and "paint" buffers.
+ * The render image is provided by the iterator, and then:
+ *  - If light mode is active, draw it to the canvas as-is
+ *  - If dark mode is active, copy the "render" buffer to the "paint" buffer,
+ *    invert colors, and then draw the image
  *
- * PainterContext is used to allow child elements to swap in
- * new iterators.
+ * TODO(bspeice): Can we make this "re-queueing iterator" pattern generic?
+ * It would be nice to have iterators returning arbitrary objects,
+ * but we rely on contexts to manage the iterator, and there's
+ * no good way to make those generic.
  *
  * @param width Canvas draw width
  * @param height Canvas draw height
+ * @param hidden Hide the canvas
  * @param children Child elements
  */
-export default function Canvas({width, height, children}: CanvasProps) {
+export default function Canvas({width, height, hidden, children}: CanvasProps) {
     const [canvasCtx, setCanvasCtx] = useState<CanvasRenderingContext2D>(null);
     const canvasRef = useCallback(node => {
         if (node !== null) {
@@ -134,6 +143,7 @@ export default function Canvas({width, height, children}: CanvasProps) {
                     ref={canvasRef}
                     width={width}
                     height={height}
+                    hidden={hidden ?? false}
                     style={{
                         aspectRatio: width / height,
                         width: '80%'

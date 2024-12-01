@@ -1,0 +1,28 @@
+---
+slug: 2024/11/playing-with-fire-log-density
+title: "Playing with fire: Log-density display"
+date: 2024-11-15 14:00:00
+authors: [bspeice]
+tags: []
+---
+
+So far, our `plot()` function has been fairly simple; map an input coordinate
+to a specific pixel, and color in that pixel.
+This works well for simple function systems (like Sierpinski's Gasket),
+but more complex systems (like our reference parameters) produce grainy images.
+
+Every time we "turn on" pixels that have already been enabled, we're wasting work.
+Can we do something more intelligent with that information?
+
+<!-- truncate -->
+
+## Image histograms
+
+To start with, it's worth demonstrating how much work is actually "wasted."
+We'll render the reference image again, but this time, counting the times
+we tried to turn on a pixel.
+
+import CodeBlock from "@theme/CodeBlock";
+import plotHistogramSource from "!!raw-loader!./PlotHistogram";
+
+<CodeBlock language="typescript">{plotHistogramSource}</CodeBlock>
