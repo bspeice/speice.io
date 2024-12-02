@@ -4,11 +4,13 @@
  */
 
 import { Coefs } from './coefs';
-import {VariationBlend} from "./variationBlend";
+import {VariationBlend} from "./blend";
 import { linear } from './linear'
 import { julia } from './julia'
 import { popcorn } from './popcorn'
 import {pdj, PdjParams} from './pdj'
+import {Transform} from "./transform";
+import {applyPost, applyTransform} from "./applyTransform";
 
 export const identityCoefs: Coefs = {
     a: 1, b: 0, c: 0,
@@ -65,6 +67,14 @@ export const xformFinalVariations: VariationBlend = [
     [1, julia]
 ]
 export const xformFinalColor = 0;
+
+export const xforms: [number, Transform][] = [
+    [xform1Weight, applyPost(xform1CoefsPost, applyTransform(xform1Coefs, xform1Variations))],
+    [xform2Weight, applyPost(xform2CoefsPost, applyTransform(xform2Coefs, xform2Variations))],
+    [xform3Weight, applyPost(xform3CoefsPost, applyTransform(xform3Coefs, xform3Variations))],
+]
+
+export const xformFinal: Transform = applyPost(xformFinalCoefsPost, applyTransform(xformFinalCoefs, xformFinalVariations));
 
 export const palette =
     "7E3037762C45722B496E2A4E6A2950672853652754632656" +

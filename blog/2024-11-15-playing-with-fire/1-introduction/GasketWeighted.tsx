@@ -1,6 +1,6 @@
 import {useEffect, useState, useContext} from "react";
 import {PainterContext} from "../src/Canvas";
-import {chaosGameWeighted } from "./chaosGameWeighted";
+import {chaosGameWeighted} from "./chaosGameWeighted";
 import TeX from '@matejmazur/react-katex';
 
 import styles from "../src/css/styles.module.css"
@@ -16,14 +16,15 @@ export default function GasketWeighted() {
     const f1: Transform = (x, y) => [(x + 1) / 2, y / 2];
     const f2: Transform = (x, y) => [x / 2, (y + 1) / 2];
 
-    const {setPainter} = useContext(PainterContext);
+    const {width, height, setPainter} = useContext(PainterContext);
 
     useEffect(() => {
-        setPainter(chaosGameWeighted([
+        const transforms: [number, Transform][] = [
             [f0Weight, f0],
             [f1Weight, f1],
             [f2Weight, f2]
-        ]));
+        ];
+        setPainter(chaosGameWeighted({width, height, transforms}));
     }, [f0Weight, f1Weight, f2Weight]);
 
     const weightInput = (title, weight, setWeight) => (

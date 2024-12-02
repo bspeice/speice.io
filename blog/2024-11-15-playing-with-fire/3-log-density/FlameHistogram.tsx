@@ -1,30 +1,27 @@
-import {VictoryChart, VictoryLine, VictoryScatter, VictoryTheme} from "victory";
-import {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect} from "react";
+import * as params from "../src/params";
 import {PainterContext} from "../src/Canvas";
-import {chaosGameHistogram} from "./chaosGameHistogram";
-import {PlotData, plotHistogram} from "./plotHistogram";
+import {chaosGameHistogram} from "@site/blog/2024-11-15-playing-with-fire/3-log-density/chaosGameHistogram";
 
-function* plotChaosGame(width: number, height: number, setPdf: (data: PlotData) => void, setCdf: (data: PlotData) => void) {
-    const emptyImage = new ImageData(width, height);
-    for (let histogram of chaosGameHistogram(width, height)) {
-        const plotData = plotHistogram(histogram);
-        setPdf(plotData);
-        yield emptyImage;
-    }
+type Props = {
+    quality?: number;
+    paintFn: (width: number, histogram: Uint32Array) => ImageData;
+    children?: React.ReactElement;
 }
-
-export default function FlameHistogram() {
+export default function FlameHistogram({quality, paintFn, children}: Props) {
     const {width, height, setPainter} = useContext(PainterContext);
-    const [pdfData, setPdfData] = useState<{ x: number, y: number }[]>(null);
 
-    useEffect(() => setPainter(plotChaosGame(width, height, setPdfData, null)), []);
+    useEffect(() => {
+        const gameParams = {
+            width,
+            height,
+            transforms: params.xforms,
+            final: params.xformFinal,
+            quality,
+            painter: paintFn
+        }
+        setPainter(chaosGameHistogram(gameParams));
+    }, []);
 
-    return (
-        <VictoryChart theme={VictoryTheme.clean}>
-            <VictoryLine
-                data={pdfData}
-                interpolation='natural'
-            />
-        </VictoryChart>
-    )
+    return children;
 }

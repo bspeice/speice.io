@@ -1,17 +1,12 @@
 import {useContext, useEffect, useState} from "react";
 import {Transform} from "../src/transform";
-import {
-    xform1Coefs,
-    xform1Weight,
-    xform2Coefs,
-    xform2Weight,
-    xform3Coefs,
-    xform3Weight
-} from "../src/params";
+import * as params from "../src/params"
 import {PainterContext} from "../src/Canvas"
-import {buildBlend, buildTransform} from "./buildTransform"
 import {chaosGameFinal} from "./chaosGameFinal"
 import {VariationEditor, VariationProps} from "./VariationEditor"
+import {xform1Weight} from "../src/params";
+import {applyTransform} from "@site/blog/2024-11-15-playing-with-fire/src/applyTransform";
+import {buildBlend} from "@site/blog/2024-11-15-playing-with-fire/2-transforms/buildBlend";
 
 export default function FlameBlend() {
     const {width, height, setPainter} = useContext(PainterContext);
@@ -47,11 +42,21 @@ export default function FlameBlend() {
     // and swap in identity components for each
     const identityXform: Transform = (x, y) => [x, y];
 
-    useEffect(() => setPainter(chaosGameFinal(width, height, [
-        [xform1Weight, buildTransform(xform1Coefs, buildBlend(xform1Coefs, xform1Variations))],
-        [xform2Weight, buildTransform(xform2Coefs, buildBlend(xform2Coefs, xform2Variations))],
-        [xform3Weight, buildTransform(xform3Coefs, buildBlend(xform3Coefs, xform3Variations))]
-    ], identityXform)), [xform1Variations, xform2Variations, xform3Variations]);
+    useEffect(() => {
+        const transforms: [number, Transform][] = [
+            [params.xform1Weight, applyTransform(params.xform1Coefs, buildBlend(params.xform1Coefs, xform1Variations))],
+            [params.xform2Weight, applyTransform(params.xform2Coefs, buildBlend(params.xform2Coefs, xform2Variations))],
+            [params.xform3Weight, applyTransform(params.xform3Coefs, buildBlend(params.xform3Coefs, xform3Variations))]
+        ]
+
+        const gameParams = {
+            width,
+            height,
+            transforms,
+            final: identityXform
+        }
+        setPainter(chaosGameFinal(gameParams));
+    }, [xform1Variations, xform2Variations, xform3Variations]);
 
     return (
         <>

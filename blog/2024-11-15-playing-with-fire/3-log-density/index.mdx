@@ -19,17 +19,23 @@ Can we do something more intelligent with that information?
 ## Image histograms
 
 To start with, it's worth demonstrating how much work is actually "wasted."
-We'll render the reference image again, but this time, counting the times
-we tried to turn on a pixel.
+We'll render the reference image again, but this time, set each pixel's transparency
+based on how many times we encounter it in the chaos game:
 
 import CodeBlock from "@theme/CodeBlock";
-import plotHistogramSource from "!!raw-loader!./plotHistogram";
 
-<CodeBlock language="typescript">{plotHistogramSource}</CodeBlock>
+import paintLinearSource from "!!raw-loader!./paintLinear"
+
+<CodeBlock language="typescript">{paintLinearSource}</CodeBlock>
 
 import Canvas from "../src/Canvas";
 import FlameHistogram from "./FlameHistogram";
+import {paintLinear} from "./paintLinear";
 
-<Canvas width={400} height={400} hidden={true}>
-    <FlameHistogram/>
-</Canvas>
+<Canvas><FlameHistogram quality={5} paintFn={paintLinear}/></Canvas>
+
+## Log display
+
+import {paintLogarithmic} from './paintLogarithmic'
+
+<Canvas><FlameHistogram quality={10} paintFn={paintLogarithmic}/></Canvas>

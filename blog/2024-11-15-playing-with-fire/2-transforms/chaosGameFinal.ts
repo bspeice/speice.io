@@ -3,12 +3,19 @@ import { randomBiUnit } from "../src/randomBiUnit";
 import { randomChoice } from "../src/randomChoice";
 import { plotBinary as plot } from "../src/plotBinary"
 import {Transform} from "../src/transform";
-const iterations = 500_000;
-const step = 1000;
+import {ChaosGameWeightedProps} from "../1-introduction/chaosGameWeighted";
 // hidden-end
-export function* chaosGameFinal(width: number, height: number, transforms: [number, Transform][], final: Transform) {
+export type ChaosGameFinalProps = ChaosGameWeightedProps & {
+    final: Transform,
+    quality?: number,
+    step?: number,
+}
+export function* chaosGameFinal({width, height, transforms, final, quality, step}: ChaosGameFinalProps) {
     let image = new ImageData(width, height);
     let [x, y] = [randomBiUnit(), randomBiUnit()];
+
+    const iterations = (quality ?? 0.5) * width * height;
+    step = step ?? 1000;
 
     for (let i = 0; i < iterations; i++) {
         const [_, transform] = randomChoice(transforms);

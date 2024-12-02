@@ -6,8 +6,13 @@ import {Transform} from "../src/transform";
 const iterations = 50_000;
 const step = 1000;
 // hidden-end
-export function* chaosGameWeighted(transforms: [number, Transform][]) {
-    let image = new ImageData(500, 500);
+export type ChaosGameWeightedProps = {
+    width: number,
+    height: number,
+    transforms: [number, Transform][]
+}
+export function* chaosGameWeighted({width, height, transforms}: ChaosGameWeightedProps) {
+    let image = new ImageData(width, height);
     var [x, y] = [randomBiUnit(), randomBiUnit()];
 
     for (let i = 0; i < iterations; i++) {

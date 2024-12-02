@@ -4,7 +4,7 @@ import BrowserOnly from "@docusaurus/BrowserOnly";
 
 function invertImage(sourceImage: ImageData): ImageData {
     const image = new ImageData(sourceImage.width, sourceImage.height);
-    image.data.forEach((value, index) =>
+    sourceImage.data.forEach((value, index) =>
         image.data[index] = index % 4 === 3 ? value : 0xff - value)
 
     return image;
@@ -13,7 +13,6 @@ function invertImage(sourceImage: ImageData): ImageData {
 type InvertibleCanvasProps = {
     width: number,
     height: number,
-    hidden?: boolean,
     // NOTE: Images are provided as a single-element array
     //so we can allow re-painting with the same (modified) ImageData reference.
     image?: [ImageData],
@@ -27,7 +26,7 @@ type InvertibleCanvasProps = {
  * @param hidden Hide the canvas element
  * @param image Image data to draw on the canvas
  */
-const InvertibleCanvas: React.FC<InvertibleCanvasProps> = ({width, height, hidden, image}) => {
+const InvertibleCanvas: React.FC<InvertibleCanvasProps> = ({width, height, image}) => {
     const [canvasCtx, setCanvasCtx] = useState<CanvasRenderingContext2D>(null);
     const canvasRef = useCallback(node => {
         if (node !== null) {
@@ -54,7 +53,6 @@ const InvertibleCanvas: React.FC<InvertibleCanvasProps> = ({width, height, hidde
             ref={canvasRef}
             width={width}
             height={height}
-            hidden={hidden ?? false}
             style={{
                 aspectRatio: width / height,
                 width: '75%'
@@ -73,7 +71,6 @@ export const PainterContext = createContext<PainterProps>(null);
 interface CanvasProps {
     width?: number;
     height?: number;
-    hidden?: boolean;
     children?: React.ReactElement;
 }
 
@@ -105,7 +102,7 @@ interface CanvasProps {
  * but we rely on contexts to manage the iterator, and I can't find
  * a good way to make those generic.
  */
-export default function Canvas({width, height, hidden, children}: CanvasProps) {
+export default function Canvas({width, height, children}: CanvasProps) {
     const [image, setImage] = useState<[ImageData]>(null);
     const [painterHolder, setPainterHolder] = useState<[Iterator<ImageData>]>(null);
     useEffect(() => {
@@ -135,7 +132,7 @@ export default function Canvas({width, height, hidden, children}: CanvasProps) {
     return (
         <>
             <center>
-                <InvertibleCanvas width={width} height={height} hidden={hidden} image={image}/>
+                <InvertibleCanvas width={width} height={height} image={image}/>
             </center>
             <PainterContext.Provider value={{width, height, setPainter}}>
                 <BrowserOnly>{() => children}</BrowserOnly>

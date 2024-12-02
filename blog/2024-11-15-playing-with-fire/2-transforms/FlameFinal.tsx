@@ -1,40 +1,18 @@
 import {useContext, useEffect, useState} from "react";
 import {Coefs} from "../src/coefs"
-import {
-    xform1Coefs,
-    xform1Weight,
-    xform1Variations,
-    xform1CoefsPost,
-    xform2Coefs,
-    xform2Weight,
-    xform2Variations,
-    xform2CoefsPost,
-    xform3Coefs,
-    xform3Weight,
-    xform3Variations,
-    xform3CoefsPost,
-    xformFinalCoefs as xformFinalCoefsDefault,
-    xformFinalCoefsPost as xformFinalCoefsPostDefault,
-} from "../src/params";
+import * as params from "../src/params";
 import {PainterContext} from "../src/Canvas"
-import {buildBlend, buildTransform} from "./buildTransform";
-import {transformPost} from "./post";
+import {buildBlend} from "./buildBlend";
 import {chaosGameFinal} from "./chaosGameFinal"
 import {VariationEditor, VariationProps} from "./VariationEditor";
 import {CoefEditor} from "./CoefEditor";
-import {Transform} from "../src/transform";
-
-export const transforms: [number, Transform][] = [
-    [xform1Weight, transformPost(buildTransform(xform1Coefs, xform1Variations), xform1CoefsPost)],
-    [xform2Weight, transformPost(buildTransform(xform2Coefs, xform2Variations), xform2CoefsPost)],
-    [xform3Weight, transformPost(buildTransform(xform3Coefs, xform3Variations), xform3CoefsPost)]
-];
+import {applyPost, applyTransform} from "../src/applyTransform";
 
 export default function FlameFinal() {
     const {width, height, setPainter} = useContext(PainterContext);
 
-    const [xformFinalCoefs, setXformFinalCoefs] = useState<Coefs>(xformFinalCoefsDefault);
-    const resetXformFinalCoefs = () => setXformFinalCoefs(xformFinalCoefsDefault);
+    const [xformFinalCoefs, setXformFinalCoefs] = useState<Coefs>(params.xformFinalCoefs);
+    const resetXformFinalCoefs = () => setXformFinalCoefs(params.xformFinalCoefs);
 
     const xformFinalVariationsDefault: VariationProps = {
         linear: 0,
@@ -45,15 +23,14 @@ export default function FlameFinal() {
     const [xformFinalVariations, setXformFinalVariations] = useState<VariationProps>(xformFinalVariationsDefault);
     const resetXformFinalVariations = () => setXformFinalVariations(xformFinalVariationsDefault);
 
-    const [xformFinalCoefsPost, setXformFinalCoefsPost] = useState<Coefs>(xformFinalCoefsPostDefault);
-    const resetXformFinalCoefsPost = () => setXformFinalCoefsPost(xformFinalCoefsPostDefault);
+    const [xformFinalCoefsPost, setXformFinalCoefsPost] = useState<Coefs>(params.xformFinalCoefsPost);
+    const resetXformFinalCoefsPost = () => setXformFinalCoefsPost(params.xformFinalCoefsPost);
 
     useEffect(() => {
         const finalBlend = buildBlend(xformFinalCoefs, xformFinalVariations);
-        const finalTransform = buildTransform(xformFinalCoefs, finalBlend);
-        const finalPost = transformPost(finalTransform, xformFinalCoefsPost);
+        const finalXform = applyPost(xformFinalCoefsPost, applyTransform(xformFinalCoefs, finalBlend));
 
-        setPainter(chaosGameFinal(width, height, transforms, finalPost));
+        setPainter(chaosGameFinal({width, height, transforms: params.xforms, final: finalXform}));
     }, [xformFinalCoefs, xformFinalVariations, xformFinalCoefsPost]);
 
     return (

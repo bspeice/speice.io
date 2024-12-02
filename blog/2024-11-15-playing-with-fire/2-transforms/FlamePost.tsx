@@ -1,45 +1,37 @@
 import {useContext, useEffect, useState} from "react";
 import {Coefs} from "../src/coefs"
 import {Transform} from "../src/transform";
-import {
-    xform1Coefs,
-    xform1Weight,
-    xform1Variations,
-    xform1CoefsPost as xform1CoefsPostDefault,
-    xform2Coefs,
-    xform2Weight,
-    xform2Variations,
-    xform2CoefsPost as xform2CoefsPostDefault,
-    xform3Coefs,
-    xform3Weight,
-    xform3Variations,
-    xform3CoefsPost as xform3CoefsPostDefault
-} from "../src/params";
+import * as params from "../src/params";
 import {PainterContext} from "../src/Canvas"
-import {chaosGameFinal} from "./chaosGameFinal"
+import {chaosGameFinal, ChaosGameFinalProps} from "./chaosGameFinal"
 import {CoefEditor} from "./CoefEditor"
-import {transformPost} from "./post";
-import {buildTransform} from "./buildTransform";
+import {applyPost, applyTransform} from "@site/blog/2024-11-15-playing-with-fire/src/applyTransform";
 
 export default function FlamePost() {
     const {width, height, setPainter} = useContext(PainterContext);
 
-    const [xform1CoefsPost, setXform1CoefsPost] = useState<Coefs>(xform1CoefsPostDefault);
-    const resetXform1CoefsPost = () => setXform1CoefsPost(xform1CoefsPostDefault);
+    const [xform1CoefsPost, setXform1CoefsPost] = useState<Coefs>(params.xform1CoefsPost);
+    const resetXform1CoefsPost = () => setXform1CoefsPost(params.xform1CoefsPost);
 
-    const [xform2CoefsPost, setXform2CoefsPost] = useState<Coefs>(xform2CoefsPostDefault);
-    const resetXform2CoefsPost = () => setXform2CoefsPost(xform2CoefsPostDefault);
+    const [xform2CoefsPost, setXform2CoefsPost] = useState<Coefs>(params.xform2CoefsPost);
+    const resetXform2CoefsPost = () => setXform2CoefsPost(params.xform2CoefsPost);
 
-    const [xform3CoefsPost, setXform3CoefsPost] = useState<Coefs>(xform3CoefsPostDefault);
-    const resetXform3CoefsPost = () => setXform1CoefsPost(xform3CoefsPostDefault);
+    const [xform3CoefsPost, setXform3CoefsPost] = useState<Coefs>(params.xform3CoefsPost);
+    const resetXform3CoefsPost = () => setXform1CoefsPost(params.xform3CoefsPost);
 
     const identityXform: Transform = (x, y) => [x, y];
 
-    useEffect(() => setPainter(chaosGameFinal(width, height, [
-        [xform1Weight, transformPost(buildTransform(xform1Coefs, xform1Variations), xform1CoefsPost)],
-        [xform2Weight, transformPost(buildTransform(xform2Coefs, xform2Variations), xform2CoefsPost)],
-        [xform3Weight, transformPost(buildTransform(xform3Coefs, xform3Variations), xform3CoefsPost)]
-    ], identityXform)), [xform1CoefsPost, xform2CoefsPost, xform3CoefsPost]);
+    const gameParams: ChaosGameFinalProps = {
+        width,
+        height,
+        transforms: [
+            [params.xform1Weight, applyPost(xform1CoefsPost, applyTransform(params.xform1Coefs, params.xform1Variations))],
+            [params.xform2Weight, applyPost(xform2CoefsPost, applyTransform(params.xform2Coefs, params.xform2Variations))],
+            [params.xform3Weight, applyPost(xform3CoefsPost, applyTransform(params.xform3Coefs, params.xform3Variations))],
+        ],
+        final: identityXform
+    }
+    useEffect(() => setPainter(chaosGameFinal(gameParams)), [xform1CoefsPost, xform2CoefsPost, xform3CoefsPost]);
 
     return (
         <>
