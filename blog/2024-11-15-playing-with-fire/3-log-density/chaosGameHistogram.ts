@@ -8,7 +8,7 @@ export type ChaosGameHistogramProps = ChaosGameFinalProps & {
     painter: (width: number, histogram: Uint32Array) => ImageData;
 }
 export function* chaosGameHistogram({width, height, transforms, final, quality, step, painter}: ChaosGameHistogramProps) {
-    let iterations = (quality ?? 10) * width * height;
+    let iterations = (quality ?? 1) * width * height;
     step = step ?? 100_000;
 
     const histogram = new Uint32Array(width * height);

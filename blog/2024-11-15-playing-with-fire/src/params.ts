@@ -76,7 +76,7 @@ export const xforms: [number, Transform][] = [
 
 export const xformFinal: Transform = applyPost(xformFinalCoefsPost, applyTransform(xformFinalCoefs, xformFinalVariations));
 
-export const palette =
+export const paletteString =
     "7E3037762C45722B496E2A4E6A2950672853652754632656" +
     "5C265C5724595322574D2155482153462050451F4E441E4D" +
     "431E4C3F1E473F1E453F1E433F1E3F3F1E3B3E1E393E1E37" +
@@ -109,3 +109,13 @@ export const palette =
     "E9A411E5A313E1A113DD9F13D99D14D49C15D09815CC9518" +
     "C79318C38F1ABE8B1AB9871DB4811FB07D1FAB7621A67123" +
     "A16A249C6227975E289256298E502A89482C853F2D803A2E"
+
+function hexToBytes(hex: string) {
+    let bytes: number[] = [];
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substring(i, i + 2), 16));
+    }
+    return bytes;
+}
+
+export const palette = hexToBytes(paletteString).map(value => value / 0xff);

@@ -22,11 +22,11 @@ export function* chaosGameFinal({width, height, transforms, final, quality, step
         [x, y] = transform(x, y);
 
         // highlight-start
-        [x, y] = final(x, y);
+        const [finalX, finalY] = final(x, y);
         // highlight-end
 
         if (i > 20)
-            plot(x, y, image);
+            plot(finalX, finalY, image);
 
         if (i % step === 0)
             yield image;

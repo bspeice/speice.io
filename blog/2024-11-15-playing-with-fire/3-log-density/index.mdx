@@ -1,6 +1,6 @@
 ---
 slug: 2024/11/playing-with-fire-log-density
-title: "Playing with fire: Log-density display"
+title: "Playing with fire: Log-density and color"
 date: 2024-11-15 14:00:00
 authors: [bspeice]
 tags: []
@@ -32,10 +32,16 @@ import Canvas from "../src/Canvas";
 import FlameHistogram from "./FlameHistogram";
 import {paintLinear} from "./paintLinear";
 
-<Canvas><FlameHistogram quality={5} paintFn={paintLinear}/></Canvas>
+<!-- <Canvas><FlameHistogram quality={0.5} paintFn={paintLinear}/></Canvas> -->
 
 ## Log display
 
 import {paintLogarithmic} from './paintLogarithmic'
 
-<Canvas><FlameHistogram quality={10} paintFn={paintLogarithmic}/></Canvas>
+<!-- <Canvas><FlameHistogram quality={0.5} paintFn={paintLogarithmic}/></Canvas> -->
+
+## Color
+
+import FlameColor from "./FlameColor";
+
+<Canvas><FlameColor quality={10}/></Canvas>
