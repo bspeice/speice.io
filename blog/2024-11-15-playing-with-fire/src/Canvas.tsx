@@ -10,56 +10,6 @@ function invertImage(sourceImage: ImageData): ImageData {
     return image;
 }
 
-class RenderManager {
-    private isFinished: boolean = false;
-    private painter: Iterator<ImageData> = null;
-    constructor(private readonly setImage: (image: [ImageData]) => void) {
-        requestAnimationFrame(() => this.animate());
-    }
-
-    setPainter(painter: Iterator<ImageData>) {
-        console.log("Received next painter");
-        if (!this) {
-            console.log(this);
-            return;
-        }
-        this.painter = painter;
-    }
-
-    setFinished() {
-        console.log("Received finished");
-        if (!this) {
-            console.log(this);
-            return;
-        }
-        this.isFinished = true;
-    }
-
-    animate() {
-        console.log("Received next frame");
-        if (!this) {
-            console.log(this);
-            return;
-        }
-
-        if (this.isFinished) {
-            return;
-        }
-
-        if (!this.painter) {
-            requestAnimationFrame(() => this.animate());
-        }
-
-        const nextImage = this.painter.next().value;
-        if (nextImage) {
-            console.log("Received next image");
-            this.setImage([nextImage]);
-        }
-
-        requestAnimationFrame(() => this.animate());
-    }
-}
-
 type InvertibleCanvasProps = {
     width: number,
     height: number,
@@ -154,10 +104,28 @@ interface CanvasProps {
  */
 export default function Canvas({width, height, children}: CanvasProps) {
     const [image, setImage] = useState<[ImageData]>(null);
-    const [renderManager, _setRenderManager] = useState<RenderManager>(new RenderManager(setImage));
-    const setPainter = (painter: Iterator<ImageData>) => renderManager.setPainter.bind(renderManager)(painter);
+    const [painterHolder, setPainterHolder] = useState<[Iterator<ImageData>]>(null);
+    useEffect(() => {
+        if (!painterHolder) {
+            return;
+        }
 
-    useEffect(() => () => { renderManager.setFinished.bind(renderManager)(); }, []);
+        const painter = painterHolder[0];
+        const nextImage = painter.next().value;
+        if (nextImage) {
+            setImage([nextImage]);
+            setPainterHolder([painter]);
+        } else {
+            setPainterHolder(null);
+        }
+    }, [painterHolder]);
+
+    const [painter, setPainter] = useState<Iterator<ImageData>>(null);
+    useEffect(() => {
+        if (painter) {
+            setPainterHolder([painter]);
+        }
+    }, [painter]);
 
     width = width ?? 500;
     height = height ?? 500;
