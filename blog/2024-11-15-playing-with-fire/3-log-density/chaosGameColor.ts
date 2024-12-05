@@ -4,11 +4,21 @@ import {randomChoice} from "../src/randomChoice";
 import {camera, histIndex} from "../src/camera";
 import {colorFromPalette, paintColor} from "./color";
 
-type ChaosGameHistogramProps = ChaosGameFinalProps & {
-    palette: number[];
-    colors: number[];
+export type TransformColor = {
+    color: number;
+    colorSpeed: number;
 }
-export function* chaosGameColor({width, height, transforms, final, palette, colors, quality, step}: ChaosGameHistogramProps) {
+
+function mixColor(color1: number, color2: number, colorSpeed: number) {
+    return color1 * (1 - colorSpeed) + color2 * colorSpeed;
+}
+
+export type ChaosGameColorProps = ChaosGameFinalProps & {
+    palette: number[];
+    colors: TransformColor[];
+    finalColor: TransformColor;
+}
+export function* chaosGameColor({width, height, transforms, final, palette, colors, finalColor, quality, step}: ChaosGameColorProps) {
     let iterations = (quality ?? 1) * width * height;
     step = step ?? 100_000;
 
@@ -33,8 +43,11 @@ export function* chaosGameColor({width, height, transforms, final, palette, colo
             if (pixelIndex < 0 || pixelIndex >= alpha.length)
                 continue;
 
-            currentColor = (currentColor + colors[transformIndex]) / 2;
-            const [r, g, b] = colorFromPalette(palette, currentColor);
+            const transformColor = colors[transformIndex];
+            currentColor = mixColor(currentColor, transformColor.color, transformColor.colorSpeed);
+
+            const colorFinal = mixColor(currentColor, finalColor.color, finalColor.colorSpeed);
+            const [r, g, b] = colorFromPalette(palette, colorFinal);
             red[pixelIndex] += r;
             green[pixelIndex] += g;
             blue[pixelIndex] += b;

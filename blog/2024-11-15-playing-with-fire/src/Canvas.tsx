@@ -26,7 +26,7 @@ type InvertibleCanvasProps = {
  * @param hidden Hide the canvas element
  * @param image Image data to draw on the canvas
  */
-const InvertibleCanvas: React.FC<InvertibleCanvasProps> = ({width, height, image}) => {
+export const InvertibleCanvas: React.FC<InvertibleCanvasProps> = ({width, height, image}) => {
     const [canvasCtx, setCanvasCtx] = useState<CanvasRenderingContext2D>(null);
     const canvasRef = useCallback(node => {
         if (node !== null) {
