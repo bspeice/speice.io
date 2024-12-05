@@ -53,10 +53,7 @@ export const InvertibleCanvas: React.FC<InvertibleCanvasProps> = ({width, height
             ref={canvasRef}
             width={width}
             height={height}
-            style={{
-                aspectRatio: width / height,
-                width: '75%'
-            }}
+            style={{aspectRatio: width / height}}
         />
     )
 }

@@ -45,6 +45,7 @@ const AutoSizingCanvas: React.FC<AutoSizingCanvasProps> = ({painter}) => {
 
     useEffect(() => {
         if (sizingRef) {
+            console.log(`Sizing; width=${sizingRef.current.offsetWidth} height=${sizingRef.current.offsetHeight}`)
             setWidth(sizingRef.current.offsetWidth);
             setHeight(sizingRef.current.offsetHeight)
         }
@@ -53,7 +54,7 @@ const AutoSizingCanvas: React.FC<AutoSizingCanvasProps> = ({painter}) => {
     const image: [ImageData] = useMemo(() => (width && height) ? [painter(width, height)] : null, [painter, width, height]);
 
     return (
-        <div ref={sizingRef}><InvertibleCanvas width={width} height={height} image={image}/></div>
+        <div ref={sizingRef} style={{width: '100%', height: '100%'}}><InvertibleCanvas width={width} height={height} image={image}/></div>
     )
 }
 
