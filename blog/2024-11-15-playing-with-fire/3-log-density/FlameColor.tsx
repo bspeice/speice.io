@@ -1,39 +1,11 @@
 import React, {useContext, useEffect, useMemo, useRef, useState} from "react";
 import * as params from "../src/params";
 import {InvertibleCanvas, PainterContext} from "../src/Canvas";
+import {colorFromPalette} from "./color";
 import {chaosGameColor, ChaosGameColorProps, TransformColor} from "./chaosGameColor";
 
 import styles from "../src/css/styles.module.css";
-import {colorFromPalette} from "@site/blog/2024-11-15-playing-with-fire/3-log-density/color";
-
-type PaletteBarProps = {
-    height: number;
-    palette: number[];
-    sizingStyle?: any;
-    children?: React.ReactNode;
-}
-const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, sizingStyle, children}) => {
-    const sizingRef = useRef<HTMLDivElement>(null);
-    const [width, setWidth] = useState(0);
-    useEffect(() => {
-        if (!sizingRef.current) {
-            return;
-        }
-
-        setWidth(sizingRef.current.offsetWidth);
-    }, [sizingRef.current]);
-
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    useEffect(() => {
-        if (!canvasRef.current) {
-            return;
-        }
-    }, [canvasRef.current]);
-
-    return (
-        <div ref={sizingRef} style={sizingStyle}><canvas width={width} height={height}/></div>
-    )
-}
+import {histIndex} from "../src/camera";
 
 type AutoSizingCanvasProps = {
     painter: (width: number, height: number) => ImageData;
@@ -45,7 +17,6 @@ const AutoSizingCanvas: React.FC<AutoSizingCanvasProps> = ({painter}) => {
 
     useEffect(() => {
         if (sizingRef) {
-            console.log(`Sizing; width=${sizingRef.current.offsetWidth} height=${sizingRef.current.offsetHeight}`)
             setWidth(sizingRef.current.offsetWidth);
             setHeight(sizingRef.current.offsetHeight)
         }
@@ -54,7 +25,45 @@ const AutoSizingCanvas: React.FC<AutoSizingCanvasProps> = ({painter}) => {
     const image: [ImageData] = useMemo(() => (width && height) ? [painter(width, height)] : null, [painter, width, height]);
 
     return (
-        <div ref={sizingRef} style={{width: '100%', height: '100%'}}><InvertibleCanvas width={width} height={height} image={image}/></div>
+        <div ref={sizingRef} style={{width: '100%', height: '100%'}}>
+            <InvertibleCanvas width={width} height={height} image={image}/>
+        </div>
+    )
+}
+
+const paletteBarPainter = (palette: number[]) =>
+    (width: number, height: number) => {
+        const image = new ImageData(width, height);
+        for (let x = 0; x < width; x++) {
+            const colorIndex = x / width;
+            const [r, g, b] = colorFromPalette(palette, colorIndex);
+
+            for (let y = 0; y < height; y++) {
+                const pixelIndex = histIndex(x, y, width, 4);
+                image.data[pixelIndex] = r * 0xff;
+                image.data[pixelIndex + 1] = g * 0xff;
+                image.data[pixelIndex + 2] = b * 0xff;
+                image.data[pixelIndex + 3] = 0xff;
+            }
+        }
+        return image;
+    }
+
+type PaletteBarProps = {
+    height: number;
+    palette: number[];
+    children?: React.ReactNode;
+}
+const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
+    const painter = useMemo(() => paletteBarPainter(palette), [palette]);
+
+    return (
+        <>
+            <div style={{width: '100%', height, marginTop: '1em', marginBottom: '1em'}}>
+                <AutoSizingCanvas painter={painter}/>
+            </div>
+            {children}
+        </>
     )
 }
 
@@ -102,6 +111,7 @@ const ColorEditor: React.FC<ColorEditorProps> = ({title, palette, transformColor
                     <AutoSizingCanvas painter={painter}/>
                 </div>
             </div>
+            {children}
         </>
     )
 }
