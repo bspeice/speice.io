@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState, createContext} from "react";
+import React, {useCallback, useEffect, useState, createContext, useRef} from "react";
 import {useColorMode} from "@docusaurus/theme-common";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 
@@ -100,10 +100,32 @@ interface CanvasProps {
  * a good way to make those generic.
  */
 export default function Canvas({width, height, children}: CanvasProps) {
+    const viewportDetectionRef = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+    useEffect(() => {
+        if (!viewportDetectionRef) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                setIsVisible(true);
+            }
+        }, {root: null, threshold: .1});
+        observer.observe(viewportDetectionRef.current);
+
+        return () => {
+            if (viewportDetectionRef.current) {
+                observer.unobserve(viewportDetectionRef.current);
+            }
+        }
+    }, [viewportDetectionRef]);
+
     const [image, setImage] = useState<[ImageData]>(null);
     const [painterHolder, setPainterHolder] = useState<[Iterator<ImageData>]>(null);
     useEffect(() => {
-        if (!painterHolder) {
+        if (!isVisible || !painterHolder) {
+            console.log("Skipping, not visible");
             return;
         }
 
@@ -115,7 +137,7 @@ export default function Canvas({width, height, children}: CanvasProps) {
         } else {
             setPainterHolder(null);
         }
-    }, [painterHolder]);
+    }, [isVisible, painterHolder]);
 
     const [painter, setPainter] = useState<Iterator<ImageData>>(null);
     useEffect(() => {
@@ -129,7 +151,9 @@ export default function Canvas({width, height, children}: CanvasProps) {
     return (
         <>
             <center>
-                <InvertibleCanvas width={width} height={height} image={image}/>
+                <div ref={viewportDetectionRef}>
+                    <InvertibleCanvas width={width} height={height} image={image}/>
+                </div>
             </center>
             <PainterContext.Provider value={{width, height, setPainter}}>
                 <BrowserOnly>{() => children}</BrowserOnly>

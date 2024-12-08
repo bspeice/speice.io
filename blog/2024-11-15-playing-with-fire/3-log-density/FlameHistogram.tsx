@@ -1,24 +1,24 @@
 import React, {useContext, useEffect} from "react";
-import * as params from "../src/params";
+import {xforms as transforms, xformFinal as final} from "../src/params";
 import {PainterContext} from "../src/Canvas";
 import {chaosGameHistogram} from "./chaosGameHistogram";
 
 type Props = {
     quality?: number;
-    paintFn: (width: number, histogram: Uint32Array) => ImageData;
+    paint: (width: number, histogram: Uint32Array) => ImageData;
     children?: React.ReactElement;
 }
-export default function FlameHistogram({quality, paintFn, children}: Props) {
+export default function FlameHistogram({quality, paint, children}: Props) {
     const {width, height, setPainter} = useContext(PainterContext);
 
     useEffect(() => {
         const gameParams = {
             width,
             height,
-            transforms: params.xforms,
-            final: params.xformFinal,
+            transforms,
+            final,
             quality,
-            painter: paintFn
+            paint
         }
         setPainter(chaosGameHistogram(gameParams));
     }, []);

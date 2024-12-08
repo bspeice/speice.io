@@ -20,7 +20,7 @@ export type ChaosGameColorProps = ChaosGameFinalProps & {
 }
 export function* chaosGameColor({width, height, transforms, final, palette, colors, finalColor, quality, step}: ChaosGameColorProps) {
     let iterations = (quality ?? 1) * width * height;
-    step = step ?? 100_000;
+    step = step ?? 10_000;
 
     let currentColor = Math.random();
     const red = Array(width * height).fill(0);

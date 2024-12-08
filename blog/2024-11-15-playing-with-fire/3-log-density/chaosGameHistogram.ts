@@ -9,7 +9,7 @@ export type ChaosGameHistogramProps = ChaosGameFinalProps & {
 }
 export function* chaosGameHistogram({width, height, transforms, final, quality, step, paint}: ChaosGameHistogramProps) {
     let iterations = (quality ?? 1) * width * height;
-    step = step ?? 100_000;
+    step = step ?? 10_000;
 
     const histogram = new Uint32Array(width * height);
 

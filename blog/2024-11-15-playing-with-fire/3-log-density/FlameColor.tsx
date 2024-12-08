@@ -103,7 +103,7 @@ const ColorEditor: React.FC<ColorEditorProps> = ({title, palette, transformColor
                            onInput={e => setTransformColor({...transformColor, color: Number(e.currentTarget.value)})}/>
                 </div>
                 <div className={styles.inputElement}>
-                    <p>Color speed: {transformColor.colorSpeed}</p>
+                    <p>Speed: {transformColor.colorSpeed}</p>
                     <input type={'range'} min={0} max={1} step={.001} value={transformColor.colorSpeed}
                            onInput={e => setTransformColor({...transformColor, colorSpeed: Number(e.currentTarget.value)})}/>
                 </div>
