@@ -22,7 +22,7 @@
     margin: 0
 }
 
-.inputElement > input {
+.inputElement > input[type=range] {
     width: 100%;
 }
 

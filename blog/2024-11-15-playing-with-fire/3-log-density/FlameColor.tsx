@@ -1,7 +1,7 @@
 import React, {useContext, useEffect, useMemo, useRef, useState} from "react";
 import * as params from "../src/params";
 import {InvertibleCanvas, PainterContext} from "../src/Canvas";
-import {colorFromPalette} from "./color";
+import {colorFromPalette} from "./paintColor";
 import {chaosGameColor, ChaosGameColorProps, TransformColor} from "./chaosGameColor";
 
 import styles from "../src/css/styles.module.css";

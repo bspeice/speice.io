@@ -2,7 +2,7 @@ import {ChaosGameFinalProps} from "../2-transforms/chaosGameFinal";
 import {randomBiUnit} from "../src/randomBiUnit";
 import {randomChoice} from "../src/randomChoice";
 import {camera, histIndex} from "../src/camera";
-import {colorFromPalette, paintColor} from "./color";
+import {colorFromPalette, paintColor} from "./paintColor";
 
 export type TransformColor = {
     color: number;
@@ -33,7 +33,6 @@ export function* chaosGameColor({width, height, transforms, final, palette, colo
     for (let i = 0; i < iterations; i++) {
         const [transformIndex, transform] = randomChoice(transforms);
         [x, y] = transform(x, y);
-
         const [finalX, finalY] = final(x, y);
 
         if (i > 20) {

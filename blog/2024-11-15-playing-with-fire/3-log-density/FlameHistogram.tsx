@@ -1,7 +1,7 @@
 import React, {useContext, useEffect} from "react";
 import * as params from "../src/params";
 import {PainterContext} from "../src/Canvas";
-import {chaosGameHistogram} from "@site/blog/2024-11-15-playing-with-fire/3-log-density/chaosGameHistogram";
+import {chaosGameHistogram} from "./chaosGameHistogram";
 
 type Props = {
     quality?: number;

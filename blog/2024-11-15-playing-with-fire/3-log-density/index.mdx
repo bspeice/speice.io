@@ -32,16 +32,24 @@ import Canvas from "../src/Canvas";
 import FlameHistogram from "./FlameHistogram";
 import {paintLinear} from "./paintLinear";
 
-<Canvas><FlameHistogram quality={0.5} paintFn={paintLinear}/></Canvas>
+<Canvas><FlameHistogram quality={5} paintFn={paintLinear}/></Canvas>
 
 ## Log display
 
+import paintLogarithmicSource from "!!raw-loader!./paintLogarithmic"
+
+<CodeBlock language="typescript">{paintLogarithmicSource}</CodeBlock>
+
 import {paintLogarithmic} from './paintLogarithmic'
 
-<Canvas><FlameHistogram quality={0.5} paintFn={paintLogarithmic}/></Canvas>
+<Canvas><FlameHistogram quality={5} paintFn={paintLogarithmic}/></Canvas>
 
 ## Color
 
+import paintColorSource from "!!raw-loader!./paintColor"
+
+<CodeBlock language="typescript">{paintColorSource}</CodeBlock>
+
 import FlameColor from "./FlameColor";
 
-<Canvas><FlameColor quality={10}/></Canvas>
+<Canvas><FlameColor quality={15}/></Canvas>
