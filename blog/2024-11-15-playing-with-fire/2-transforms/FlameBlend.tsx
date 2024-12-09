@@ -4,9 +4,8 @@ import * as params from "../src/params"
 import {PainterContext} from "../src/Canvas"
 import {chaosGameFinal} from "./chaosGameFinal"
 import {VariationEditor, VariationProps} from "./VariationEditor"
-import {xform1Weight} from "../src/params";
-import {applyTransform} from "@site/blog/2024-11-15-playing-with-fire/src/applyTransform";
-import {buildBlend} from "@site/blog/2024-11-15-playing-with-fire/2-transforms/buildBlend";
+import {applyTransform} from "../src/applyTransform";
+import {buildBlend} from "./buildBlend";
 
 export default function FlameBlend() {
     const {width, height, setPainter} = useContext(PainterContext);

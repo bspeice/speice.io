@@ -3,7 +3,7 @@ import {Coefs} from "../src/coefs"
 import {Transform} from "../src/transform";
 import * as params from "../src/params";
 import {PainterContext} from "../src/Canvas"
-import {chaosGameFinal, ChaosGameFinalProps} from "./chaosGameFinal"
+import {chaosGameFinal, Props as ChaosGameFinalProps} from "./chaosGameFinal"
 import {CoefEditor} from "./CoefEditor"
 import {applyPost, applyTransform} from "@site/blog/2024-11-15-playing-with-fire/src/applyTransform";
 

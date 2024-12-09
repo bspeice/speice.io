@@ -29,17 +29,17 @@ export function plot(
   let pixelY = Math.floor(y * img.height);
 
   const index = imageIndex(
-      img.width,
-      pixelX,
-      pixelY
+    img.width,
+    pixelX,
+    pixelY
   );
 
   // Skip pixels outside the display range
   if (
-      index < 0 ||
-      index > img.data.length
+    index < 0 ||
+    index > img.data.length
   ) {
-      return;
+    return;
   }
 
   // Set the pixel to black by writing 0

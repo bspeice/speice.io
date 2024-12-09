@@ -6,7 +6,7 @@ import {Transform} from "../src/transform";
 const iterations = 50_000;
 const step = 1000;
 // hidden-end
-type Props = {
+export type Props = {
     width: number,
     height: number,
     transforms: [number, Transform][]
@@ -20,6 +20,7 @@ export function* chaosGameWeighted(
       randomBiUnit()
   ];
 
+  // TODO: Explain quality
   const iterations = width * height * 0.5;
   for (let c = 0; c < iterations; c++) {
     // highlight-start

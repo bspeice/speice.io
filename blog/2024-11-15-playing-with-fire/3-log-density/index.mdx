@@ -28,11 +28,11 @@ import paintLinearSource from "!!raw-loader!./paintLinear"
 
 <CodeBlock language="typescript">{paintLinearSource}</CodeBlock>
 
-import Canvas from "../src/Canvas";
+import {SquareCanvas} from "../src/Canvas";
 import FlameHistogram from "./FlameHistogram";
 import {paintLinear} from "./paintLinear";
 
-<!-- <Canvas><FlameHistogram quality={5} paint={paintLinear}/></Canvas> -->
+<SquareCanvas><FlameHistogram quality={5} paint={paintLinear}/></SquareCanvas>
 
 ## Log display
 
@@ -42,7 +42,7 @@ import paintLogarithmicSource from "!!raw-loader!./paintLogarithmic"
 
 import {paintLogarithmic} from './paintLogarithmic'
 
-<!-- <Canvas><FlameHistogram quality={5} paint={paintLogarithmic}/></Canvas> -->
+<SquareCanvas><FlameHistogram quality={10} paint={paintLogarithmic}/></SquareCanvas>
 
 ## Color
 
@@ -52,4 +52,4 @@ import paintColorSource from "!!raw-loader!./paintColor"
 
 import FlameColor from "./FlameColor";
 
-<!-- <Canvas><FlameColor quality={15}/></Canvas> -->
+<SquareCanvas><FlameColor quality={15}/></SquareCanvas>

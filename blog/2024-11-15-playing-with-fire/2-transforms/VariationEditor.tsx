@@ -18,7 +18,7 @@ export const VariationEditor = ({title, variations, setVariations, resetVariatio
     const resetButton = <button className={styles.inputReset} onClick={resetVariations}>Reset</button>
 
     return (
-        <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: 'auto auto auto auto'}}>
+        <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: '1fr 1fr'}}>
             <p className={styles.inputTitle} style={{gridColumn: '1/-1'}}>{title} {resetButton}</p>
             <div className={styles.inputElement}>
                 <span>Linear: {variations.linear}</span>

@@ -6,11 +6,11 @@ authors: [bspeice]
 tags: []
 ---
 
-Wikipedia [describes](https://en.wikipedia.org/wiki/Fractal_flame) fractal flames as:
+Wikipedia describes fractal flames fractal flames as:
 
 > a member of the iterated function system class of fractals
 
-I think of them a different way: beauty in mathematics.
+It's a bit tedious, but technically correct. I choose to think of them a different way: beauty in mathematics.
 
 import isDarkMode from '@site/src/isDarkMode'
 import banner from '../banner.png'
@@ -21,36 +21,37 @@ import banner from '../banner.png'
 
 <!-- truncate -->
 
-I don't remember exactly when or how I originally came across fractal flames, but I do remember becoming entranced by the images they created.
-I also remember their unique appeal to my young engineering mind; this was an art form I could actively participate in.
+I don't remember exactly when I first learned about fractal flames, but I do remember becoming entranced by the images they created.
+I also remember their unique appeal to my young engineering mind; this was an art form I could participate in.
 
-The [paper](https://flam3.com/flame_draves.pdf) describing their mathematical structure was too much
-for me to handle at the time (I was ~12 years old), and I was content to play around and enjoy the pictures.
-But the desire to understand it stuck with me, so I wanted to try again. With a graduate degree in Financial Engineering under my belt,
-maybe it would be easier this time.
+The original [Fractal Flame](https://flam3.com/flame_draves.pdf) describing their structure was too much
+for me to handle at the time (I was ~12 years old), so I was content to play around and enjoy the pictures.
+But the desire to understand it stuck around. Now, with a graduate degree under my belt, maybe I can make some progress.
+
+This guide is my attempt to explain fractal flames in a way that younger me &mdash; and others interested in the art &mdash;
+can understand without too much prior knowledge.
 
 ---
 
 ## Iterated function systems
 
-Let's begin by defining an "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system)" (IFS).
-We'll start at the end and work backwards to build a practical understanding. In mathematical notation, an IFS is:
+As mentioned above, fractal flames are a type of "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system),"
+or IFS. Their mathematical foundations come from a paper written by [John E. Hutchinson](https://maths-people.anu.edu.au/~john/Assets/Research%20Papers/fractals_self-similarity.pdf),
+but reading that paper isn't critical for our purposes. Instead, we'll focus on building a practical understanding
+of how they work. The formula for an IFS is short, but will take some time to unpack:
 
 $$
-S = \bigcup_{i=0}^{n-1} F_i(S) \\[0.6cm]
-S \in \mathbb{R}^2 \\
-F_i(S) \in \mathbb{R}^2 \rightarrow \mathbb{R}^2
+S = \bigcup_{i=0}^{n-1} F_i(S)
 $$
 
-### Stationary point
+### Fixed set
 
-First, $S$. We're generating images, so everything is in two dimensions: $S \in \mathbb{R}^2$. The set $S$ is
-all points that are "in the system." To generate our final image, we just plot every point in the system
-like a coordinate chart.
-
-TODO: What is a stationary point? How does it relate to the chaos game? Why does the chaos game work?
+First, $S$. $S$ is the set of points in two dimensions (in math terms, $S \in \mathbb{R}^2$) that represent
+a "solution" of some kind. Our goal is to find all points in the set $S$, plot them, and display that image.
 
 For example, if we say $S = \{(0,0), (1, 1), (2, 2)\}$, there are three points to plot:
+
+<!-- TODO: What is a stationary point? How does it relate to the chaos game? Why does the chaos game work? -->
 
 import {VictoryChart, VictoryTheme, VictoryScatter, VictoryLegend} from "victory";
 export const simpleData = [
@@ -63,8 +64,18 @@ export const simpleData = [
     <VictoryScatter data={simpleData} size={5} style={{data: {fill: "blue"}}}/>
 </VictoryChart>
 
-For fractal flames, we just need to figure out which points are in $S$ and plot them. While there are
-technically an infinite number of points, if we find _enough_ points and plot them, we end up with a nice picture.
+However, this is a pretty boring image. With fractal flames, rather than listing individual points,
+we use functions to describe which points are part of the solution. This means there are an infinite
+number of points, but if we find _enough_ points to plot, we'll end up with a nice picture.
+And if we choose different functions to start with, our solution set changes, and we'll end up
+with a new picture.
+
+However, it's not clear which points belong in the solution just by staring at the functions.
+We'll need a computer to figure it out.
+
+TODO: Other topics worth covering in this section? Maybe in a `details` block?:
+- Fixed sets: https://en.wiktionary.org/wiki/fixed_set
+- Compact sets
 
 ### Transformation functions
 
@@ -182,7 +193,8 @@ import chaosGameSource from '!!raw-loader!./chaosGame'
 <hr/>
 
 <small>
-Note: The image here is different than the fractal flame paper, but I think the paper has an error.
+Note: The image here is slightly different than the fractal flame paper; I think the paper has an error,
+so I'm choosing to plot the image in a way that's consistent with [`flam3` itself](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
 </small>
 
 ## Weights

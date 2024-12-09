@@ -1,35 +1,12 @@
 import React, {useContext, useEffect, useMemo, useRef, useState} from "react";
 import * as params from "../src/params";
-import {InvertibleCanvas, PainterContext} from "../src/Canvas";
+import {PainterContext} from "../src/Canvas";
 import {colorFromPalette} from "./paintColor";
 import {chaosGameColor, ChaosGameColorProps, TransformColor} from "./chaosGameColor";
 
 import styles from "../src/css/styles.module.css";
 import {histIndex} from "../src/camera";
-
-type AutoSizingCanvasProps = {
-    painter: (width: number, height: number) => ImageData;
-}
-const AutoSizingCanvas: React.FC<AutoSizingCanvasProps> = ({painter}) => {
-    const sizingRef = useRef<HTMLDivElement>(null);
-    const [width, setWidth] = useState<number>(0);
-    const [height, setHeight] = useState<number>(0);
-
-    useEffect(() => {
-        if (sizingRef) {
-            setWidth(sizingRef.current.offsetWidth);
-            setHeight(sizingRef.current.offsetHeight)
-        }
-    }, [sizingRef]);
-
-    const image: [ImageData] = useMemo(() => (width && height) ? [painter(width, height)] : null, [painter, width, height]);
-
-    return (
-        <div ref={sizingRef} style={{width: '100%', height: '100%'}}>
-            <InvertibleCanvas width={width} height={height} image={image}/>
-        </div>
-    )
-}
+import {useColorMode} from "@docusaurus/theme-common";
 
 const paletteBarPainter = (palette: number[]) =>
     (width: number, height: number) => {
@@ -60,7 +37,7 @@ const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
     return (
         <>
             <div style={{width: '100%', height, marginTop: '1em', marginBottom: '1em'}}>
-                <AutoSizingCanvas painter={painter}/>
+                {/*<AutoSizingCanvas painter={painter}/>*/}
             </div>
             {children}
         </>
@@ -90,8 +67,12 @@ type ColorEditorProps = {
     children?: React.ReactNode;
 }
 const ColorEditor: React.FC<ColorEditorProps> = ({title, palette, transformColor, setTransformColor, resetTransformColor, children}) => {
-    const painter = useMemo(() => colorSwatchPainter(palette, transformColor.color), [palette, transformColor]);
     const resetButton = <button className={styles.inputReset} onClick={resetTransformColor}>Reset</button>
+
+    const [r, g, b] = colorFromPalette(palette, transformColor.color);
+    const colorCss = `rgb(${Math.floor(r * 0xff)},${Math.floor(g * 0xff)},${Math.floor(b * 0xff)})`;
+
+    const {colorMode} = useColorMode();
 
     return (
         <>
@@ -107,9 +88,12 @@ const ColorEditor: React.FC<ColorEditorProps> = ({title, palette, transformColor
                     <input type={'range'} min={0} max={1} step={.001} value={transformColor.colorSpeed}
                            onInput={e => setTransformColor({...transformColor, colorSpeed: Number(e.currentTarget.value)})}/>
                 </div>
-                <div className={styles.inputElement}>
-                    <AutoSizingCanvas painter={painter}/>
-                </div>
+                <div className={styles.inputElement} style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: colorCss,
+                    filter: colorMode === 'dark' ? 'invert(1)' : ''
+                }}/>
             </div>
             {children}
         </>

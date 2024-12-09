@@ -14,7 +14,7 @@ export const CoefEditor = ({title, isPost, coefs, setCoefs, resetCoefs}: Props) 
     const resetButton = <button className={styles.inputReset} onClick={resetCoefs}>Reset</button>
 
     return (
-        <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: 'auto auto auto'}}>
+        <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
             <p className={styles.inputTitle} style={{gridColumn: '1/-1'}}>{title} {resetButton}</p>
             <div className={styles.inputElement}>
                 <p>{isPost ? <TeX>\alpha</TeX> : 'a'}: {coefs.a}</p>

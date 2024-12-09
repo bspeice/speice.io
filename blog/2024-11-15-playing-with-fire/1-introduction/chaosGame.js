@@ -9,6 +9,7 @@ const xforms = [
 ]
 
 function* chaosGame({width, height}) {
+  const step = 1000;
   let img = new ImageData(width, height);
   let [x, y] = [
     randomBiUnit(),
@@ -22,7 +23,7 @@ function* chaosGame({width, height}) {
     if (c > 20)
       plot(x, y, img);
 
-    if (c % 1000 === 0)
+    if (c % step === 0)
       yield img;
   }
 
