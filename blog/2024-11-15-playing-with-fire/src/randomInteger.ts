@@ -1,3 +1,7 @@
-export function randomInteger(min: number, max: number) {
-    return Math.floor(Math.random() * (max - min)) + min;
+export function randomInteger(
+    min: number,
+    max: number
+) {
+    let v = Math.random() * (max - min);
+    return Math.floor(v) + min;
 }

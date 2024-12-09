@@ -1,30 +1,33 @@
-// Hint: try increasing the iteration count
-const iterations = 10000;
+// Hint: try changing the iteration count
+const iterations = 100000;
 
-// Hint: negating `x` and `y` creates some interesting images
-const transforms = [
-    (x, y) => [x / 2, y / 2],
-    (x, y) => [(x + 1) / 2, y / 2],
-    (x, y) => [x / 2, (y + 1) / 2]
+// Hint: negating `x` and `y` creates some cool images
+const xforms = [
+  (x, y) => [x / 2, y / 2],
+  (x, y) => [(x + 1) / 2, y / 2],
+  (x, y) => [x / 2, (y + 1) / 2]
 ]
 
-function* chaosGame() {
-    let image = new ImageData(500, 500);
-    let [x, y] = [randomBiUnit(), randomBiUnit()];
+function* chaosGame({width, height}) {
+  let img = new ImageData(width, height);
+  let [x, y] = [
+    randomBiUnit(),
+    randomBiUnit()
+  ];
 
-    for (var count = 0; count < iterations; count++) {
-        const i = randomInteger(0, transforms.length);
-        [x, y] = transforms[i](x, y);
+  for (let c = 0; c < iterations; c++) {
+    const i = randomInteger(0, xforms.length);
+    [x, y] = xforms[i](x, y);
 
-        if (count > 20)
-            plot(x, y, image);
+    if (c > 20)
+      plot(x, y, img);
 
-        if (count % 1000 === 0)
-            yield image;
-    }
+    if (c % 1000 === 0)
+      yield img;
+  }
 
-    yield image;
+  yield img;
 }
 
 // Wiring so the code above displays properly
-render(<Gasket f={chaosGame()}/>)
+render(<Gasket f={chaosGame}/>)

@@ -101,7 +101,7 @@ export const shiftData = simpleData.map(({x, y}) => { return {x: x + 1, y} })
 This is a simple example designed to illustrate the principle. In general, $F_i$ functions have the form:
 
 $$
-F_i(x,y) = (a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
+F_i(x,y) = (a_i \cdot x + b_i \cdot y + c_i, d_i \cdot x + e_i \cdot y + f_i)
 $$
 
 The parameters ($a_i$, $b_i$, etc.) are values we get to choose. In the example above, we can represent our shift
@@ -126,10 +126,10 @@ Fractal flames use more complex functions to produce a wide variety of images, b
 Using these definitions, we can build the first image. The paper defines a function system for us:
 
 $$
-F_0(x, y) = \left({x \over 2}, {y \over 2} \right)
-\hspace{0.8cm}
-F_1(x, y) = \left({{x + 1} \over 2}, {y \over 2} \right)
-\hspace{0.8cm}
+F_0(x, y) = \left({x \over 2}, {y \over 2} \right) \\
+~\\
+F_1(x, y) = \left({{x + 1} \over 2}, {y \over 2} \right) \\
+~\\
 F_2(x, y) = \left({x \over 2}, {{y + 1} \over 2} \right)
 $$
 
@@ -141,11 +141,11 @@ Next, how do we find out all the points in $S$? The paper lays out an algorithm 
 
 $$
 \begin{align*}
-&(x, y) = \text{a random point in the bi-unit square} \\
+&(x, y) = \text{random point in the bi-unit square} \\
 &\text{iterate } \{ \\
-&\hspace{1cm} i = \text{a random integer from 0 to } n - 1 \text{ inclusive} \\
+&\hspace{1cm} i = \text{random integer from 0 to } n - 1 \\
 &\hspace{1cm} (x,y) = F_i(x,y) \\
-&\hspace{1cm} \text{plot}(x,y) \text{ except during the first 20 iterations} \\
+&\hspace{1cm} \text{plot}(x,y) \text{ if iterations} > 20 \\
 \}
 \end{align*}
 $$
@@ -199,6 +199,6 @@ import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
 <CodeBlock language={'typescript'}>{chaosGameWeightedSource}</CodeBlock>
 
 import GasketWeighted from "./GasketWeighted";
-import Canvas from "../src/Canvas";
+import {SquareCanvas} from "../src/Canvas";
 
-<Canvas><GasketWeighted/></Canvas>
+<SquareCanvas><GasketWeighted/></SquareCanvas>

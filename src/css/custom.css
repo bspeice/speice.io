@@ -3,6 +3,19 @@
     --ifm-container-width-xl: 1440px;
     --ifm-footer-padding-vertical: .5rem;
     --ifm-spacing-horizontal: .8rem;
+
+    /* Reduce padding on code blocks */
+    --ifm-pre-padding: .6rem;
+
+    /* More readable code highlight background */
+    --docusaurus-highlighted-code-line-bg: var(--ifm-color-emphasis-300);
+
+    /*--ifm-code-font-size: 85%;*/
+}
+
+.katex {
+    /* Default is 1.21, this helps with fitting on mobile screens */
+    font-size: 1.16em;
 }
 
 .header-github-link:hover {

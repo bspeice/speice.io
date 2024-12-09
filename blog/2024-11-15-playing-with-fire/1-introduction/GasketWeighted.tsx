@@ -1,4 +1,4 @@
-import {useEffect, useState, useContext} from "react";
+import {useEffect, useState, useContext, useRef} from "react";
 import {PainterContext} from "../src/Canvas";
 import {chaosGameWeighted} from "./chaosGameWeighted";
 import TeX from '@matejmazur/react-katex';
@@ -30,7 +30,7 @@ export default function GasketWeighted() {
     const weightInput = (title, weight, setWeight) => (
         <>
             <div className={styles.inputElement}>
-                <p><TeX>{title}</TeX> weight: {weight}</p>
+                <p><TeX>{title}</TeX>: {weight}</p>
                 <input type={'range'} min={0} max={1} step={.01} style={{width: '100%'}} value={weight}
                     onInput={e => setWeight(Number(e.currentTarget.value))}/>
             </div>
@@ -39,7 +39,7 @@ export default function GasketWeighted() {
 
     return (
         <>
-            <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: 'auto auto auto'}}>
+            <div className={styles.inputGroup} style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr'}}>
                 {weightInput("F_0", f0Weight, setF0Weight)}
                 {weightInput("F_1", f1Weight, setF1Weight)}
                 {weightInput("F_2", f2Weight, setF2Weight)}

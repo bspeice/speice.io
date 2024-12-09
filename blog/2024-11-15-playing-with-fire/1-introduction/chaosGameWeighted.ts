@@ -6,27 +6,33 @@ import {Transform} from "../src/transform";
 const iterations = 50_000;
 const step = 1000;
 // hidden-end
-export type ChaosGameWeightedProps = {
+type Props = {
     width: number,
     height: number,
     transforms: [number, Transform][]
 }
-export function* chaosGameWeighted({width, height, transforms}: ChaosGameWeightedProps) {
-    let image = new ImageData(width, height);
-    var [x, y] = [randomBiUnit(), randomBiUnit()];
+export function* chaosGameWeighted(
+    {width, height, transforms}: Props
+) {
+  let img = new ImageData(width, height);
+  let [x, y] = [
+      randomBiUnit(),
+      randomBiUnit()
+  ];
 
-    for (let i = 0; i < iterations; i++) {
-        // highlight-start
-        const [_, transform] = randomChoice(transforms);
-        // highlight-end
-        [x, y] = transform(x, y);
+  const iterations = width * height * 0.5;
+  for (let c = 0; c < iterations; c++) {
+    // highlight-start
+    const [_, xform] = randomChoice(transforms);
+    // highlight-end
+    [x, y] = xform(x, y);
 
-        if (i > 20)
-            plot(x, y, image);
+    if (c > 20)
+      plot(x, y, img);
 
-        if (i % step === 0)
-            yield image;
-    }
+    if (c % step === 0)
+      yield img;
+  }
 
-    yield image;
+  yield img;
 }

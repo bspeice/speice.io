@@ -1,6 +1,7 @@
 .inputGroup {
-    padding: .5em;
-    margin: .5em;
+    padding: .2em;
+    margin-top: .2em;
+    margin-bottom: .2em;
     border: 1px solid;
     border-radius: var(--ifm-global-radius);
     border-color: var(--ifm-color-emphasis-500);
