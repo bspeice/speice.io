@@ -44,20 +44,6 @@ const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
     )
 }
 
-const colorSwatchPainter = (palette: number[], color: number) =>
-    (width: number, height: number) => {
-        const [r, g, b] = colorFromPalette(palette, color);
-        const image = new ImageData(width, height);
-        for (let i = 0; i < image.data.length; i += 4) {
-            image.data[i] = r * 0xff;
-            image.data[i + 1] = g * 0xff;
-            image.data[i + 2] = b * 0xff;
-            image.data[i + 3] = 0xff;
-        }
-
-        return image;
-    }
-
 type ColorEditorProps = {
     title: string;
     palette: number[];

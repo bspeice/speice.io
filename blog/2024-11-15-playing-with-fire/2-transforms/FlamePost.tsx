@@ -17,7 +17,7 @@ export default function FlamePost() {
     const resetXform2CoefsPost = () => setXform2CoefsPost(params.xform2CoefsPost);
 
     const [xform3CoefsPost, setXform3CoefsPost] = useState<Coefs>(params.xform3CoefsPost);
-    const resetXform3CoefsPost = () => setXform1CoefsPost(params.xform3CoefsPost);
+    const resetXform3CoefsPost = () => setXform3CoefsPost(params.xform3CoefsPost);
 
     const identityXform: Transform = (x, y) => [x, y];
 

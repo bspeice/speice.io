@@ -1,17 +1,17 @@
-export function paintLinear(width: number, histogram: Uint32Array): ImageData {
-    const image = new ImageData(width, histogram.length / width);
+export function paintLinear(width: number, height: number, histogram: number[]): ImageData {
+    const image = new ImageData(width, height);
 
-    let countMax = 0;
+    let valueMax = 0;
     for (let value of histogram) {
-        countMax = Math.max(countMax, value);
+        valueMax = Math.max(valueMax, value);
     }
 
     for (let i = 0; i < histogram.length; i++) {
         const pixelIndex = i * 4;
-        image.data[pixelIndex] = 0; // red
-        image.data[pixelIndex + 1] = 0; // green
-        image.data[pixelIndex + 2] = 0; // blue
-        image.data[pixelIndex + 3] = Number(histogram[i]) / countMax * 0xff;
+        image.data[pixelIndex] = 0;
+        image.data[pixelIndex + 1] = 0;
+        image.data[pixelIndex + 2] = 0;
+        image.data[pixelIndex + 3] = histogram[i] / valueMax * 0xff;
     }
 
     return image;

@@ -1,5 +1,5 @@
-export function paintLogarithmic(width: number, histogram: Uint32Array): ImageData {
-    const image = new ImageData(width, histogram.length / width);
+export function paintLogarithmic(width: number, height: number, histogram: number[]): ImageData {
+    const image = new ImageData(width, height);
 
     const histogramLog = new Array<number>();
     histogram.forEach(value => histogramLog.push(Math.log(value)));

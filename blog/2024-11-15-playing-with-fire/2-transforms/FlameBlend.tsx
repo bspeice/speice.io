@@ -37,8 +37,6 @@ export default function FlameBlend() {
     const [xform3Variations, setXform3Variations] = useState(xform3VariationsDefault)
     const resetXform3Variations = () => setXform3Variations(xform3VariationsDefault);
 
-    // Cheating a bit here; for purposes of code re-use, use the post- and final-transform-enabled chaos game,
-    // and swap in identity components for each
     const identityXform: Transform = (x, y) => [x, y];
 
     useEffect(() => {

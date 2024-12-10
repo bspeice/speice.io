@@ -25,7 +25,9 @@ export function* chaosGameFinal({width, height, transforms, final}: Props) {
         // highlight-end
 
         if (i > 20)
+            // highlight-start
             plot(finalX, finalY, image);
+            // highlight-end
 
         if (i % step === 0)
             yield image;

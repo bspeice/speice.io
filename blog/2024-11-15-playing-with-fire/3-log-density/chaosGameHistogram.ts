@@ -1,17 +1,19 @@
 // hidden-start
 import {randomBiUnit} from "../src/randomBiUnit";
 import {randomChoice} from "../src/randomChoice";
-import {ChaosGameFinalProps} from "../2-transforms/chaosGameFinal";
+import {Props as ChaosGameFinalProps} from "../2-transforms/chaosGameFinal";
 import {camera, histIndex} from "../src/camera";
-// hidden-end
-export type ChaosGameHistogramProps = ChaosGameFinalProps & {
-    paint: (width: number, histogram: Uint32Array) => ImageData;
-}
-export function* chaosGameHistogram({width, height, transforms, final, quality, step, paint}: ChaosGameHistogramProps) {
-    let iterations = (quality ?? 1) * width * height;
-    step = step ?? 10_000;
 
-    const histogram = new Uint32Array(width * height);
+const quality = 10;
+const step = 100_000;
+// hidden-end
+export type Props = ChaosGameFinalProps & {
+    paint: (width: number, height: number, histogram: number[]) => ImageData;
+}
+export function* chaosGameHistogram({width, height, transforms, final, paint}: Props) {
+    let iterations = quality * width * height;
+
+    const histogram = Array<number>(width * height).fill(0);
 
     let [x, y] = [randomBiUnit(), randomBiUnit()];
 
@@ -22,13 +24,18 @@ export function* chaosGameHistogram({width, height, transforms, final, quality, 
 
         if (i > 20) {
             const [pixelX, pixelY] = camera(finalX, finalY, width);
-            const pixelIndex = histIndex(pixelX, pixelY, width, 1);
-            histogram[pixelIndex] += 1;
+            const hIndex = histIndex(pixelX, pixelY, width, 1);
+
+            if (hIndex < 0 || hIndex >= histogram.length) {
+                continue;
+            }
+
+            histogram[hIndex] += 1;
         }
 
         if (i % step === 0)
-            yield paint(width, histogram);
+            yield paint(width, height, histogram);
     }
 
-    yield paint(width, histogram);
+    yield paint(width, height, histogram);
 }

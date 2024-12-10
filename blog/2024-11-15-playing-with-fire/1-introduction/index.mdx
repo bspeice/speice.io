@@ -24,7 +24,7 @@ import banner from '../banner.png'
 I don't remember exactly when I first learned about fractal flames, but I do remember becoming entranced by the images they created.
 I also remember their unique appeal to my young engineering mind; this was an art form I could participate in.
 
-The original [Fractal Flame](https://flam3.com/flame_draves.pdf) describing their structure was too much
+The original [Fractal Flame Algorithm paper](https://flam3.com/flame_draves.pdf) describing their structure was too much
 for me to handle at the time (I was ~12 years old), so I was content to play around and enjoy the pictures.
 But the desire to understand it stuck around. Now, with a graduate degree under my belt, maybe I can make some progress.
 
@@ -35,7 +35,13 @@ can understand without too much prior knowledge.
 
 ## Iterated function systems
 
-As mentioned above, fractal flames are a type of "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system),"
+:::note
+
+This post covers section 2 of the Fractal Flame Algorithm paper
+
+:::
+
+As mentioned, fractal flames are a type of "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system),"
 or IFS. Their mathematical foundations come from a paper written by [John E. Hutchinson](https://maths-people.anu.edu.au/~john/Assets/Research%20Papers/fractals_self-similarity.pdf),
 but reading that paper isn't critical for our purposes. Instead, we'll focus on building a practical understanding
 of how they work. The formula for an IFS is short, but will take some time to unpack:
@@ -65,17 +71,17 @@ export const simpleData = [
 </VictoryChart>
 
 However, this is a pretty boring image. With fractal flames, rather than listing individual points,
-we use functions to describe which points are part of the solution. This means there are an infinite
+we use functions to describe which points are part of the solution.
+
+TODO: Explain characteristics of the solution - fixed set
+
+This means there are an infinite
 number of points, but if we find _enough_ points to plot, we'll end up with a nice picture.
 And if we choose different functions to start with, our solution set changes, and we'll end up
 with a new picture.
 
 However, it's not clear which points belong in the solution just by staring at the functions.
 We'll need a computer to figure it out.
-
-TODO: Other topics worth covering in this section? Maybe in a `details` block?:
-- Fixed sets: https://en.wiktionary.org/wiki/fixed_set
-- Compact sets
 
 ### Transformation functions
 

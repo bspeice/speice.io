@@ -3,7 +3,8 @@ import { randomBiUnit } from "../src/randomBiUnit";
 import { randomChoice } from "../src/randomChoice";
 import { plot } from "./plot"
 import {Transform} from "../src/transform";
-const iterations = 50_000;
+
+const quality = 0.5;
 const step = 1000;
 // hidden-end
 export type Props = {
@@ -20,8 +21,7 @@ export function* chaosGameWeighted(
       randomBiUnit()
   ];
 
-  // TODO: Explain quality
-  const iterations = width * height * 0.5;
+  const iterations = width * height * quality;
   for (let c = 0; c < iterations; c++) {
     // highlight-start
     const [_, xform] = randomChoice(transforms);
