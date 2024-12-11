@@ -1,6 +1,5 @@
 import React, {useEffect, useState, createContext, useRef} from "react";
 import {useColorMode} from "@docusaurus/theme-common";
-import BrowserOnly from "@docusaurus/BrowserOnly";
 
 type PainterProps = {
     width: number;
@@ -76,13 +75,18 @@ export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
         }
     }, [painter]);
 
-    const filter = useColorMode().colorMode === 'dark' ? 'invert(1)' : '';
+    const canvasProps = {
+        ref: canvasRef,
+        width,
+        height,
+        style: {filter: useColorMode().colorMode === 'dark' ? 'invert(1)' : ''}
+    }
 
     return (
         <>
             <center>
                 <div ref={sizingRef} style={style}>
-                    {width > 0 ? <canvas ref={canvasRef} width={width} height={height} style={{filter}}/> : null}
+                    {width > 0 ? <canvas {...canvasProps}/> : null}
                 </div>
             </center>
             <PainterContext.Provider value={{width, height, setPainter}}>
