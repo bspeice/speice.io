@@ -2,14 +2,32 @@ import React, {useContext, useEffect, useMemo, useRef, useState} from "react";
 import * as params from "../src/params";
 import {PainterContext} from "../src/Canvas";
 import {colorFromPalette} from "./paintColor";
-import {chaosGameColor, ChaosGameColorProps, TransformColor} from "./chaosGameColor";
+import {chaosGameColor, Props as ChaosGameColorProps, TransformColor} from "./chaosGameColor";
 
 import styles from "../src/css/styles.module.css";
 import {histIndex} from "../src/camera";
 import {useColorMode} from "@docusaurus/theme-common";
 
-const paletteBarPainter = (palette: number[]) =>
-    (width: number, height: number) => {
+type PaletteBarProps = {
+    height: number;
+    palette: number[];
+    children?: React.ReactNode;
+}
+const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
+    const sizingRef = useRef<HTMLDivElement>(null);
+    const [width, setWidth] = useState(0);
+    useEffect(() => {
+        if (sizingRef) {
+            setWidth(sizingRef.current.offsetWidth);
+        }
+    }, [sizingRef]);
+
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const paletteImage = useMemo(() => {
+        if (width === 0) {
+            return;
+        }
+
         const image = new ImageData(width, height);
         for (let x = 0; x < width; x++) {
             const colorIndex = x / width;
@@ -23,21 +41,20 @@ const paletteBarPainter = (palette: number[]) =>
                 image.data[pixelIndex + 3] = 0xff;
             }
         }
-        return image;
-    }
 
-type PaletteBarProps = {
-    height: number;
-    palette: number[];
-    children?: React.ReactNode;
-}
-const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
-    const painter = useMemo(() => paletteBarPainter(palette), [palette]);
+        return image;
+    }, [width, height, palette]);
+
+    useEffect(() => {
+        if (canvasRef && paletteImage) {
+            canvasRef.current.getContext("2d").putImageData(paletteImage, 0, 0);
+        }
+    }, [canvasRef, paletteImage]);
 
     return (
         <>
-            <div style={{width: '100%', height, marginTop: '1em', marginBottom: '1em'}}>
-                {/*<AutoSizingCanvas painter={painter}/>*/}
+            <div ref={sizingRef} style={{width: '100%', height}}>
+                {width > 0 ? <canvas ref={canvasRef} width={width} height={height}/> : null}
             </div>
             {children}
         </>
@@ -115,7 +132,6 @@ export default function FlameColor({quality, children}: Props) {
             height,
             transforms: params.xforms,
             final: params.xformFinal,
-            quality,
             palette: params.palette,
             colors: [xform1Color, xform2Color, xform3Color],
             finalColor: xformFinalColor

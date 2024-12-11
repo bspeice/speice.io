@@ -4,11 +4,10 @@ import {PainterContext} from "../src/Canvas";
 import {chaosGameHistogram} from "./chaosGameHistogram";
 
 type Props = {
-    quality?: number;
-    paint: (width: number, histogram: Uint32Array) => ImageData;
+    paint: (width: number, height: number, histogram: number[]) => ImageData;
     children?: React.ReactElement;
 }
-export default function FlameHistogram({quality, paint, children}: Props) {
+export default function FlameHistogram({paint, children}: Props) {
     const {width, height, setPainter} = useContext(PainterContext);
 
     useEffect(() => {
@@ -17,11 +16,10 @@ export default function FlameHistogram({quality, paint, children}: Props) {
             height,
             transforms,
             final,
-            quality,
             paint
         }
         setPainter(chaosGameHistogram(gameParams));
-    }, []);
+    }, [width, height]);
 
     return children;
 }

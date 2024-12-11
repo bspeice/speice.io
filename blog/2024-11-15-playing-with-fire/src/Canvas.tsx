@@ -14,8 +14,17 @@ type CanvasProps = {
     children?: React.ReactElement
 }
 export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const sizingRef = useRef<HTMLDivElement>(null);
+    const [width, setWidth] = useState(0);
+    const [height, setHeight] = useState(0);
+    useEffect(() => {
+        if (sizingRef.current) {
+            setWidth(sizingRef.current.offsetWidth);
+            setHeight(sizingRef.current.offsetHeight);
+        }
+    }, [sizingRef]);
 
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isVisible, setIsVisible] = useState(false);
     useEffect(() => {
         if (!canvasRef.current) {
@@ -35,16 +44,7 @@ export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
                 observer.unobserve(canvasRef.current);
             }
         }
-    }, [canvasRef]);
-
-    const [width, setWidth] = useState(0);
-    const [height, setHeight] = useState(0);
-    useEffect(() => {
-        if (canvasRef.current) {
-            setWidth(canvasRef.current.offsetWidth);
-            setHeight(canvasRef.current.offsetHeight);
-        }
-    }, [canvasRef]);
+    }, [canvasRef.current]);
 
     const [imageHolder, setImageHolder] = useState<[ImageData]>(null);
     useEffect(() => {
@@ -76,25 +76,22 @@ export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
         }
     }, [painter]);
 
-    const {colorMode} = useColorMode();
+    const filter = useColorMode().colorMode === 'dark' ? 'invert(1)' : '';
+
     return (
         <>
-            <canvas
-                ref={canvasRef}
-                width={width}
-                height={height}
-                style={{
-                    filter: colorMode === 'dark' ? 'invert(1)' : '',
-                    ...style
-                }}
-            />
+            <center>
+                <div ref={sizingRef} style={style}>
+                    {width > 0 ? <canvas ref={canvasRef} width={width} height={height} style={{filter}}/> : null}
+                </div>
+            </center>
             <PainterContext.Provider value={{width, height, setPainter}}>
-                <BrowserOnly>{() => children}</BrowserOnly>
+                {width > 0 ? children : null}
             </PainterContext.Provider>
         </>
     )
 }
 
 export const SquareCanvas: React.FC<CanvasProps> = ({style, children}) => {
-    return <Canvas style={{width: '100%', aspectRatio: '1/1', ...style}} children={children}/>
+    return <center><Canvas style={{width: '75%', aspectRatio: '1/1', ...style}} children={children}/></center>
 }
