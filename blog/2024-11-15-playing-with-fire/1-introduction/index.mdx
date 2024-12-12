@@ -6,6 +6,7 @@ authors: [bspeice]
 tags: []
 ---
 
+
 Wikipedia describes fractal flames fractal flames as:
 
 > a member of the iterated function system class of fractals
@@ -40,17 +41,11 @@ This post covers section 2 of the Fractal Flame Algorithm paper
 :::
 
 As mentioned, fractal flames are a type of "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system),"
-or IFS. Their mathematical foundations come from a paper written by [John E. Hutchinson](https://maths-people.anu.edu.au/~john/Assets/Research%20Papers/fractals_self-similarity.pdf),
-but reading that paper isn't critical for our purposes. Instead, we'll focus on building a practical understanding
-of how they work. The formula for an IFS is short, but will take some time to unpack:
+or IFS. The formula for an IFS is short, but will take some time to unpack:
 
 $$
 S = \bigcup_{i=0}^{n-1} F_i(S)
 $$
-
-TODO: I'm not sure what the intuitive explanation here is. Is the idea that the solution is all points
-produced by applying each function to all points in the solution? And the purpose of the chaos game is
-that if we find one point in the solution set, we can effectively discover all the other points?
 
 ### Solution set
 
@@ -91,6 +86,7 @@ F_i(a_i \cdot x + b_i \cdot y + c_i, d_i \cdot x + e_i \cdot y + f_i)
 $$
 
 import transformSource from "!!raw-loader!../src/transform"
+import CodeBlock from '@theme/CodeBlock'
 
 <CodeBlock language="typescript">{transformSource}</CodeBlock>
 
@@ -135,35 +131,63 @@ export const shiftData = simpleData.map(({x, y}) => toData(applyCoefs(x, y, coef
 
 Fractal flames use more complex functions, but they all start with this structure.
 
-<details>
-    <summary>If you're interested in more math...</summary>
-
-    TODO: Contractive functions, attractors, etc.?
-</details>
-
 ### Fixed set
 
-With those definitions in place, we can try stating the original problem in
-a more natural way:
+With those definitions in place, let's revisit the initial problem:
 
 $$
 S = \bigcup_{i=0}^{n-1} F_i(S)
 $$
 
-> The solution, $S$, is the union of all sets produced by applying each function, $F_i$,
+Or, to put it in English, we would get something like this:
+
+> Our solution, $S$, is the union of all sets produced by applying each function, $F_i$,
 > to points in the solution.
 
-There's just one small problem: to solve the equation, we must already know what the solution is?
+There's just one small problem: to find the solution, we must apply these functions to points
+we know are in the solution. But how do we know which points are in the solution to start with?
 
-TODO: Phrase it another way?
-A point is in the solution if it can be reached by applying
-one of the functions to another point in the solution?
-Is that the definition of a fixed set?
+John E. Hutchinson provides an answer in the [original paper](https://maths-people.anu.edu.au/~john/Assets/Research%20Papers/fractals_self-similarity.pdf)
+explaining the mathematics of iterated function systems:
+
+> Furthermore, $S$ is compact and is the closure of the set of fixed points $s_{i_1...i_p}$
+> of finite compositions $F_{i_1...i_p}$ of members of $F$.
+
+:::note
+I've tweaked the wording slightly to match the conventions in the Fractal Flame paper
+:::
+
+Before your eyes glaze over, let's unpack this explanation:
+
+- **$S$ is [compact](https://en.wikipedia.org/wiki/Compact_space)...**: All points in our solution will be in a finite range
+- **...and is the [closure](https://en.wikipedia.org/wiki/Closure_(mathematics)) of the set of [fixed points](https://en.wikipedia.org/wiki/Fixed_point_(mathematics))**:
+  Applying our functions to these points does not change them
+- **...of finite compositions $F_{i_1...i_p}$ of members of $F$**: By composing our functions (that is,
+  using the output of one function as input to the next function), we will arrive at the points we care about
+
+Thus, by applying the functions in our system to "fixed points," we will find the other points we care about.
+
+However, this is all a bit vague, so let's work through an example.
+
+<details>
+    <summary>But if you want a bit more math...</summary>
+
+    ...then it's worth mentioning some information I've skipped over.
+
+    First, the Hutchinson paper explains that the functions $F_i$ must be _contractive_ for this result to hold.
+    That is, applying the function to a point must bring it closer to other points. However, as the Fractal Flame
+    algorithm demonstrates, we only need functions to be contractive _on average_. At worst, the system will
+    degenerate and produce a bad image.
+
+    Second, we're focused $\mathbb{R}^2$ because we're generating images, but the Hutchinson paper
+    allows for arbitrary dimensions - which means you could also have 3-dimensional fractal flames.
+
+    TODO: Mention attractors? https://en.wikipedia.org/wiki/Chaos_game
+</details>
 
 ## Sierpinski's gasket
 
-With the math out of the way, we're ready to build our first IFS.
-The Fractal Flame paper provides us three functions we can use for our system:
+The Fractal Flame paper gives us three functions we can use for our function system:
 
 $$
 F_0(x, y) = \left({x \over 2}, {y \over 2} \right) \\
@@ -175,9 +199,8 @@ $$
 
 ### The chaos game
 
-import CodeBlock from '@theme/CodeBlock'
-
-Next, how do we find out all the points in $S$? The paper lays out an algorithm called the "chaos game":
+Next, how do we find the "fixed points" we mentioned earlier? The paper lays out an algorithm called the "[chaos game](https://en.wikipedia.org/wiki/Chaos_game)"
+that will give us points in the solution set:
 
 $$
 \begin{align*}
@@ -244,8 +267,9 @@ import chaosGameSource from '!!raw-loader!./chaosGame'
 <hr/>
 
 <small>
-Note: The image here is slightly different than the one in the paper.
-I think the paper has an error, so I'm choosing to plot the image in a way that's consistent with [`flam3` itself](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
+The image here is slightly different than the one in the paper.
+I think the paper has an error, so I'm choosing to plot the image
+    in a way that's consistent with [`flam3` itself](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
 </small>
 
 ## Weights
