@@ -30,5 +30,4 @@ function* chaosGame({width, height}) {
   yield img;
 }
 
-// Wiring so the code above displays properly
 render(<Gasket f={chaosGame}/>)

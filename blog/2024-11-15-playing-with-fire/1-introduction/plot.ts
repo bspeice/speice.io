@@ -1,10 +1,6 @@
-/**
- * ImageData is an array that contains
- * four elements per pixel (one for each
- * red, green, blue, and alpha value).
- * This maps from pixel coordinates
- * to the array index
- */
+// hidden-start
+import {camera} from "./cameraGasket"
+// hidden-end
 function imageIndex(
   width: number,
   x: number,
@@ -18,17 +14,9 @@ export function plot(
   y: number,
   img: ImageData
 ) {
-  // Translate (x,y) coordinates
-  // to pixel coordinates.
-  // Also known as a "camera" function.
-  //
-  // The display range is:
-  //  x=[0, 1]
-  //  y=[0, 1]
-  let pixelX = Math.floor(x * img.width);
-  let pixelY = Math.floor(y * img.height);
+  let [pixelX, pixelY] = camera(img.width, x, y);
 
-  const index = imageIndex(
+  const i = imageIndex(
     img.width,
     pixelX,
     pixelY
@@ -36,17 +24,18 @@ export function plot(
 
   // Skip pixels outside the display range
   if (
-    index < 0 ||
-    index > img.data.length
+    i < 0 ||
+    i > img.data.length
   ) {
     return;
   }
 
   // Set the pixel to black by writing 0
-  // to the first three elements,
-  // and 255 to the last element
-  img.data[index] = 0;
-  img.data[index + 1] = 0;
-  img.data[index + 2] = 0;
-  img.data[index + 3] = 0xff;
+  // to the first three elements at the index
+  // (red, green, and blue, respectively),
+  // and 255 to the last element (alpha)
+  img.data[i] = 0;
+  img.data[i + 1] = 0;
+  img.data[i + 2] = 0;
+  img.data[i + 3] = 0xff;
 }

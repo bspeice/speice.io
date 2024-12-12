@@ -36,9 +36,7 @@ can understand without too much prior knowledge.
 ## Iterated function systems
 
 :::note
-
 This post covers section 2 of the Fractal Flame Algorithm paper
-
 :::
 
 As mentioned, fractal flames are a type of "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system),"
@@ -50,14 +48,17 @@ $$
 S = \bigcup_{i=0}^{n-1} F_i(S)
 $$
 
-### Fixed set
+TODO: I'm not sure what the intuitive explanation here is. Is the idea that the solution is all points
+produced by applying each function to all points in the solution? And the purpose of the chaos game is
+that if we find one point in the solution set, we can effectively discover all the other points?
 
-First, $S$. $S$ is the set of points in two dimensions (in math terms, $S \in \mathbb{R}^2$) that represent
-a "solution" of some kind. Our goal is to find all points in the set $S$, plot them, and display that image.
+### Solution set
+
+First, $S$. $S$ is the set of points in two dimensions (in math terms, $S \in \mathbb{R}^2$)
+that represent a "solution" of some kind to our equation.
+Our goal is to find all points in $S$, plot them, and display that image.
 
 For example, if we say $S = \{(0,0), (1, 1), (2, 2)\}$, there are three points to plot:
-
-<!-- TODO: What is a stationary point? How does it relate to the chaos game? Why does the chaos game work? -->
 
 import {VictoryChart, VictoryTheme, VictoryScatter, VictoryLegend} from "victory";
 export const simpleData = [
@@ -71,35 +72,52 @@ export const simpleData = [
 </VictoryChart>
 
 However, this is a pretty boring image. With fractal flames, rather than listing individual points,
-we use functions to describe which points are part of the solution.
-
-TODO: Explain characteristics of the solution - fixed set
-
-This means there are an infinite
+we use functions to describe which points are part of the solution. This means there are an infinite
 number of points, but if we find _enough_ points to plot, we'll end up with a nice picture.
-And if we choose different functions to start with, our solution set changes, and we'll end up
-with a new picture.
+And if we change the functions, our solution changes, and we'll get a new picture.
 
-However, it's not clear which points belong in the solution just by staring at the functions.
-We'll need a computer to figure it out.
+### Transform functions
 
-### Transformation functions
+Second, the $F_i(S)$ functions, also known as "transforms."
+At their most basic, each $F_i$ takes in a 2-dimensional point and gives back a new point
+(in math terms, $F_i \in \mathbb{R}^2 \rightarrow \mathbb{R}^2$).
+While you could theoretically use any function, we'll focus on a specific kind of function
+known as an "[affine transformation](https://en.wikipedia.org/wiki/Affine_transformation)."
 
-Second, $F_i(S)$. At their most basic, each $F_i$ is a function that takes in a 2-dimensional point and transforms
-it into a new 2-dimensional point: $F_i \in \mathbb{R}^2 \rightarrow \mathbb{R}^2$. It's worth discussing
-these functions, but not critical, so **this section is optional**.
-
-In mathematical terms, each $F_i$ is a special kind of function called an [affine transformation](https://en.wikipedia.org/wiki/Affine_transformation).
-We can think of them like mapping from one coordinate system to another. For example, we can define a coordinate system
-where everything is shifted over:
+The general form of an affine transformation is:
 
 $$
-F_{shift}(x, y) = (x + 1, y)
+F_i(a_i \cdot x + b_i \cdot y + c_i, d_i \cdot x + e_i \cdot y + f_i)
 $$
 
-That is, for an input point $(x, y)$, the output point will be $(x + 1, y)$:
+import transformSource from "!!raw-loader!../src/transform"
 
-export const shiftData = simpleData.map(({x, y}) => { return {x: x + 1, y} })
+<CodeBlock language="typescript">{transformSource}</CodeBlock>
+
+The parameters ($a_i$, $b_i$, etc.) are values we get to choose.
+For example, we can represent a "shift" function like this:
+
+$$
+\begin{align*}
+a &= 1 \\
+b &= 0 \\
+c &= 0.5 \\
+d &= 0 \\
+e &= 1 \\
+f &= 1.5 \\
+F_{shift}(x,y) &= (1 \cdot x + 0 \cdot y + 0.5, 0 \cdot x + 1 \cdot y + 0.5) \\
+F_{shift}(x, y) &= (x + 0.5, y + 0.5)
+\end{align*}
+$$
+
+Applying this function to our original points will give us a new set of points:
+
+import {applyCoefs} from "../src/transform"
+
+export const coefs = {a: 1, b: 0, c: 0.5, d: 0, e: 1, f: 1.5}
+export const toData = ([x, y]) => ({x, y})
+
+export const shiftData = simpleData.map(({x, y}) => toData(applyCoefs(x, y, coefs)))
 
 <VictoryChart theme={VictoryTheme.clean}>
     <VictoryScatter data={simpleData} size={5} style={{data: {fill: "blue"}}}/>
@@ -115,32 +133,37 @@ export const shiftData = simpleData.map(({x, y}) => { return {x: x + 1, y} })
     />
 </VictoryChart>
 
-This is a simple example designed to illustrate the principle. In general, $F_i$ functions have the form:
+Fractal flames use more complex functions, but they all start with this structure.
+
+<details>
+    <summary>If you're interested in more math...</summary>
+
+    TODO: Contractive functions, attractors, etc.?
+</details>
+
+### Fixed set
+
+With those definitions in place, we can try stating the original problem in
+a more natural way:
 
 $$
-F_i(x,y) = (a_i \cdot x + b_i \cdot y + c_i, d_i \cdot x + e_i \cdot y + f_i)
+S = \bigcup_{i=0}^{n-1} F_i(S)
 $$
 
-The parameters ($a_i$, $b_i$, etc.) are values we get to choose. In the example above, we can represent our shift
-function using these parameters:
+> The solution, $S$, is the union of all sets produced by applying each function, $F_i$,
+> to points in the solution.
 
-$$
-a_i = 1 \hspace{0.5cm} b_i = 0 \hspace{0.5cm} c_i = 1 \\
-d_i = 0 \hspace{0.5cm} e_i = 1 \hspace{0.5cm} f_i = 0 \\
-$$
+There's just one small problem: to solve the equation, we must already know what the solution is?
 
-$$
-\begin{align*}
-F_{shift}(x,y) &= (1 \cdot x + 0 \cdot y + 1, 0 \cdot x + 1 \cdot y + 0) \\
-F_{shift}(x,y) &= (x + 1, y)
-\end{align*}
-$$
-
-Fractal flames use more complex functions to produce a wide variety of images, but all follow this same format.
+TODO: Phrase it another way?
+A point is in the solution if it can be reached by applying
+one of the functions to another point in the solution?
+Is that the definition of a fixed set?
 
 ## Sierpinski's gasket
 
-Using these definitions, we can build the first image. The paper defines a function system for us:
+With the math out of the way, we're ready to build our first IFS.
+The Fractal Flame paper provides us three functions we can use for our system:
 
 $$
 F_0(x, y) = \left({x \over 2}, {y \over 2} \right) \\
@@ -169,7 +192,7 @@ $$
 
 Let's turn this into code, one piece at a time.
 
-First, the "bi-unit square" is the range $[-1, 1]$. We can pick a random point like this:
+First, the "bi-unit square" is the range $[-1, 1]$. We can :
 
 import biunitSource from '!!raw-loader!../src/randomBiUnit'
 
@@ -181,13 +204,35 @@ import randintSource from '!!raw-loader!../src/randomInteger'
 
 <CodeBlock language="typescript">{randintSource}</CodeBlock>
 
-Finally, implementing the `plot` function. Web browsers have a [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
-we can use for 2D graphics. In our case, the plot function will take an $(x,y)$ coordinate and plot it by
-coloring the corresponding pixel in an [ImageData](https://developer.mozilla.org/en-US/docs/Web/API/ImageData):
+### Plotting
+
+Finally, implementing the `plot` function. This blog series
+is designed to be interactive, so everything shows
+real-time directly in the browser. As an alternative,
+software like `flam3` an Apophysis can also save an image.
+
+To display the results, we'll use the [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API).
+This allows us to manipulate individual pixels an image,
+and display it on screen.
+
+First, we need to convert from Fractal Flame coordinates to pixel coordinates.
+To simplify things, we'll assume that we're plotting a square image,
+and we'll focus on the range $[0, 1]$ for both $x$ and $y$:
+
+import cameraSource from "!!raw-loader!./cameraGasket"
+
+<CodeBlock language="typescript">{cameraSource}</CodeBlock>
+
+Next, we'll use an [`ImageData` object](https://developer.mozilla.org/en-US/docs/Web/API/ImageData)
+to store the pixel data.
+Each pixel in the image on screen has a corresponding index in the `data` array.
+To plot our image, we set that pixel to be black:
 
 import plotSource from '!!raw-loader!./plot'
 
 <CodeBlock language="typescript">{plotSource}</CodeBlock>
+
+Putting it all together, we have our first image:
 
 import Playground from '@theme/Playground'
 import Scope from './scope'
@@ -199,8 +244,8 @@ import chaosGameSource from '!!raw-loader!./chaosGame'
 <hr/>
 
 <small>
-Note: The image here is slightly different than the fractal flame paper; I think the paper has an error,
-so I'm choosing to plot the image in a way that's consistent with [`flam3` itself](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
+Note: The image here is slightly different than the one in the paper.
+I think the paper has an error, so I'm choosing to plot the image in a way that's consistent with [`flam3` itself](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
 </small>
 
 ## Weights

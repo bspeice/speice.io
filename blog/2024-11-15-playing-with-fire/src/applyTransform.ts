@@ -1,5 +1,4 @@
-import {Transform} from "./transform";
-import {applyCoefs, Coefs} from "./coefs";
+import {Transform, Coefs, applyCoefs} from "./transform";
 import {blend, VariationBlend} from "./blend";
 
 export const applyTransform = (coefs: Coefs, variations: VariationBlend): Transform =>
