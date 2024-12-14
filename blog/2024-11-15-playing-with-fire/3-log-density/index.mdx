@@ -6,13 +6,11 @@ authors: [bspeice]
 tags: []
 ---
 
-So far, our `plot()` function has been fairly simple; map an input coordinate
-to a specific pixel, and color in that pixel.
-This works well for simple function systems (like Sierpinski's Gasket),
+So far, our `plot()` function has been fairly simple; map an input coordinate to a specific pixel,
+and color in that pixel. This works well for simple function systems (like Sierpinski's Gasket),
 but more complex systems (like our reference parameters) produce grainy images.
 
-Every additional time we plot a pixel, we're wasting work.
-Can we do something more intelligent instead?
+In this post, we'll refine the image quality and add color to really make things shine.
 
 <!-- truncate -->
 
@@ -22,13 +20,14 @@ Can we do something more intelligent instead?
 This post covers sections 4 and 5 of the Fractal Flame Algorithm paper
 :::
 
-To start with, it's worth demonstrating how much work is actually "wasted."
-Previously, pixels would be either transparent or opaque depending on whether
-we encountered them while running the chaos game.
+To start, it's worth demonstrating how much work is actually "wasted"
+when we treat pixels as a binary "on" (opaque) or "off" (transparent).
 
-We'll render the reference image again, but this time, keep track of how many times
-we encounter each pixel during the chaos game. At the end, we'll "paint" our final image
-by setting each pixel's transparency based on how frequently we encounter it:
+We'll render the reference image again, but this time, track each time
+we encounter each pixel during the chaos game. When the chaos game finishes,
+find the pixel we encountered most frequently. Finally, "paint" the image
+by setting each pixel's transparency to ratio of times encountered
+divided by the maximum value:
 
 import CodeBlock from "@theme/CodeBlock";
 
@@ -40,27 +39,40 @@ import {SquareCanvas} from "../src/Canvas";
 import FlameHistogram from "./FlameHistogram";
 import {paintLinear} from "./paintLinear";
 
-<SquareCanvas><FlameHistogram quality={5} paint={paintLinear}/></SquareCanvas>
+<SquareCanvas><FlameHistogram quality={15} paint={paintLinear}/></SquareCanvas>
 
 ## Log display
 
-Using a histogram to paint our image is definitely a quality improvement,
-but it produces "ghostly" images. In our reference parameters, the outer circle
+While using a histogram to paint the image improves the quality,
+it also leads to some parts vanishing entirely.
+In the reference parameters, the outer circle
 is preserved, but the interior appears to be missing!
 
-To fix this, we'll introduce the second major innovation of the fractal flame algorithm: tone mapping.
-This technique is used in computer graphics to adjust for the fact that
-people perceive brightness on a logarithmic scale.
+To fix this, we'll introduce the second major innovation of the fractal flame algorithm: [tone mapping](https://en.wikipedia.org/wiki/Tone_mapping).
+This is a technique used in computer graphics to compensate for differences in how
+computers represent color, and how color is perceived by people.
 
 As a concrete example, high dynamic range (HDR) photography uses this technique to capture
-nice images of scenes with very different brightness levels. If you want to take a picture of something dark,
-you need a long exposure time. However, long exposures lead to bright spots that "wash out" and become nothing but white.
-If we take multiple images using different exposure times, we can blend them together to create
+nice images of scenes with wide brightness ranges. To take a picture of something dark,
+you need a long exposure time. However, long exposures can lead to images that "wash out" and become pure white.
+By taking multiple pictures using different exposure times, we can combine them to create
 a final image where everything is visible.
 
-TODO: HDR link?
+In fractal flames, this "tone map" is accomplished by scaling brightness according to the _logarithm_
+of how many times we encounter a pixel. This way, "dark spots" (pixels the chaos game visits infrequently)
+will still be visible, and "bright spots" (pixels the chaos game visits frequently) won't wash out.
 
-In fractal flames, this "tone map" is accomplished
+<details>
+    <summary>Log-scale vibrancy is also why fractal flames appear to be 3D...</summary>
+
+    As explained in the Fractal Flame paper:
+
+    > Where one branch of the fractal crosses another, one may appear to occlude the other
+    > if their densities are different enough because the lesser density is inconsequential in sum.
+    > For example, branches of densities 1000 and 100 might have brightnesses of 30 and 20.
+    > Where they cross the density is 1100, whose brightness is 30.4, which is
+    > hardly distinguishable from 30.
+</details>
 
 import paintLogarithmicSource from "!!raw-loader!./paintLogarithmic"
 
@@ -68,9 +80,28 @@ import paintLogarithmicSource from "!!raw-loader!./paintLogarithmic"
 
 import {paintLogarithmic} from './paintLogarithmic'
 
-<SquareCanvas><FlameHistogram quality={10} paint={paintLogarithmic}/></SquareCanvas>
+<SquareCanvas><FlameHistogram quality={15} paint={paintLogarithmic}/></SquareCanvas>
 
 ## Color
+
+Finally, we'll spice things up with the last innovation introduced by
+the fractal flame algorithm: color. By including a color coordinate
+in the chaos game, we can illustrate the transforms that are responsible
+for each part of an image.
+
+### Palette
+
+Our first step is to define a color palette for the image. Fractal flames
+typically use a palette of 256 colors that transition smoothly
+from one to another. In the diagram below, each color in our palette is plotted
+on a small strip. Putting the strips side by side shows the palette for our image:
+
+import * as params from "../src/params"
+import {PaletteBar} from "./FlameColor"
+
+<PaletteBar height="40" palette={params.palette}/>
+
+### Color coordinate
 
 import paintColorSource from "!!raw-loader!./paintColor"
 

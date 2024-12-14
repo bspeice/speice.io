@@ -13,7 +13,7 @@ type PaletteBarProps = {
     palette: number[];
     children?: React.ReactNode;
 }
-const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
+export const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
     const sizingRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
     useEffect(() => {
@@ -51,10 +51,12 @@ const PaletteBar: React.FC<PaletteBarProps> = ({height, palette, children}) => {
         }
     }, [canvasRef, paletteImage]);
 
+    const canvasStyle = {filter: useColorMode().colorMode === 'dark' ? 'invert(1)' : ''};
+
     return (
         <>
             <div ref={sizingRef} style={{width: '100%', height}}>
-                {width > 0 ? <canvas ref={canvasRef} width={width} height={height}/> : null}
+                {width > 0 ? <canvas ref={canvasRef} width={width} height={height} style={canvasStyle}/> : null}
             </div>
             {children}
         </>

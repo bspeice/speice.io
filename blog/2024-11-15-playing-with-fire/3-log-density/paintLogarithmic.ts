@@ -1,7 +1,7 @@
 export function paintLogarithmic(width: number, height: number, histogram: number[]): ImageData {
     const image = new ImageData(width, height);
 
-    const histogramLog = new Array<number>();
+    const histogramLog: number[] = [];
     histogram.forEach(value => histogramLog.push(Math.log(value)));
 
     let histogramLogMax = -Infinity;

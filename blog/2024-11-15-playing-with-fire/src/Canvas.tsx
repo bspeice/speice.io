@@ -1,4 +1,4 @@
-import React, {useEffect, useState, createContext, useRef} from "react";
+import React, {useEffect, useState, createContext, useRef, MouseEvent} from "react";
 import {useColorMode} from "@docusaurus/theme-common";
 
 type PainterProps = {
@@ -7,6 +7,13 @@ type PainterProps = {
     setPainter: (painter: Iterator<ImageData>) => void;
 }
 export const PainterContext = createContext<PainterProps>(null)
+
+const downloadImage = (e: MouseEvent) => {
+    const link = document.createElement("a");
+    link.download = "flame.png";
+    link.href = (e.target as HTMLCanvasElement).toDataURL("image/png");
+    link.click();
+}
 
 type CanvasProps = {
     style?: any;
@@ -86,7 +93,7 @@ export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
         <>
             <center>
                 <div ref={sizingRef} style={style}>
-                    {width > 0 ? <canvas {...canvasProps}/> : null}
+                    {width > 0 ? <canvas {...canvasProps} onDoubleClick={downloadImage}/> : null}
                 </div>
             </center>
             <PainterContext.Provider value={{width, height, setPainter}}>
