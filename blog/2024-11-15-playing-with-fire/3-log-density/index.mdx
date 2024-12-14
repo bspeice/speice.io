@@ -11,8 +11,8 @@ to a specific pixel, and color in that pixel.
 This works well for simple function systems (like Sierpinski's Gasket),
 but more complex systems (like our reference parameters) produce grainy images.
 
-Every time we "turn on" pixels that have already been enabled, we're wasting work.
-Can we do something more intelligent with that information?
+Every additional time we plot a pixel, we're wasting work.
+Can we do something more intelligent instead?
 
 <!-- truncate -->
 
@@ -23,8 +23,12 @@ This post covers sections 4 and 5 of the Fractal Flame Algorithm paper
 :::
 
 To start with, it's worth demonstrating how much work is actually "wasted."
-We'll render the reference image again, but this time, set each pixel's transparency
-based on how many times we encounter it in the chaos game:
+Previously, pixels would be either transparent or opaque depending on whether
+we encountered them while running the chaos game.
+
+We'll render the reference image again, but this time, keep track of how many times
+we encounter each pixel during the chaos game. At the end, we'll "paint" our final image
+by setting each pixel's transparency based on how frequently we encounter it:
 
 import CodeBlock from "@theme/CodeBlock";
 
@@ -39,6 +43,24 @@ import {paintLinear} from "./paintLinear";
 <SquareCanvas><FlameHistogram quality={5} paint={paintLinear}/></SquareCanvas>
 
 ## Log display
+
+Using a histogram to paint our image is definitely a quality improvement,
+but it produces "ghostly" images. In our reference parameters, the outer circle
+is preserved, but the interior appears to be missing!
+
+To fix this, we'll introduce the second major innovation of the fractal flame algorithm: tone mapping.
+This technique is used in computer graphics to adjust for the fact that
+people perceive brightness on a logarithmic scale.
+
+As a concrete example, high dynamic range (HDR) photography uses this technique to capture
+nice images of scenes with very different brightness levels. If you want to take a picture of something dark,
+you need a long exposure time. However, long exposures lead to bright spots that "wash out" and become nothing but white.
+If we take multiple images using different exposure times, we can blend them together to create
+a final image where everything is visible.
+
+TODO: HDR link?
+
+In fractal flames, this "tone map" is accomplished
 
 import paintLogarithmicSource from "!!raw-loader!./paintLogarithmic"
 

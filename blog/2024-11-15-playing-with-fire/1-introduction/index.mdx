@@ -170,11 +170,11 @@ Thus, by applying the functions in our system to "fixed points," we will find th
 However, this is all a bit vague, so let's work through an example.
 
 <details>
-    <summary>But if you want a bit more math...</summary>
+    <summary>If you want a bit more math first...</summary>
 
-    ...then it's worth mentioning some information I've skipped over.
+    ...then there are some details worth mentioning that I've glossed over so far.
 
-    First, the Hutchinson paper explains that the functions $F_i$ must be _contractive_ for this result to hold.
+    First, the Hutchinson paper requires that the functions $F_i$ be _contractive_ tor the solution set to exist.
     That is, applying the function to a point must bring it closer to other points. However, as the Fractal Flame
     algorithm demonstrates, we only need functions to be contractive _on average_. At worst, the system will
     degenerate and produce a bad image.
@@ -200,7 +200,7 @@ $$
 ### The chaos game
 
 Next, how do we find the "fixed points" we mentioned earlier? The paper lays out an algorithm called the "[chaos game](https://en.wikipedia.org/wiki/Chaos_game)"
-that will give us points in the solution set:
+that will give us points in the solution set.
 
 $$
 \begin{align*}
@@ -213,7 +213,11 @@ $$
 \end{align*}
 $$
 
-Let's turn this into code, one piece at a time.
+:::note
+In effect, the chaos game algorithm implements the "finite compositions of $F_{i_1..i_p}$ mentioned earlier.
+:::
+
+Now, let's turn this into code, one piece at a time.
 
 First, the "bi-unit square" is the range $[-1, 1]$. We can :
 
@@ -272,10 +276,13 @@ I think the paper has an error, so I'm choosing to plot the image
     in a way that's consistent with [`flam3` itself](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
 </small>
 
-## Weights
+### Weights
 
-Finally, we'll introduce a "weight" parameter ($w_i$) assigned to each function, which controls
-how often that function is used:
+Finally, we'll introduce a "weight" ($w_i$) for each function that controls how often we choose
+that function during the chaos game relative to each other function.
+
+For Sierpinski's Gasket, we start with equal weighting,
+but you can see how changing the function weights affects the image below:
 
 import randomChoiceSource from '!!raw-loader!../src/randomChoice'
 
@@ -289,3 +296,12 @@ import GasketWeighted from "./GasketWeighted";
 import {SquareCanvas} from "../src/Canvas";
 
 <SquareCanvas><GasketWeighted/></SquareCanvas>
+
+## Summary
+
+Studying the foundations of fractal flames is challenging,
+but we now have an understanding of both the mathematics
+and implementation of iterated function systems.
+
+In the next post, we'll study the first innovation that fractal flames
+bring: variations.
