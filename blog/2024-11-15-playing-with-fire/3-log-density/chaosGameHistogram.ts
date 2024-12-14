@@ -13,7 +13,9 @@ export type Props = ChaosGameFinalProps & {
 export function* chaosGameHistogram({width, height, transforms, final, paint}: Props) {
     let iterations = quality * width * height;
 
+    // highlight-start
     const histogram = Array<number>(width * height).fill(0);
+    // highlight-end
 
     let [x, y] = [randomBiUnit(), randomBiUnit()];
 
@@ -23,6 +25,7 @@ export function* chaosGameHistogram({width, height, transforms, final, paint}: P
         const [finalX, finalY] = final(x, y);
 
         if (i > 20) {
+            // highlight-start
             const [pixelX, pixelY] = camera(finalX, finalY, width);
             const hIndex = histIndex(pixelX, pixelY, width, 1);
 
@@ -31,6 +34,7 @@ export function* chaosGameHistogram({width, height, transforms, final, paint}: P
             }
 
             histogram[hIndex] += 1;
+            // highlight-end
         }
 
         if (i % step === 0)

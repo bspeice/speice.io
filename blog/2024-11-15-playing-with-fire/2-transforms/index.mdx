@@ -180,9 +180,23 @@ import FlamePost from "./FlamePost";
 ## Final transforms
 
 Our last step is to introduce a "final transform" ($F_{final}$) that is applied
-regardless of which transform function we're using. It works just like a normal transform
+regardless of which transform the chaos game selects. It works just like a normal transform
 (composition of affine transform, variation blend, and post transform),
-but it doesn't change the chaos game state:
+but it doesn't change the chaos game state.
+
+With that in place, our chaos game algorithm changes slightly:
+
+$$
+\begin{align*}
+&(x, y) = \text{random point in the bi-unit square} \\
+&\text{iterate } \{ \\
+&\hspace{1cm} i = \text{random integer from 0 to } n - 1 \\
+&\hspace{1cm} (x,y) = F_i(x,y) \\
+&\hspace{1cm} (x_f,y_f) = F_{final}(x,y) \\
+&\hspace{1cm} \text{plot}(x_f,y_f) \text{ if iterations} > 20 \\
+\}
+\end{align*}
+$$
 
 import chaosGameFinalSource from "!!raw-loader!./chaosGameFinal"
 
@@ -198,4 +212,4 @@ Variations are the fractal flame algorithm's first major innovation over previou
 Blending variation functions and post/final transforms allows us to generate interesting images.
 
 However, the images themselves are grainy and unappealing. In the next post, we'll clean up
-the quality and add color.
+the image quality and add some color.
