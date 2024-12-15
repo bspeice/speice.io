@@ -14,7 +14,7 @@ export function Render({f}) {
 
 export default function Gasket({f}) {
     return (
-        <SquareCanvas>
+        <SquareCanvas name={"gasket"}>
             <Render f={f}/>
         </SquareCanvas>
     )

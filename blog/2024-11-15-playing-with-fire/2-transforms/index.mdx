@@ -12,9 +12,9 @@ shapes and patterns that fractal flames are known for.
 <!-- truncate -->
 
 :::info
-This post uses a set of [reference parameters](../params.flame) to demonstrate the fractal flame algorithm.
+This post uses [reference parameters](../params.flame) to demonstrate the fractal flame algorithm.
 If you're interested in tweaking the parameters, or generating your own art, [Apophysis](https://sourceforge.net/projects/apophysis/)
-can load that file and you can try tweaking things yourself!
+can load that file to play around with!
 :::
 
 ## Variations
@@ -30,8 +30,8 @@ playing the chaos game leads to an image of Sierpinski's Gasket. Even though we 
 the image it generates is exciting. But it's still not nearly as exciting as the images the Fractal Flame
 algorithm is known for.
 
-This leads us to the first big innovation of the Fractal Flame algorithm: applying non-linear functions
-after the affine transform has happened. These functions are called "variations":
+This leads us to the first big innovation of the Fractal Flame algorithm: adding non-linear functions
+after the affine transform. These functions are called "variations":
 
 $$
 F_i(x, y) = V_j(a_i \cdot x + b_i \cdot y + c_i, d_i \cdot x + e_i \cdot y + f_i)
@@ -41,8 +41,9 @@ import variationSource from '!!raw-loader!../src/variation'
 
 <CodeBlock language="typescript">{variationSource}</CodeBlock>
 
-Just like transforms, variations ($V_j$) are functions that map $(x, y)$ coordinates to new coordinates.
-However, the sky is the limit for what we can do in between input and output.
+Just like transforms, variations ($V_j$) are functions that take in $(x, y)$ coordinates
+and give back new $(x, y)$ coordinates.
+However, the sky is the limit for what happens between input and output.
 The Fractal Flame paper lists 49 different variation functions,
 and the official `flam3` implementation supports [98 different variations](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/variations.c).
 
@@ -70,8 +71,6 @@ apply the affine coefficients to the input point, and use that as the output poi
 This variation is a good example of the non-linear functions we can use. It uses both trigonometry
 and probability to produce interesting shapes:
 
-TODO: Connection with the julia set?
-
 $$
 \begin{align*}
 r &= \sqrt{x^2 + y^2} \\
@@ -93,7 +92,7 @@ import juliaSrc from '!!raw-loader!../src/julia'
 
 ### Popcorn (variation 17)
 
-Some variations rely on knowing their transform's affine coefficients; they're known as "dependent variations."
+Some variations rely on knowing the transform's affine coefficients; they're called "dependent variations."
 For the popcorn variation, we use $c$ and $f$:
 
 $$
@@ -106,7 +105,7 @@ import popcornSrc from '!!raw-loader!../src/popcorn'
 
 ### PDJ (variation 24)
 
-Some variations have extra parameters we can choose; these are known as "parametric variations."
+Some variations have extra parameters; they're called "parametric variations."
 For the PDJ variation, there are four extra parameters we can choose:
 
 $$
@@ -122,7 +121,7 @@ import pdjSrc from '!!raw-loader!../src/pdj'
 
 Now, one variation is fun, but we can also combine variations in a process called "blending."
 Each variation receives the same $x$ and $y$ inputs, and we add together each variation's $x$ and $y$ outputs.
-We'll also give each variation a weight (called $v_{ij}$) that changes how much it contributes to the transform:
+We'll also give each variation a weight ($v_{ij}$) that changes how much it contributes to the result:
 
 $$
 F_i(x,y) = \sum_{j} v_{ij} V_j(a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
@@ -144,11 +143,12 @@ Try using the variation weight sliders to figure out which parts of the image ea
 import {SquareCanvas} from "../src/Canvas";
 import FlameBlend from "./FlameBlend";
 
-<SquareCanvas><FlameBlend/></SquareCanvas>
+<SquareCanvas name={"flame_blend"}><FlameBlend/></SquareCanvas>
 
 ## Post transforms
 
-Next, we'll introduce a second affine transform, known as a post transform, that is applied _after_ variation blending.
+Next, we'll introduce a second affine transform, applied _after_ variation blending. This is called a "post transform."
+
 We'll use some new variables, but the post transform function should look familiar:
 
 $$
@@ -163,19 +163,18 @@ import postSource from '!!raw-loader!./post'
 <CodeBlock language="typescript">{postSource}</CodeBlock>
 
 The image below uses the same transforms/variations as the previous fractal flame,
-but allows modifying the post-transform coefficients.
+but allows modifying the post-transform coefficients:
 
 <details>
     <summary>If you want to test your understanding...</summary>
 
-    Challenge 1: What post-transform coefficients will give us the previous image?
-
-    Challenge 2: What post-transform coefficients will give us a _mirrored_ image?
+    - What post-transform coefficients will give us the previous image?
+    - What post-transform coefficients will give us a _mirrored_ image?
 </details>
 
 import FlamePost from "./FlamePost";
 
-<SquareCanvas><FlamePost/></SquareCanvas>
+<SquareCanvas name={"flame_post"}><FlamePost/></SquareCanvas>
 
 ## Final transforms
 
@@ -204,12 +203,12 @@ import chaosGameFinalSource from "!!raw-loader!./chaosGameFinal"
 
 import FlameFinal from "./FlameFinal";
 
-<SquareCanvas><FlameFinal/></SquareCanvas>
+<SquareCanvas name={"flame_final"}><FlameFinal/></SquareCanvas>
 
 ## Summary
 
-Variations are the fractal flame algorithm's first major innovation over previous IFS's.
-Blending variation functions and post/final transforms allows us to generate interesting images.
+Variations are the fractal flame algorithm's first major innovation.
+By blending variation functions, and post/final transforms, we generate unique images.
 
 However, the images themselves are grainy and unappealing. In the next post, we'll clean up
 the image quality and add some color.

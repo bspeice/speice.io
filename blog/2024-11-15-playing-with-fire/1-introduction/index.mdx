@@ -7,11 +7,11 @@ tags: []
 ---
 
 
-Wikipedia describes fractal flames fractal flames as:
+Wikipedia describes [fractal flames](https://en.wikipedia.org/wiki/Fractal_flame) as:
 
 > a member of the iterated function system class of fractals
 
-It's a bit tedious, but technically correct. I choose to think of them a different way: beauty in mathematics.
+It's tedious, but technically correct. I choose to think of them a different way: beauty in mathematics.
 
 import isDarkMode from '@site/src/isDarkMode'
 import banner from '../banner.png'
@@ -22,14 +22,15 @@ import banner from '../banner.png'
 
 <!-- truncate -->
 
-I don't remember exactly when I first learned about fractal flames, but I do remember becoming entranced by the images they created.
+I don't remember exactly when I first learned about fractal flames, but I do remember being entranced by the images they created.
 I also remember their unique appeal to my young engineering mind; this was an art form I could participate in.
 
 The original [Fractal Flame Algorithm paper](https://flam3.com/flame_draves.pdf) describing their structure was too much
 for me to handle at the time (I was ~12 years old), so I was content to play around and enjoy the pictures.
-But the desire to understand it stuck around. Now, with a graduate degree under my belt, maybe I can make some progress.
+But the desire to understand it stuck around. Now, with a graduate degree under my belt, I want to revisit it
+and try to make some progress.
 
-This guide is my attempt to explain fractal flames in a way that younger me &mdash; and others interested in the art &mdash;
+This guide is my attempt to explain how fractal flames work in a way that younger me &mdash; and others interested in the art &mdash;
 can understand without too much prior knowledge.
 
 ---
@@ -41,7 +42,7 @@ This post covers section 2 of the Fractal Flame Algorithm paper
 :::
 
 As mentioned, fractal flames are a type of "[iterated function system](https://en.wikipedia.org/wiki/Iterated_function_system),"
-or IFS. The formula for an IFS is short, but will take some time to unpack:
+or IFS. The formula for an IFS is short, but takes some time to unpack:
 
 $$
 S = \bigcup_{i=0}^{n-1} F_i(S)
@@ -69,15 +70,15 @@ export const simpleData = [
 However, this is a pretty boring image. With fractal flames, rather than listing individual points,
 we use functions to describe which points are part of the solution. This means there are an infinite
 number of points, but if we find _enough_ points to plot, we'll end up with a nice picture.
-And if we change the functions, our solution changes, and we'll get a new picture.
+And if the functions change, the solution also changes, and we get a new picture.
 
 ### Transform functions
 
 Second, the $F_i(S)$ functions, also known as "transforms."
 At their most basic, each $F_i$ takes in a 2-dimensional point and gives back a new point
 (in math terms, $F_i \in \mathbb{R}^2 \rightarrow \mathbb{R}^2$).
-While you could theoretically use any function, we'll focus on a specific kind of function
-known as an "[affine transformation](https://en.wikipedia.org/wiki/Affine_transformation)."
+While you could theoretically use any function, we'll start with a specific kind of function
+called an "[affine transformation](https://en.wikipedia.org/wiki/Affine_transformation)."
 
 The general form of an affine transformation is:
 
@@ -102,7 +103,7 @@ d &= 0 \\
 e &= 1 \\
 f &= 1.5 \\
 F_{shift}(x,y) &= (1 \cdot x + 0 \cdot y + 0.5, 0 \cdot x + 1 \cdot y + 0.5) \\
-F_{shift}(x, y) &= (x + 0.5, y + 0.5)
+F_{shift}(x, y) &= (x + 0.5, y + 1.5)
 \end{align*}
 $$
 
@@ -139,7 +140,7 @@ $$
 S = \bigcup_{i=0}^{n-1} F_i(S)
 $$
 
-Or, to put it in English, we would get something like this:
+Or, to put it in English, we might say:
 
 > Our solution, $S$, is the union of all sets produced by applying each function, $F_i$,
 > to points in the solution.
@@ -154,40 +155,41 @@ explaining the mathematics of iterated function systems:
 > of finite compositions $F_{i_1...i_p}$ of members of $F$.
 
 :::note
-I've tweaked the wording slightly to match the conventions in the Fractal Flame paper
+I've tweaked the wording slightly to match the conventions of the Fractal Flame paper
 :::
 
-Before your eyes glaze over, let's unpack this explanation:
+Before your eyes glaze over, let's unpack this:
 
 - **$S$ is [compact](https://en.wikipedia.org/wiki/Compact_space)...**: All points in our solution will be in a finite range
 - **...and is the [closure](https://en.wikipedia.org/wiki/Closure_(mathematics)) of the set of [fixed points](https://en.wikipedia.org/wiki/Fixed_point_(mathematics))**:
-  Applying our functions to these points does not change them
+  Applying our functions to points in the solution will give us other points that are in the solution
 - **...of finite compositions $F_{i_1...i_p}$ of members of $F$**: By composing our functions (that is,
-  using the output of one function as input to the next function), we will arrive at the points we care about
+  using the output of one function as input to the next function), we will arrive at the points in the solution
 
-Thus, by applying the functions in our system to "fixed points," we will find the other points we care about.
-
-However, this is all a bit vague, so let's work through an example.
+Thus, by applying the functions to fixed points of our system, we will find the other points we care about.
 
 <details>
-    <summary>If you want a bit more math first...</summary>
+    <summary>If you want a bit more math...</summary>
 
-    ...then there are some details worth mentioning that I've glossed over so far.
+    ...then there are some extra details I've glossed over so far.
 
-    First, the Hutchinson paper requires that the functions $F_i$ be _contractive_ tor the solution set to exist.
+    First, the Hutchinson paper requires that the functions $F_i$ be _contractive_ for the solution set to exist.
     That is, applying the function to a point must bring it closer to other points. However, as the Fractal Flame
     algorithm demonstrates, we only need functions to be contractive _on average_. At worst, the system will
     degenerate and produce a bad image.
 
     Second, we're focused $\mathbb{R}^2$ because we're generating images, but the Hutchinson paper
-    allows for arbitrary dimensions - which means you could also have 3-dimensional fractal flames.
+    allows for arbitrary dimensions; you could also have 3-dimensional fractal flames.
 
-    TODO: Mention attractors? https://en.wikipedia.org/wiki/Chaos_game
+    Finally, there's a close relationship between fractal flames and [attractors](https://en.wikipedia.org/wiki/Attractor).
+    Specifically, the fixed points of $S$ act as attractors for the chaos game (explained in detail below).
 </details>
 
-## Sierpinski's gasket
+This is still a bit vague, so let's work through an example.
 
-The Fractal Flame paper gives us three functions we can use for our function system:
+## [Sierpinski's gasket](https://www.britannica.com/biography/Waclaw-Sierpinski)
+
+The Fractal Flame paper gives us three functions to use for our first IFS:
 
 $$
 F_0(x, y) = \left({x \over 2}, {y \over 2} \right) \\
@@ -200,7 +202,7 @@ $$
 ### The chaos game
 
 Next, how do we find the "fixed points" we mentioned earlier? The paper lays out an algorithm called the "[chaos game](https://en.wikipedia.org/wiki/Chaos_game)"
-that will give us points in the solution set.
+that gives us points in the solution set:
 
 $$
 \begin{align*}
@@ -214,12 +216,13 @@ $$
 $$
 
 :::note
-In effect, the chaos game algorithm implements the "finite compositions of $F_{i_1..i_p}$ mentioned earlier.
+The chaos game algorithm is effectively the "finite compositions of $F_{i_1..i_p}$" mentioned earlier.
 :::
 
 Now, let's turn this into code, one piece at a time.
 
-First, the "bi-unit square" is the range $[-1, 1]$. We can :
+First, we need to generate some random numbers. The "bi-unit square" is the range $[-1, 1]$,
+so we generate a random point using an existing API:
 
 import biunitSource from '!!raw-loader!../src/randomBiUnit'
 
@@ -233,14 +236,12 @@ import randintSource from '!!raw-loader!../src/randomInteger'
 
 ### Plotting
 
-Finally, implementing the `plot` function. This blog series
-is designed to be interactive, so everything shows
-real-time directly in the browser. As an alternative,
-software like `flam3` an Apophysis can also save an image.
+Finally, implementing the `plot` function. This blog series is designed to be interactive,
+so everything displays directly in the browser. As an alternative,
+software like `flam3` and Apophysis can "plot" by saving an image to disk.
 
-To display the results, we'll use the [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API).
-This allows us to manipulate individual pixels an image,
-and display it on screen.
+To show the results, we'll use the [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API).
+This allows us to manipulate individual pixels in an image and display it on screen.
 
 First, we need to convert from Fractal Flame coordinates to pixel coordinates.
 To simplify things, we'll assume that we're plotting a square image
@@ -250,10 +251,9 @@ import cameraSource from "!!raw-loader!./cameraGasket"
 
 <CodeBlock language="typescript">{cameraSource}</CodeBlock>
 
-Next, we'll use an [`ImageData` object](https://developer.mozilla.org/en-US/docs/Web/API/ImageData)
-to store the pixel data.
+Next, we'll store the pixel data in an [`ImageData` object](https://developer.mozilla.org/en-US/docs/Web/API/ImageData).
 Each pixel in the image on screen has a corresponding index in the `data` array.
-To plot our image, we set that pixel to be black:
+To plot a point, we set that pixel to be black:
 
 import plotSource from '!!raw-loader!./plot'
 
@@ -271,18 +271,16 @@ import chaosGameSource from '!!raw-loader!./chaosGame'
 <hr/>
 
 <small>
-The image here is slightly different than the one in the paper.
-I think the paper has an error, so I'm choosing to plot the image
-    in a way that's consistent with [`flam3` itself](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
+    The image here is slightly different than in the paper.
+    I think the paper has an error, so I'm choosing to plot the image
+    the same way as the [reference implementation](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
 </small>
 
 ### Weights
 
-Finally, we'll introduce a "weight" ($w_i$) for each function that controls how often we choose
-that function during the chaos game relative to each other function.
-
-For Sierpinski's Gasket, we start with equal weighting,
-but you can see how changing the function weights affects the image below:
+There's one last step before we finish the introduction. So far, each function $F_i$ has
+the same chance of being chosen. We can change that by introducing a "weight" ($w_i$)
+to each transform in the chaos game:
 
 import randomChoiceSource from '!!raw-loader!../src/randomChoice'
 
@@ -292,16 +290,23 @@ import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
 
 <CodeBlock language={'typescript'}>{chaosGameWeightedSource}</CodeBlock>
 
+For Sierpinski's Gasket, we start with equal weighting,
+but changing the transform weights affects how often
+the chaos game "visits" parts of the image:
+
+:::tip
+Double-click the image if you want to save a copy!
+:::
+
 import GasketWeighted from "./GasketWeighted";
 import {SquareCanvas} from "../src/Canvas";
 
-<SquareCanvas><GasketWeighted/></SquareCanvas>
+<SquareCanvas name={"gasket_weighted"}><GasketWeighted/></SquareCanvas>
 
 ## Summary
 
 Studying the foundations of fractal flames is challenging,
 but we now have an understanding of both the mathematics
-and implementation of iterated function systems.
+and implementations of iterated function systems.
 
-In the next post, we'll study the first innovation that fractal flames
-bring: variations.
+In the next post, we'll study the first innovation of fractal flames: variations.

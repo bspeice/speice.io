@@ -8,18 +8,20 @@ type PainterProps = {
 }
 export const PainterContext = createContext<PainterProps>(null)
 
-const downloadImage = (e: MouseEvent) => {
-    const link = document.createElement("a");
-    link.download = "flame.png";
-    link.href = (e.target as HTMLCanvasElement).toDataURL("image/png");
-    link.click();
-}
+const downloadImage = (name: string) =>
+    (e: MouseEvent) => {
+        const link = document.createElement("a");
+        link.download = "flame.png";
+        link.href = (e.target as HTMLCanvasElement).toDataURL("image/png");
+        link.click();
+    }
 
 type CanvasProps = {
+    name: string;
     style?: any;
     children?: React.ReactElement
 }
-export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
+export const Canvas: React.FC<CanvasProps> = ({name, style, children}) => {
     const sizingRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
     const [height, setHeight] = useState(0);
@@ -93,7 +95,7 @@ export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
         <>
             <center>
                 <div ref={sizingRef} style={style}>
-                    {width > 0 ? <canvas {...canvasProps} onDoubleClick={downloadImage}/> : null}
+                    {width > 0 ? <canvas {...canvasProps} onDoubleClick={downloadImage(name)}/> : null}
                 </div>
             </center>
             <PainterContext.Provider value={{width, height, setPainter}}>
@@ -103,6 +105,6 @@ export const Canvas: React.FC<CanvasProps> = ({style, children}) => {
     )
 }
 
-export const SquareCanvas: React.FC<CanvasProps> = ({style, children}) => {
-    return <center><Canvas style={{width: '75%', aspectRatio: '1/1', ...style}} children={children}/></center>
+export const SquareCanvas: React.FC<CanvasProps> = ({name, style, children}) => {
+    return <center><Canvas name={name} style={{width: '75%', aspectRatio: '1/1', ...style}} children={children}/></center>
 }

@@ -31,7 +31,7 @@ export default function GasketWeighted() {
         <>
             <div className={styles.inputElement}>
                 <p><TeX>{title}</TeX>: {weight}</p>
-                <input type={'range'} min={0} max={1} step={.01} style={{width: '100%', background: 'transparent'}} value={weight}
+                <input type={'range'} min={0} max={1} step={.01} value={weight}
                     onInput={e => setWeight(Number(e.currentTarget.value))}/>
             </div>
         </>
