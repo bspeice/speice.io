@@ -144,11 +144,11 @@ Or, to put it in English, we might say:
 > Our solution, $S$, is the union of all sets produced by applying each function, $F_i$,
 > to points in the solution.
 
-There's just one small problem: to find the solution, we must apply these functions to points
-we know are in the solution. But how do we know which points are in the solution to start with?
+There's just one small problem: to find the solution, we must already know which points are in the solution.
+What?
 
-John E. Hutchinson provides an answer in the [original paper](https://maths-people.anu.edu.au/~john/Assets/Research%20Papers/fractals_self-similarity.pdf)
-explaining the mathematics of iterated function systems:
+John E. Hutchinson provides an explanation in the [original paper](https://maths-people.anu.edu.au/~john/Assets/Research%20Papers/fractals_self-similarity.pdf)
+defining the mathematics of iterated function systems:
 
 > Furthermore, $S$ is compact and is the closure of the set of fixed points $s_{i_1...i_p}$
 > of finite compositions $F_{i_1...i_p}$ of members of $F$.
@@ -159,7 +159,7 @@ I've tweaked the conventions of that paper slightly to match the Fractal Flame p
 
 Before your eyes glaze over, let's unpack this:
 
-- **$S$ is [compact](https://en.wikipedia.org/wiki/Compact_space)...**: All points in our solution will be in a finite range
+- **Furthermore, $S$ is [compact](https://en.wikipedia.org/wiki/Compact_space)...**: All points in our solution will be in a finite range
 - **...and is the [closure](https://en.wikipedia.org/wiki/Closure_(mathematics)) of the set of [fixed points](https://en.wikipedia.org/wiki/Fixed_point_(mathematics))**:
   Applying our functions to points in the solution will give us other points that are in the solution
 - **...of finite compositions $F_{i_1...i_p}$ of members of $F$**: By composing our functions (that is,
@@ -188,7 +188,7 @@ This is still a bit vague, so let's work through an example.
 
 ## [Sierpinski's gasket](https://www.britannica.com/biography/Waclaw-Sierpinski)
 
-The Fractal Flame paper gives us three functions to use for our first IFS:
+The Fractal Flame paper gives three functions to use for a first IFS:
 
 $$
 F_0(x, y) = \left({x \over 2}, {y \over 2} \right) \\
@@ -200,8 +200,8 @@ $$
 
 ### The chaos game
 
-Next, how do we find the "fixed points" we mentioned earlier? The paper lays out an algorithm called the "[chaos game](https://en.wikipedia.org/wiki/Chaos_game)"
-that gives us points in the solution set:
+Next, how do we find the "fixed points" mentioned earlier? The paper lays out an algorithm called the "[chaos game](https://en.wikipedia.org/wiki/Chaos_game)"
+that gives us points in the solution:
 
 $$
 \begin{align*}
@@ -218,7 +218,7 @@ $$
 The chaos game algorithm is effectively the "finite compositions of $F_{i_1..i_p}$" mentioned earlier.
 :::
 
-Now, let's turn this into code, one piece at a time.
+Let's turn this into code, one piece at a time.
 
 First, we need to generate some random numbers. The "bi-unit square" is the range $[-1, 1]$,
 so we generate a random point using an existing API:
