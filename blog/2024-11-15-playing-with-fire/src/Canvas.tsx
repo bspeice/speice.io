@@ -11,7 +11,7 @@ export const PainterContext = createContext<PainterProps>(null)
 const downloadImage = (name: string) =>
     (e: MouseEvent) => {
         const link = document.createElement("a");
-        link.download = "flame.png";
+        link.download = `${name}.png`;
         link.href = (e.target as HTMLCanvasElement).toDataURL("image/png");
         link.click();
     }

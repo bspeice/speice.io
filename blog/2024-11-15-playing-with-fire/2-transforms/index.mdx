@@ -34,7 +34,7 @@ This leads us to the first big innovation of the Fractal Flame algorithm: adding
 after the affine transform. These functions are called "variations":
 
 $$
-F_i(x, y) = V_j(a_i \cdot x + b_i \cdot y + c_i, d_i \cdot x + e_i \cdot y + f_i)
+F_i(x, y) = V_j(a_i x + b_i y + c_i, d_i x + e_i y + f_i)
 $$
 
 import variationSource from '!!raw-loader!../src/variation'
@@ -96,7 +96,7 @@ Some variations rely on knowing the transform's affine coefficients; they're cal
 For the popcorn variation, we use $c$ and $f$:
 
 $$
-V_{17}(x,y) = (x + c \cdot \text{sin}(\text{tan }3y), y + f \cdot \text{sin}(\text{tan }3x))
+V_{17}(x,y) = (x + c\ \text{sin}(\text{tan }3y), y + f\ \text{sin}(\text{tan }3x))
 $$
 
 import popcornSrc from '!!raw-loader!../src/popcorn'
@@ -109,8 +109,8 @@ Some variations have extra parameters; they're called "parametric variations."
 For the PDJ variation, there are four extra parameters we can choose:
 
 $$
-p_1 = \text{pdj.a} \hspace{0.2cm} p_2 = \text{pdj.b} \hspace{0.2cm} p_3 = \text{pdj.c} \hspace{0.2cm} p_4 = \text{pdj.d} \\
-V_{24} = (\text{sin}(p_1 \cdot y) - \text{cos}(p_2 \cdot x), \text{sin}(p_3 \cdot x) - \text{cos}(p_4 \cdot y))
+p_1 = \text{pdj.a} \hspace{0.1cm} p_2 = \text{pdj.b} \hspace{0.1cm} p_3 = \text{pdj.c} \hspace{0.1cm} p_4 = \text{pdj.d} \\
+V_{24} = (\text{sin}(p_1 y) - \text{cos}(p_2 x), \text{sin}(p_3 x) - \text{cos}(p_4 y))
 $$
 
 import pdjSrc from '!!raw-loader!../src/pdj'
@@ -124,7 +124,7 @@ Each variation receives the same $x$ and $y$ inputs, and we add together each va
 We'll also give each variation a weight ($v_{ij}$) that changes how much it contributes to the result:
 
 $$
-F_i(x,y) = \sum_{j} v_{ij} V_j(a_i \cdot x + b_i \cdot y + c_i, \hspace{0.2cm} d_i \cdot x + e_i \cdot y + f_i)
+F_i(x,y) = \sum_{j} v_{ij} V_j(x, y)
 $$
 
 The formula looks intimidating, but it's not hard to implement:

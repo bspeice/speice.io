@@ -6,28 +6,29 @@ const xforms = [
   (x, y) => [x / 2, y / 2],
   (x, y) => [(x + 1) / 2, y / 2],
   (x, y) => [x / 2, (y + 1) / 2]
-]
+];
 
-function* chaosGame({width, height}) {
-  const step = 1000;
-  let img = new ImageData(width, height);
+function* chaosGame({ width, height }) {
+  let img =
+    new ImageData(width, height);
   let [x, y] = [
     randomBiUnit(),
     randomBiUnit()
   ];
 
-  for (let c = 0; c < iterations; c++) {
-    const i = randomInteger(0, xforms.length);
-    [x, y] = xforms[i](x, y);
+  for (let i = 0; i < iterations; i++) {
+    const index =
+      randomInteger(0, xforms.length);
+    [x, y] = xforms[index](x, y);
 
-    if (c > 20)
+    if (i > 20)
       plot(x, y, img);
 
-    if (c % step === 0)
+    if (i % 1000 === 0)
       yield img;
   }
 
   yield img;
 }
 
-render(<Gasket f={chaosGame}/>)
+render(<Gasket f={chaosGame} />);

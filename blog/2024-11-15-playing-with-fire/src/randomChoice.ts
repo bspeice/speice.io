@@ -7,7 +7,8 @@ export function randomChoice<T>(
   );
   let choice = Math.random() * weightSum;
 
-  for (const [idx, elem] of choices.entries()) {
+  for (const entry of choices.entries()) {
+    const [idx, elem] = entry;
     const [weight, t] = elem;
     if (choice < weight) {
       return [idx, t];

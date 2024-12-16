@@ -1,7 +1,11 @@
 // hidden-start
-import {Coefs} from "../src/coefs";
-import {Transform} from "../src/transform";
-import {applyCoefs} from "../src/coefs";
+import { applyCoefs, Coefs, Transform } from "../src/transform";
 // hidden-end
-export const transformPost = (transform: Transform, coefs: Coefs): Transform =>
-    (x, y) => applyCoefs(...transform(x, y), coefs)
+export const transformPost = (
+  transform: Transform,
+  coefs: Coefs
+): Transform =>
+  (x, y) => {
+    [x, y] = transform(x, y);
+    return applyCoefs(x, y, coefs);
+  }

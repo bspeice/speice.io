@@ -83,7 +83,7 @@ called an "[affine transformation](https://en.wikipedia.org/wiki/Affine_transfor
 The general form of an affine transformation is:
 
 $$
-F_i(a_i \cdot x + b_i \cdot y + c_i, d_i \cdot x + e_i \cdot y + f_i)
+F_i(a_i x + b_i y + c_i, d_i x + e_i y + f_i)
 $$
 
 import transformSource from "!!raw-loader!../src/transform"
@@ -102,8 +102,7 @@ c &= 0.5 \\
 d &= 0 \\
 e &= 1 \\
 f &= 1.5 \\
-F_{shift}(x,y) &= (1 \cdot x + 0 \cdot y + 0.5, 0 \cdot x + 1 \cdot y + 0.5) \\
-F_{shift}(x, y) &= (x + 0.5, y + 1.5)
+F_{shift}(x, y) &= (1 \cdot x + 0.5, 1 \cdot y + 1.5)
 \end{align*}
 $$
 
@@ -155,7 +154,7 @@ explaining the mathematics of iterated function systems:
 > of finite compositions $F_{i_1...i_p}$ of members of $F$.
 
 :::note
-I've tweaked the wording slightly to match the conventions of the Fractal Flame paper
+I've tweaked the conventions of that paper slightly to match the Fractal Flame paper
 :::
 
 Before your eyes glaze over, let's unpack this:
@@ -174,15 +173,15 @@ Thus, by applying the functions to fixed points of our system, we will find the 
     ...then there are some extra details I've glossed over so far.
 
     First, the Hutchinson paper requires that the functions $F_i$ be _contractive_ for the solution set to exist.
-    That is, applying the function to a point must bring it closer to other points. However, as the Fractal Flame
+    That is, applying the function to a point must bring it closer to other points. However, as the fractal flame
     algorithm demonstrates, we only need functions to be contractive _on average_. At worst, the system will
     degenerate and produce a bad image.
 
-    Second, we're focused $\mathbb{R}^2$ because we're generating images, but the Hutchinson paper
+    Second, we're focused on $\mathbb{R}^2$ because we're generating images, but the Hutchinson paper
     allows for arbitrary dimensions; you could also have 3-dimensional fractal flames.
 
     Finally, there's a close relationship between fractal flames and [attractors](https://en.wikipedia.org/wiki/Attractor).
-    Specifically, the fixed points of $S$ act as attractors for the chaos game (explained in detail below).
+    Specifically, the fixed points of $S$ act as attractors for the chaos game (explained in more detail below).
 </details>
 
 This is still a bit vague, so let's work through an example.
@@ -272,8 +271,8 @@ import chaosGameSource from '!!raw-loader!./chaosGame'
 
 <small>
     The image here is slightly different than in the paper.
-    I think the paper has an error, so I'm choosing to plot the image
-    the same way as the [reference implementation](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
+    I think the paper has an error, so I'm plotting the image
+    like the [reference implementation](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L440-L441).
 </small>
 
 ### Weights
@@ -292,7 +291,10 @@ import chaosGameWeightedSource from "!!raw-loader!./chaosGameWeighted";
 
 For Sierpinski's Gasket, we start with equal weighting,
 but changing the transform weights affects how often
-the chaos game "visits" parts of the image:
+the chaos game "visits" parts of the image. If the chaos
+were to run forever, we'd get the same image;
+but because the iteration count is limited,
+some parts may be missing below.
 
 :::tip
 Double-click the image if you want to save a copy!

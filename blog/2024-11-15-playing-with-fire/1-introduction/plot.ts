@@ -1,10 +1,11 @@
 // hidden-start
-import {camera} from "./cameraGasket"
+import { camera } from "./cameraGasket";
+
 // hidden-end
 function imageIndex(
-  width: number,
   x: number,
-  y: number
+  y: number,
+  width: number
 ) {
   return y * (width * 4) + x * 4;
 }
@@ -14,24 +15,26 @@ export function plot(
   y: number,
   img: ImageData
 ) {
-  let [pixelX, pixelY] = camera(img.width, x, y);
+  let [pixelX, pixelY] =
+    camera(x, y, img.width);
+
+  // Skip coordinates outside the display
+  if (
+    pixelX < 0 ||
+    pixelX >= img.width ||
+    pixelY < 0 ||
+    pixelY >= img.height
+  )
+    return;
 
   const i = imageIndex(
-    img.width,
     pixelX,
-    pixelY
+    pixelY,
+    img.width
   );
 
-  // Skip pixels outside the display range
-  if (
-    i < 0 ||
-    i > img.data.length
-  ) {
-    return;
-  }
-
-  // Set the pixel to black by writing 0
-  // to the first three elements at the index
+  // Set the pixel to black by setting
+  // the first three elements to 0
   // (red, green, and blue, respectively),
   // and 255 to the last element (alpha)
   img.data[i] = 0;

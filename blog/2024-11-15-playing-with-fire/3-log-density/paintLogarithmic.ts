@@ -1,21 +1,29 @@
-export function paintLogarithmic(width: number, height: number, histogram: number[]): ImageData {
-    const image = new ImageData(width, height);
+export function paintLogarithmic(
+  width: number,
+  height: number,
+  hist: number[]
+) {
+  const img =
+    new ImageData(width, height);
 
-    const histogramLog: number[] = [];
-    histogram.forEach(value => histogramLog.push(Math.log(value)));
+  const histLog = hist.map(Math.log);
 
-    let histogramLogMax = -Infinity;
-    for (let value of histogramLog) {
-        histogramLogMax = Math.max(histogramLogMax, value);
-    }
+  let hLogMax = -Infinity;
+  for (let value of histLog) {
+    hLogMax = Math.max(hLogMax, value);
+  }
 
-    for (let i = 0; i < histogram.length; i++) {
-        const pixelIndex = i * 4;
-        image.data[pixelIndex] = 0; // red
-        image.data[pixelIndex + 1] = 0; // green
-        image.data[pixelIndex + 2] = 0; // blue
-        image.data[pixelIndex + 3] = histogramLog[i] / histogramLogMax * 0xff;
-    }
+  for (let i = 0; i < hist.length; i++) {
+    const pixelIndex = i * 4;
 
-    return image;
+    img.data[pixelIndex] = 0; // red
+    img.data[pixelIndex + 1] = 0; // green
+    img.data[pixelIndex + 2] = 0; // blue
+
+    const alpha =
+      histLog[i] / hLogMax * 0xff;
+    img.data[pixelIndex + 3] = alpha;
+  }
+
+  return img;
 }

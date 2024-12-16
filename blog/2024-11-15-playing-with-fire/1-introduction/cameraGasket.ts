@@ -1,10 +1,10 @@
 export function camera(
-    size: number,
-    x: number,
-    y: number
+  x: number,
+  y: number,
+  size: number
 ): [number, number] {
-    return [
-        Math.floor(x * size),
-        Math.floor(y * size)
-    ];
+  return [
+    Math.floor(x * size),
+    Math.floor(y * size)
+  ];
 }
