@@ -1,0 +1,222 @@
+---
+slug: 2024/11/playing-with-fire-log-density
+title: "Playing with fire: Tone mapping and color"
+date: 2024-12-16 21:32:00
+authors: [bspeice]
+tags: []
+---
+
+So far, our `plot()` function has been fairly simple: map a fractal flame coordinate to a specific pixel,
+and color in that pixel. This works well for simple function systems (like Sierpinski's Gasket),
+but more complex systems (like the reference parameters) produce grainy images.
+
+In this post, we'll refine the image quality and add color to really make things shine.
+
+<!-- truncate -->
+
+## Image histograms
+
+:::note
+This post covers sections 4 and 5 of the Fractal Flame Algorithm paper
+:::
+
+One problem with the current chaos game algorithm is that we waste work
+because pixels are either "on" (opaque) or "off" (transparent).
+If the chaos game encounters the same pixel twice, nothing changes.
+
+To demonstrate how much work is wasted, we'll count each time the chaos game
+visits a pixel while iterating. This gives us a kind of image "histogram":
+
+import chaosGameHistogramSource from "!!raw-loader!./chaosGameHistogram"
+
+<CodeBlock language="typescript">{chaosGameHistogramSource}</CodeBlock>
+
+When the chaos game finishes, we find the pixel encountered most often.
+Finally, we "paint" the image by setting each pixel's alpha (transparency) value
+to the ratio of times visited divided by the maximum:
+
+import CodeBlock from "@theme/CodeBlock";
+
+import paintLinearSource from "!!raw-loader!./paintLinear"
+
+<CodeBlock language="typescript">{paintLinearSource}</CodeBlock>
+
+import {SquareCanvas} from "../src/Canvas";
+import FlameHistogram from "./FlameHistogram";
+import {paintLinear} from "./paintLinear";
+
+<SquareCanvas><FlameHistogram paint={paintLinear}/></SquareCanvas>
+
+## Tone mapping
+
+While using a histogram reduces the "graining," it also leads to some parts vanishing entirely.
+In the reference parameters, the outer circle is still there, but the interior is gone!
+
+To fix this, we'll introduce the second major innovation of the fractal flame algorithm: [tone mapping](https://en.wikipedia.org/wiki/Tone_mapping).
+This is a technique used in computer graphics to compensate for differences in how
+computers represent brightness, and how people actually see brightness.
+
+As a concrete example, high-dynamic-range (HDR) photography uses this technique to capture
+scenes with a wide range of brightnesses. To take a picture of something dark,
+you need a long exposure time. However, long exposures lead to "hot spots" (sections that are pure white).
+By taking multiple pictures with different exposure times, we can combine them to create
+a final image where everything is visible.
+
+In fractal flames, this "tone map" is accomplished by scaling brightness according to the _logarithm_
+of how many times we encounter a pixel. This way, "cold spots" (pixels the chaos game visits infrequently)
+are still visible, and "hot spots" (pixels the chaos game visits frequently) won't wash out.
+
+<details>
+    <summary>Log-scale vibrancy also explains fractal flames appear to be 3D...</summary>
+
+    As mentioned in the paper:
+
+    > Where one branch of the fractal crosses another, one may appear to occlude the other
+    > if their densities are different enough because the lesser density is inconsequential in sum.
+    > For example, branches of densities 1000 and 100 might have brightnesses of 30 and 20.
+    > Where they cross the density is 1100, whose brightness is 30.4, which is
+    > hardly distinguishable from 30.
+</details>
+
+import paintLogarithmicSource from "!!raw-loader!./paintLogarithmic"
+
+<CodeBlock language="typescript">{paintLogarithmicSource}</CodeBlock>
+
+import {paintLogarithmic} from './paintLogarithmic'
+
+<SquareCanvas><FlameHistogram paint={paintLogarithmic}/></SquareCanvas>
+
+## Color
+
+Now we'll introduce the last innovation of the fractal flame algorithm: color.
+By including a third coordinate ($c$) in the chaos game, we can illustrate the transforms
+responsible for the image.
+
+### Color coordinate
+
+Color in a fractal flame is continuous on the range $[0, 1]$. This is important for two reasons:
+
+- It helps blend colors together in the final image. Slight changes in the color value lead to
+  slight changes in the actual color
+- It allows us to swap in new color palettes easily. We're free to choose what actual colors
+  each value represents
+
+We'll give each transform a color value ($c_i$) in the $[0, 1]$ range.
+The final transform gets a value too ($c_f$).
+Then, at each step in the chaos game, we'll set the current color
+by blending it with the previous color:
+
+$$
+\begin{align*}
+&(x, y) = \text{random point in the bi-unit square} \\
+&c = \text{random point from [0,1]} \\
+&\text{iterate } \{ \\
+&\hspace{1cm} i = \text{random integer from 0 to } n - 1 \\
+&\hspace{1cm} (x,y) = F_i(x,y) \\
+&\hspace{1cm} (x_f,y_f) = F_{final}(x,y) \\
+&\hspace{1cm} c = (c + c_i) / 2 \\
+&\hspace{1cm} \text{plot}(x_f,y_f,c_f) \text{ if iterations} > 20 \\
+\}
+\end{align*}
+$$
+
+### Color speed
+
+:::warning
+Color speed isn't introduced in the Fractal Flame Algorithm paper.
+
+It is included here because [`flam3` implements it](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/variations.c#L2140),
+and because it's fun to play with.
+:::
+
+Next, we'll add a parameter to each transform that controls how much it changes the current color.
+This is known as the "color speed" ($s_i$):
+
+$$
+c = c \cdot (1 - s_i) + c_i \cdot s_i
+$$
+
+import mixColorSource from "!!raw-loader!./mixColor"
+
+<CodeBlock language="typescript">{mixColorSource}</CodeBlock>
+
+Color speed values work just like transform weights. A value of 1
+means we take the transform color and ignore the previous color state.
+A value of 0 means we keep the current color state and ignore the
+transform color.
+
+### Palette
+
+Now, we need to map the color coordinate to a pixel color. Fractal flames typically use
+256 colors (each color has 3 values - red, green, blue) to define a palette.
+The color coordinate then becomes an index into the palette.
+
+There's one small complication: the color coordinate is continuous, but the palette
+uses discrete colors. How do we handle situations where the color coordinate is
+"in between" the colors of our palette?
+
+One way to handle this is a step function. In the code below, we multiply the color coordinate
+by the number of colors in the palette, then truncate that value. This gives us a discrete index:
+
+import colorFromPaletteSource from "!!raw-loader!./colorFromPalette";
+
+<CodeBlock language="typescript">{colorFromPaletteSource}</CodeBlock>
+
+<details>
+    <summary>As an alternative...</summary>
+
+    ...you could interpolate between colors in the palette.
+    For example, `flam3` uses [linear interpolation](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L483-L486)
+</details>
+
+In the diagram below, each color in the palette is plotted on a small vertical strip.
+Putting the strips side by side shows the full palette used by the reference parameters:
+
+import * as params from "../src/params"
+import {PaletteBar} from "./FlameColor"
+
+<PaletteBar height="40" palette={params.palette}/>
+
+### Plotting
+
+We're now ready to plot our $(x_f,y_f,c_f)$ coordinates. This time, we'll use a histogram
+for each color channel (red, green, blue, alpha). After translating from color coordinate ($c_f$)
+to RGB value, add that to the histogram:
+
+import chaosGameColorSource from "!!raw-loader!./chaosGameColor"
+
+<CodeBlock language="typescript">{chaosGameColorSource}</CodeBlock>
+
+Finally, painting the image. With tone mapping, logarithms scale the image brightness to match
+how it is perceived. With color, we use a similar method, but scale each color channel
+by the alpha channel:
+
+import paintColorSource from "!!raw-loader!./paintColor"
+
+<CodeBlock language="typescript">{paintColorSource}</CodeBlock>
+
+And now, at long last, a full-color fractal flame:
+
+import FlameColor from "./FlameColor";
+
+<SquareCanvas><FlameColor/></SquareCanvas>
+
+## Summary
+
+Tone mapping is the second major innovation of the fractal flame algorithm.
+By tracking how often the chaos game encounters each pixel, we can adjust
+brightness/transparency to reduce the visual "graining" of previous images.
+
+Next, introducing a third coordinate to the chaos game makes color images possible,
+the third major innovation of the fractal flame algorithm. Using a continuous
+color scale and color palette adds a splash of excitement to the image.
+
+The Fractal Flame Algorithm paper goes on to describe more techniques
+not covered here. For example, image quality can be improved with density estimation
+and filtering. New parameters can be generated by "mutating" existing
+fractal flames. And fractal flames can even be animated to produce videos!
+
+That said, I think this is a good place to wrap up. We went from
+an introduction to the mathematics of fractal systems all the way to
+generating full-color images. Fractal flames are a challenging topic,
+but it's extremely rewarding to learn about how they work.

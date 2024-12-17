@@ -28,13 +28,14 @@ const config: Config = {
     locales: ['en'],
   },
 
+  themes: ['@docusaurus/theme-live-codeblock'],
   presets: [
     [
       'classic',
       {
         docs: false,
         blog: {
-          routeBasePath: "/",
+          routeBasePath: '/',
           blogSidebarTitle: 'All posts',
           blogSidebarCount: 'ALL',
           showReadingTime: true,
@@ -80,17 +81,26 @@ const config: Config = {
     prism: {
       theme: prismThemes.oneLight,
       darkTheme: prismThemes.oneDark,
-      additionalLanguages: ['bash', 'java', 'julia', 'nasm']
+      additionalLanguages: ['bash', 'java', 'julia', 'nasm'],
+      magicComments: [
+        // Remember to extend the default highlight class name as well!
+        {
+          className: 'theme-code-block-highlighted-line',
+          line: 'highlight-next-line',
+          block: {start: 'highlight-start', end: 'highlight-end'},
+        },
+        {
+          className: 'code-block-hidden',
+          block: {start: 'hidden-start', end: 'hidden-end'}
+        }
+      ]
     },
   } satisfies Preset.ThemeConfig,
   plugins: [require.resolve('docusaurus-lunr-search')],
   stylesheets: [
     {
-      href: 'https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css',
+      href: '/katex/katex.min.css',
       type: 'text/css',
-      integrity:
-        'sha384-odtC+0UGzzFL/6PNoE8rX/SPcQDXBJ+uRepguP4QkPCm2LBxH3FA3y+fKSiJ+AmM',
-      crossorigin: 'anonymous',
     },
   ],
   future: {

@@ -1,0 +1,216 @@
+---
+slug: 2024/11/playing-with-fire-transforms
+title: "Playing with fire: Transforms and variations"
+date: 2024-12-16 21:31:00
+authors: [bspeice]
+tags: []
+---
+
+Now that we've learned about the chaos game, it's time to spice things up. Variations create the
+shapes and patterns that fractal flames are known for.
+
+<!-- truncate -->
+
+:::info
+This post uses [reference parameters](../params.flame) to demonstrate the fractal flame algorithm.
+If you're interested in tweaking the parameters, or creating your own, [Apophysis](https://sourceforge.net/projects/apophysis/)
+can load that file.
+:::
+
+## Variations
+
+:::note
+This post covers section 3 of the Fractal Flame Algorithm paper
+:::
+
+import CodeBlock from '@theme/CodeBlock'
+
+We previously introduced transforms as the "functions" of an "iterated function system," and showed how
+playing the chaos game gives us an image of Sierpinski's Gasket. Even though we used simple functions,
+the image it generates is intriguing. But what would happen if we used something more complex?
+
+This leads us to the first big innovation of the fractal flame algorithm: adding non-linear functions
+after the affine transform. These functions are called "variations":
+
+$$
+F_i(x, y) = V_j(a_i x + b_i y + c_i, d_i x + e_i y + f_i)
+$$
+
+import variationSource from '!!raw-loader!../src/variation'
+
+<CodeBlock language="typescript">{variationSource}</CodeBlock>
+
+Just like transforms, variations ($V_j$) are functions that take in $(x, y)$ coordinates
+and give back new $(x, y)$ coordinates.
+However, the sky is the limit for what happens between input and output.
+The Fractal Flame paper lists 49 variation functions,
+and the official `flam3` implementation supports [98 different variations](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/variations.c).
+
+To draw our reference image, we'll focus on just four:
+
+### Linear (variation 0)
+
+This variation is dead simple: return the $x$ and $y$ coordinates as-is.
+
+$$
+V_0(x,y) = (x,y)
+$$
+
+import linearSrc from '!!raw-loader!../src/linear'
+
+<CodeBlock language={'typescript'}>{linearSrc}</CodeBlock>
+
+:::tip
+In a way, we've already been using this variation! The transforms that define Sierpinski's Gasket
+apply the affine coefficients to the input point and use that as the output.
+:::
+
+### Julia (variation 13)
+
+This variation is a good example of a non-linear function. It uses both trigonometry
+and probability to produce interesting shapes:
+
+$$
+\begin{align*}
+r &= \sqrt{x^2 + y^2} \\
+\theta &= \text{arctan}(x / y) \\
+\Omega &= \left\{
+\begin{array}{lr}
+0 \hspace{0.4cm} \text{w.p. } 0.5 \\
+\pi \hspace{0.4cm} \text{w.p. } 0.5 \\
+\end{array}
+\right\} \\
+
+V_{13}(x, y) &= \sqrt{r} \cdot (\text{cos} ( \theta / 2 + \Omega ), \text{sin} ( \theta / 2 + \Omega ))
+\end{align*}
+$$
+
+import juliaSrc from '!!raw-loader!../src/julia'
+
+<CodeBlock language={'typescript'}>{juliaSrc}</CodeBlock>
+
+### Popcorn (variation 17)
+
+Some variations rely on knowing the transform's affine coefficients; they're called "dependent variations."
+For this variation, we use $c$ and $f$:
+
+$$
+V_{17}(x,y) = (x + c\ \text{sin}(\text{tan }3y), y + f\ \text{sin}(\text{tan }3x))
+$$
+
+import popcornSrc from '!!raw-loader!../src/popcorn'
+
+<CodeBlock language={'typescript'}>{popcornSrc}</CodeBlock>
+
+### PDJ (variation 24)
+
+Some variations have extra parameters we can choose; they're called "parametric variations."
+For the PDJ variation, there are four extra parameters:
+
+$$
+p_1 = \text{pdj.a} \hspace{0.1cm} p_2 = \text{pdj.b} \hspace{0.1cm} p_3 = \text{pdj.c} \hspace{0.1cm} p_4 = \text{pdj.d} \\
+V_{24} = (\text{sin}(p_1 y) - \text{cos}(p_2 x), \text{sin}(p_3 x) - \text{cos}(p_4 y))
+$$
+
+import pdjSrc from '!!raw-loader!../src/pdj'
+
+<CodeBlock language={'typescript'}>{pdjSrc}</CodeBlock>
+
+## Blending
+
+Now, one variation is fun, but we can also combine variations in a process called "blending."
+Each variation receives the same $x$ and $y$ inputs, and we add together each variation's $x$ and $y$ outputs.
+We'll also give each variation a weight ($v_{ij}$) that changes how much it contributes to the result:
+
+$$
+F_i(x,y) = \sum_{j} v_{ij} V_j(x, y)
+$$
+
+The formula looks intimidating, but it's not hard to implement:
+
+import blendSource from "!!raw-loader!../src/blend";
+
+<CodeBlock language={'typescript'}>{blendSource}</CodeBlock>
+
+With that in place, we have enough to render a fractal flame. We'll use the same
+chaos game as before, but the new transforms and variations produce a dramatically different image:
+
+:::tip
+Try using the variation weights to figure out which parts of the image each transform controls.
+:::
+
+import {SquareCanvas} from "../src/Canvas";
+import FlameBlend from "./FlameBlend";
+
+<SquareCanvas name={"flame_blend"}><FlameBlend/></SquareCanvas>
+
+## Post transforms
+
+Next, we'll introduce a second affine transform applied _after_ variation blending. This is called a "post transform."
+
+We'll use some new variables, but the post transform should look familiar:
+
+$$
+\begin{align*}
+P_i(x, y) &= (\alpha_i x + \beta_i y + \gamma_i, \delta_i x + \epsilon_i y + \zeta_i) \\
+F_i(x, y) &= P_i\left(\sum_{j} v_{ij} V_j(x, y)\right)
+\end{align*}
+$$
+
+import postSource from '!!raw-loader!./post'
+
+<CodeBlock language="typescript">{postSource}</CodeBlock>
+
+The image below uses the same transforms/variations as the previous fractal flame,
+but allows changing the post-transform coefficients:
+
+<details>
+    <summary>If you want to test your understanding...</summary>
+
+    - What post-transform coefficients will give us the previous image?
+    - What post-transform coefficients will give us a _mirrored_ image?
+</details>
+
+import FlamePost from "./FlamePost";
+
+<SquareCanvas name={"flame_post"}><FlamePost/></SquareCanvas>
+
+## Final transforms
+
+The last step is to introduce a "final transform" ($F_{final}$) that is applied
+regardless of which regular transform ($F_i$) the chaos game selects.
+It's just like a normal transform (composition of affine transform, variation blend, and post transform),
+but it doesn't affect the chaos game state.
+
+After adding the final transform, our chaos game algorithm looks like this:
+
+$$
+\begin{align*}
+&(x, y) = \text{random point in the bi-unit square} \\
+&\text{iterate } \{ \\
+&\hspace{1cm} i = \text{random integer from 0 to } n - 1 \\
+&\hspace{1cm} (x,y) = F_i(x,y) \\
+&\hspace{1cm} (x_f,y_f) = F_{final}(x,y) \\
+&\hspace{1cm} \text{plot}(x_f,y_f) \text{ if iterations} > 20 \\
+\}
+\end{align*}
+$$
+
+import chaosGameFinalSource from "!!raw-loader!./chaosGameFinal"
+
+<CodeBlock language="typescript">{chaosGameFinalSource}</CodeBlock>
+
+This image uses the same normal/post transforms as above, but allows modifying
+the coefficients and variations of the final transform:
+
+import FlameFinal from "./FlameFinal";
+
+<SquareCanvas name={"flame_final"}><FlameFinal/></SquareCanvas>
+
+## Summary
+
+Variations are the fractal flame algorithm's first major innovation.
+By blending variation functions and post/final transforms, we generate unique images.
+
+However, these images are grainy and unappealing. In the next post, we'll clean up
+the image quality and add some color.
