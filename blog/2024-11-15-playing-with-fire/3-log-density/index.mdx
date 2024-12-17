@@ -6,7 +6,7 @@ authors: [bspeice]
 tags: []
 ---
 
-So far, our `plot()` function has been fairly simple; map a fractal flame coordinate to a specific pixel,
+So far, our `plot()` function has been fairly simple: map a fractal flame coordinate to a specific pixel,
 and color in that pixel. This works well for simple function systems (like Sierpinski's Gasket),
 but more complex systems (like the reference parameters) produce grainy images.
 
@@ -20,21 +20,20 @@ In this post, we'll refine the image quality and add color to really make things
 This post covers sections 4 and 5 of the Fractal Flame Algorithm paper
 :::
 
-One problem with the existing chaos game is that we waste work
-by treating pixels as a binary "on" (opaque) or "off" (transparent).
-If the chaos game encounters the same location twice, nothing actually changes.
+One problem with the current chaos game algorithm is that we waste work
+because pixels are either "on" (opaque) or "off" (transparent).
+If the chaos game encounters the same pixel twice, nothing changes.
 
-To demonstrate how much work is wasted, we'll render the reference image again.
-However, we'll also count each time the chaos game encounters a pixel.
-This gives us a kind of image "histogram":
+To demonstrate how much work is wasted, we'll count each time the chaos game
+visits a pixel while iterating. This gives us a kind of image "histogram":
 
 import chaosGameHistogramSource from "!!raw-loader!./chaosGameHistogram"
 
 <CodeBlock language="typescript">{chaosGameHistogramSource}</CodeBlock>
 
-When the chaos game finishes, we find the pixel encountered most frequently.
-Finally, we "paint" the image by setting each pixel's alpha value (transparency)
-to the ratio of times encountered divided by the maximum:
+When the chaos game finishes, we find the pixel encountered most often.
+Finally, we "paint" the image by setting each pixel's alpha (transparency) value
+to the ratio of times visited divided by the maximum:
 
 import CodeBlock from "@theme/CodeBlock";
 
@@ -50,22 +49,22 @@ import {paintLinear} from "./paintLinear";
 
 ## Tone mapping
 
-While using a histogram reduces the "graininess" of the image, it also leads to some parts vanishing entirely.
-In the reference parameters, the outer circle is preserved, but the interior appears to be missing!
+While using a histogram reduces the "graining," it also leads to some parts vanishing entirely.
+In the reference parameters, the outer circle is still there, but the interior is gone!
 
 To fix this, we'll introduce the second major innovation of the fractal flame algorithm: [tone mapping](https://en.wikipedia.org/wiki/Tone_mapping).
 This is a technique used in computer graphics to compensate for differences in how
-computers represent brightness, and how people see brightness.
+computers represent brightness, and how people actually see brightness.
 
-As a concrete example, high dynamic range (HDR) photography uses this technique to capture
-nice images of scenes with a wide range of brightnesses. To take a picture of something dark,
+As a concrete example, high-dynamic-range (HDR) photography uses this technique to capture
+scenes with a wide range of brightnesses. To take a picture of something dark,
 you need a long exposure time. However, long exposures lead to "hot spots" (sections that are pure white).
 By taking multiple pictures with different exposure times, we can combine them to create
 a final image where everything is visible.
 
 In fractal flames, this "tone map" is accomplished by scaling brightness according to the _logarithm_
 of how many times we encounter a pixel. This way, "cold spots" (pixels the chaos game visits infrequently)
-will still be visible, and "hot spots" (pixels the chaos game visits frequently) won't wash out.
+are still visible, and "hot spots" (pixels the chaos game visits frequently) won't wash out.
 
 <details>
     <summary>Log-scale vibrancy also explains fractal flames appear to be 3D...</summary>
@@ -89,7 +88,7 @@ import {paintLogarithmic} from './paintLogarithmic'
 
 ## Color
 
-Finally, we'll introduce the last innovation of the fractal flame algorithm: color.
+Now we'll introduce the last innovation of the fractal flame algorithm: color.
 By including a third coordinate ($c$) in the chaos game, we can illustrate the transforms
 responsible for the image.
 
@@ -100,11 +99,12 @@ Color in a fractal flame is continuous on the range $[0, 1]$. This is important 
 - It helps blend colors together in the final image. Slight changes in the color value lead to
   slight changes in the actual color
 - It allows us to swap in new color palettes easily. We're free to choose what actual colors
-  each color value represents
+  each value represents
 
 We'll give each transform a color value ($c_i$) in the $[0, 1]$ range.
+The final transform gets a value too ($c_f$).
 Then, at each step in the chaos game, we'll set the current color
-by blending it with the previous color and the current transform:
+by blending it with the previous color:
 
 $$
 \begin{align*}
@@ -123,13 +123,13 @@ $$
 ### Color speed
 
 :::warning
-Color speed as a concept isn't introduced in the Fractal Flame Algorithm paper.
+Color speed isn't introduced in the Fractal Flame Algorithm paper.
 
 It is included here because [`flam3` implements it](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/variations.c#L2140),
 and because it's fun to play with.
 :::
 
-Next, we'll add a parameter to each transform that controls how much it affects the current color.
+Next, we'll add a parameter to each transform that controls how much it changes the current color.
 This is known as the "color speed" ($s_i$):
 
 $$
@@ -155,7 +155,7 @@ There's one small complication: the color coordinate is continuous, but the pale
 uses discrete colors. How do we handle situations where the color coordinate is
 "in between" the colors of our palette?
 
-One way is to use a step function. In the code below, we multiply the color coordinate
+One way to handle this is a step function. In the code below, we multiply the color coordinate
 by the number of colors in the palette, then truncate that value. This gives us a discrete index:
 
 import colorFromPaletteSource from "!!raw-loader!./colorFromPalette";
@@ -169,7 +169,7 @@ import colorFromPaletteSource from "!!raw-loader!./colorFromPalette";
     For example, `flam3` uses [linear interpolation](https://github.com/scottdraves/flam3/blob/7fb50c82e90e051f00efcc3123d0e06de26594b2/rect.c#L483-L486)
 </details>
 
-In the diagram below, each color in our palette is plotted on a small vertical strip.
+In the diagram below, each color in the palette is plotted on a small vertical strip.
 Putting the strips side by side shows the full palette used by the reference parameters:
 
 import * as params from "../src/params"
@@ -179,8 +179,9 @@ import {PaletteBar} from "./FlameColor"
 
 ### Plotting
 
-We're now ready to plot our $(x_f,y_f,c_f)$ coordinates. After translating from color coordinate ($c_f$)
-to RGB value, add that to the image histogram:
+We're now ready to plot our $(x_f,y_f,c_f)$ coordinates. This time, we'll use a histogram
+for each color channel (red, green, blue, alpha). After translating from color coordinate ($c_f$)
+to RGB value, add that to the histogram:
 
 import chaosGameColorSource from "!!raw-loader!./chaosGameColor"
 
@@ -208,14 +209,14 @@ brightness/transparency to reduce the visual "graining" of previous images.
 
 Next, introducing a third coordinate to the chaos game makes color images possible,
 the third major innovation of the fractal flame algorithm. Using a continuous
-color scale and color palette adds a splash of color to our transforms.
+color scale and color palette adds a splash of excitement to the image.
 
-The Fractal Flame Algorithm paper does go on to describe more techniques
-not covered here. For example, Image quality can be improved with density estimation
+The Fractal Flame Algorithm paper goes on to describe more techniques
+not covered here. For example, image quality can be improved with density estimation
 and filtering. New parameters can be generated by "mutating" existing
 fractal flames. And fractal flames can even be animated to produce videos!
 
-That said, I think this is a good place to wrap up. We were able to go from
+That said, I think this is a good place to wrap up. We went from
 an introduction to the mathematics of fractal systems all the way to
 generating full-color images. Fractal flames are a challenging topic,
-but it's extremely rewarding to learn more about how they work.
+but it's extremely rewarding to learn about how they work.
