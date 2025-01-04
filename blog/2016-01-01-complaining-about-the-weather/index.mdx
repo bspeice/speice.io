@@ -29,7 +29,7 @@ I'm originally from North Carolina, and I've been hearing a lot of people talkin
 
 So I got a bit curious: Has North Carolina over the past few months actually had more cloudy and rainy days recently than in previous years? This shouldn't be a particularly challenging task, but I'm interested to know if people's perceptions actually reflect reality.
 
-The data we'll use comes from [forecast.io](https://forecast.io), since they can give us a cloud cover percentage. I've gone ahead and retrieved the data to a pickle file, and included the [code that was used to generate it](#Generating-the-Forecast-file). First up: What was the average cloud cover in North Carolina during August - November, and how many days were cloudy? We're going to assume that a "cloudy" day is defined as any day in which the cloud cover is above 50%.
+The data we'll use comes from [forecast.io](https://forecast.io), since they can give us a cloud cover percentage. I've gone ahead and retrieved the data to a pickle file, and included the code that was used to generate it below. First up: What was the average cloud cover in North Carolina during August - November, and how many days were cloudy? We're going to assume that a "cloudy" day is defined as any day in which the cloud cover is above 50%.
 
 ```python
 city_forecasts = pickle.load(open('city_forecasts.p', 'rb'))

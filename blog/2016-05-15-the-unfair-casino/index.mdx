@@ -155,7 +155,7 @@ We can thus finally state: **just by looking at the distribution of results from
 
 ## Simulated Annealing
 
-What we really would like to do though, is see if there is any way to determine how exactly the dice are loaded. This is significantly more complicated, but we can borrow some algorithms from Machine Learning to figure out exactly how to perform this process. I'm using the Simulated Annealing algorithm, and I discuss why this works and why I chose it over some of the alternatives in the [justification](#Justification-of-Simulated-Annealing). If you don't care about how I set up the model and just want to see the code, check out [the actual code](#The-actual-code).
+What we really would like to do though, is see if there is any way to determine how exactly the dice are loaded. This is significantly more complicated, but we can borrow some algorithms from Machine Learning to figure out exactly how to perform this process. I'm using the Simulated Annealing algorithm, and I discuss why this works and why I chose it over some of the alternatives later. If you don't care about how I set up the model and just want to see the code, check it out below.
 
 [Simulated Annealing][3] is a variation of the [Metropolis-Hastings Algorithm][4], but the important thing for us is: Simulated Annealing allows us to quickly optimize high-dimensional problems. But what exactly are we trying to optimize? Ideally, we want a function that can tell us whether one distribution for the dice better explains the results than another distribution. This is known as the **likelihood** function.
 
