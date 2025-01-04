@@ -55,7 +55,7 @@ export const PaletteBar: React.FC<PaletteBarProps> = ({ height, palette, childre
 
   return (
     <>
-      <div ref={sizingRef} style={{ width: "100%", height }}>
+      <div ref={sizingRef} style={{ width: "100%", height: `${height}px` }}>
         {width > 0 ? <canvas ref={canvasRef} width={width} height={height} style={canvasStyle} /> : null}
       </div>
       {children}

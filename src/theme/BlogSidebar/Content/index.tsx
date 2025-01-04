@@ -19,8 +19,8 @@ function BlogSidebarGroup({ title, headingType, children }: { title: string, hea
 }
 
 function groupBySeries(items: BlogSidebarItem[], ListComponent: Props["ListComponent"]) {
-  var returnItems = [];
-  var seriesItems: BlogSidebarItem[] = [];
+  let returnItems = [];
+  let seriesItems: BlogSidebarItem[] = [];
 
   function flushSeries() {
     if (seriesItems.length === 0) {
@@ -41,13 +41,13 @@ function groupBySeries(items: BlogSidebarItem[], ListComponent: Props["ListCompo
     // but for a series, we want to show ascending order
     seriesItems = seriesItems.reverse();
 
-    returnItems.push(<>
-      <BlogSidebarGroup title={seriesTitle} headingType='h4'>
-        <ul>
+    returnItems.push(
+      <BlogSidebarGroup key={seriesTitle} title={seriesTitle} headingType='h4'>
+        <div role="group" style={{paddingInlineStart: "1.5em"}}>
           <ListComponent items={seriesItems} />
-        </ul>
+        </div>
       </BlogSidebarGroup>
-    </>);
+    );
 
     seriesItems = [];
   }
@@ -61,7 +61,7 @@ function groupBySeries(items: BlogSidebarItem[], ListComponent: Props["ListCompo
 
     flushSeries();
 
-    returnItems.push(<ListComponent items={[item]} />);
+    returnItems.push(<ListComponent key={item.permalink} items={[item]} />);
   }
 
   flushSeries();
@@ -69,8 +69,8 @@ function groupBySeries(items: BlogSidebarItem[], ListComponent: Props["ListCompo
 }
 
 function groupByYear(items: BlogSidebarItem[], ListComponent: Props["ListComponent"]) {
-  var returnItems = [];
-  var yearItems: BlogSidebarItem[] = [];
+  let returnItems = [];
+  let yearItems: BlogSidebarItem[] = [];
 
   function flushSeries() {
     if (yearItems.length === 0) {
@@ -80,11 +80,11 @@ function groupByYear(items: BlogSidebarItem[], ListComponent: Props["ListCompone
     const yearTitle = new Date(yearItems[0].date).getFullYear();
     const yearItemsGrouped = groupBySeries(yearItems, ListComponent);
 
-    returnItems.push(<>
-      <BlogSidebarGroup title={String(yearTitle)} headingType='h3'>
+    returnItems.push(
+      <BlogSidebarGroup key={yearTitle} title={String(yearTitle)} headingType='h3'>
         {yearItemsGrouped}
       </BlogSidebarGroup>
-    </>);
+    );
 
     yearItems = [];
   }
@@ -111,7 +111,6 @@ function groupByYear(items: BlogSidebarItem[], ListComponent: Props["ListCompone
 
 function BlogSidebarContent({
   items,
-  yearGroupHeadingClassName,
   ListComponent,
 }: Props): ReactNode {
   return groupByYear(items, ListComponent);
