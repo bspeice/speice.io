@@ -16,6 +16,7 @@ const config: Config = {
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'bspeice',
   projectName: 'speice.io',
+  trailingSlash: true,
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
