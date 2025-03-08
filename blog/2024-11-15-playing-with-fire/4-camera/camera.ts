@@ -25,12 +25,11 @@ export function camera(
         y * Math.cos(rotate),
     ]
 
-    // Scale is applied to pixel
-    // coordinates. Shift by half
+    // Scale transforms IFS coordinates
+    // to pixel coordinates. Shift by half
     // the image width and height
-    // to compensate for the
-    // IFS coordinates being symmetric
-    // around the origin
+    // to compensate for IFS coordinates
+    // being symmetric around the origin
     return [
         Math.floor(x * scale + width / 2),
         Math.floor(y * scale + height / 2)

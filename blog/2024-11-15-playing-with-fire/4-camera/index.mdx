@@ -6,7 +6,76 @@ authors: [bspeice]
 tags: []
 ---
 
+Something that bugged me while writing the first three articles on fractal flames were the constraints on
+output images. At the time, I had worked out how to render fractal flames by studying
+the source code of [Apophysis](https://sourceforge.net/projects/apophysis/)
+and [flam3](https://github.com/scottdraves/flam3). That was just enough to define a basic camera for displaying
+in a browser.
+
+Having spent more time with fractal flames and computer graphics, it's time to implement
+some missing features.
+
 <!-- truncate -->
+
+## Restrictions
+
+To review, the restrictions we've had so far:
+
+> ...we need to convert from fractal flame coordinates to pixel coordinates.
+> To simplify things, we'll assume that we're _plotting a square image_ with range $[0,1]$ for both x and y
+>
+> -- [The fractal flame algorithm](/2024/11/playing-with-fire)
+
+There are a couple problems here:
+
+First, the assumption that fractals get displayed in a square image. Ignoring aspect ratios simplifies
+the render process, but we usually don't want square images. As a workaround, you could render
+a large square image and crop it to fit an aspect ratio, but it's better to render the desired
+image size to start with.
+
+Second, the assumption that fractals use the range $[0, 1]$. My statement above is an over-simplification;
+for Sierpinski's Gasket, the solution set is indeed defined on $[0, 1]$, but all other images in the series
+use a display range of $[-2, 2]$.
+
+Finally, the camera controls available in Apophysis/[`flam3`](https://github.com/scottdraves/flam3/wiki/XML-File-Format)
+have a number of settings that were simply not implemented so far:
+
+<center>![Screenshot of Apophysis camera controls](./camera-controls.png)</center>
+
+The parameters remaining to implement are scale, zoom, rotation, and position.
+
+## Scale
+
+Fractal flames are defined on a continuous range. At some point, we must convert from fractal flame coordinates
+into specific pixels, and scale is the parameter we use to do it. Specifically, scale is **the number of pixels
+in one unit of the fractal flame coordinate system**.
+
+For example, if you open the [reference parameters](../params.flame) in a text editor, you'll see the following:
+
+```xml
+<flame name="final xform" size="600 600" center="0 0" scale="150">
+```
+
+This says that the final image should be 600 pixels wide and 600 pixels tall, centered at the point $(0, 0)$,
+with 150 pixels per unit. Dividing 600 by 150 gives us an image that is 4 units wide and 4 units tall.
+And because the center is at $(0, 0)$, the final image is effectively looking at the range $[-2, 2]$ in the
+fractal coordinate system (as mentioned above).
+
+Scale can be used to implement a kind of "zoom" in images. If the reference parameters instead used `scale="300"`,
+the same 600 pixels would instead be looking at the range $[-1, 1]$ in the fractal coordinate system.
+
+This also demonstrates the biggest problem with using scale: it's a parameter that only controls the output image.
+If the output image changed to `size="1200 1200"`, and scale stayed the same, the output image would have
+a lot more white space. Instead, it's usually better to use a different parameter for controlling image size.
+
+## Zoom
+
+
+## Rotation
+
+## Offset
+
+
 
 import CodeBlock from "@theme/CodeBlock";
 
