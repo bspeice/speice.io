@@ -18,6 +18,8 @@ const downloadImage = (name: string) =>
 
 type CanvasProps = {
     name: string;
+    width?: string;
+    aspectRatio?: string;
     style?: any;
     children?: React.ReactElement
 }
@@ -105,6 +107,6 @@ export const Canvas: React.FC<CanvasProps> = ({name, style, children}) => {
     )
 }
 
-export const SquareCanvas: React.FC<CanvasProps> = ({name, style, children}) => {
-    return <center><Canvas name={name} style={{width: '75%', aspectRatio: '1/1', ...style}} children={children}/></center>
+export const SquareCanvas: React.FC<CanvasProps> = ({name, width, aspectRatio, style, children}) => {
+    return <center><Canvas name={name} style={{width: width ?? '75%', aspectRatio: aspectRatio ?? '1/1', ...style}} children={children}/></center>
 }

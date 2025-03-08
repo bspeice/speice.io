@@ -27,6 +27,8 @@ If the chaos game encounters the same pixel twice, nothing changes.
 To demonstrate how much work is wasted, we'll count each time the chaos game
 visits a pixel while iterating. This gives us a kind of image "histogram":
 
+import CodeBlock from "@theme/CodeBlock";
+
 import chaosGameHistogramSource from "!!raw-loader!./chaosGameHistogram"
 
 <CodeBlock language="typescript">{chaosGameHistogramSource}</CodeBlock>
@@ -34,8 +36,6 @@ import chaosGameHistogramSource from "!!raw-loader!./chaosGameHistogram"
 When the chaos game finishes, we find the pixel encountered most often.
 Finally, we "paint" the image by setting each pixel's alpha (transparency) value
 to the ratio of times visited divided by the maximum:
-
-import CodeBlock from "@theme/CodeBlock";
 
 import paintLinearSource from "!!raw-loader!./paintLinear"
 

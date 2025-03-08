@@ -1,0 +1,20 @@
+---
+slug: 2025/03/playing-with-fire-camera
+title: "Playing with fire: The camera"
+date: 2025-03-07 12:00:00
+authors: [bspeice]
+tags: []
+---
+
+<!-- truncate -->
+
+import CodeBlock from "@theme/CodeBlock";
+
+import cameraSource from "!!raw-loader!./camera"
+
+<CodeBlock language="typescript">{cameraSource}</CodeBlock>
+
+import {SquareCanvas} from "../src/Canvas";
+import FlameCamera from "./FlameCamera";
+
+<SquareCanvas name={"flame_camera"} width={'95%'} aspectRatio={'4/3'}><FlameCamera /></SquareCanvas>
