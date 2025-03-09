@@ -22,7 +22,7 @@ some missing features.
 To review, the restrictions we've had so far:
 
 > ...we need to convert from fractal flame coordinates to pixel coordinates.
-> To simplify things, we'll assume that we're _plotting a square image_ with range $[0,1]$ for both x and y
+> To simplify things, we'll assume that we're plotting a square image with range $[0,1]$ for both x and y
 >
 > -- [The fractal flame algorithm](/2024/11/playing-with-fire)
 
@@ -37,20 +37,82 @@ Second, the assumption that fractals use the range $[0, 1]$. My statement above 
 for Sierpinski's Gasket, the solution set is indeed defined on $[0, 1]$, but all other images in the series
 use a display range of $[-2, 2]$.
 
-Finally, the camera controls available in Apophysis/[`flam3`](https://github.com/scottdraves/flam3/wiki/XML-File-Format)
-have a number of settings that were simply not implemented so far:
+## Parameters
+
+For comparison, here are the camera controls available in Apophysis and [`flam3`](https://github.com/scottdraves/flam3/wiki/XML-File-Format):
 
 <center>![Screenshot of Apophysis camera controls](./camera-controls.png)</center>
 
-The parameters remaining to implement are scale, zoom, rotation, and position.
+There are four parameters yet to implement: position, rotation, zoom, and scale.
 
-## Scale
+### Position
 
-Fractal flames are defined on a continuous range. At some point, we must convert from fractal flame coordinates
-into specific pixels, and scale is the parameter we use to do it. Specifically, scale is **the number of pixels
-in one unit of the fractal flame coordinate system**.
+Fractal flames normally use the origin as the center of an image. The position parameters (X and Y) move
+the center point, which effectively pans the image. A positive X position shifts the image left,
+and a negative X position shifts the image right. Similarly, a positive Y position shifts the image up,
+and a negative Y position shifts the image down.
 
-For example, if you open the [reference parameters](../params.flame) in a text editor, you'll see the following:
+To apply the position, simply subtract the X and Y position from each point in the chaos game prior to plotting it:
+
+```typescript
+[x, y] = [
+  x - positionX,
+  y - positionY
+];
+```
+
+### Rotation
+
+After the position parameters are applied, we can rotate the image around the (potentially shifted) center point.
+To do so, we'll go back to the [affine transformations](https://en.wikipedia.org/wiki/Affine_transformation)
+we've been using. Specifically, the rotation angle $\theta$ gives us a transform matrix we can apply to our point:
+
+$$
+\begin{bmatrix}
+\text{cos}(\theta) & -\text{sin}(\theta) \\
+\text{sin}(\theta) & \text{cos}(\theta)
+\end{bmatrix}
+
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+$$
+
+As a minor tweak, we also negate the rotation angle to match the behavior of Apophysis/`flam3`.
+
+```typescript
+[x, y] = [
+  x * Math.cos(-rotate) -
+  y * Math.sin(-rotate),
+  x * Math.sin(-rotate) +
+  y * Math.cos(-rotate),
+];
+```
+
+### Zoom
+
+This parameter does what the name implies; zoom in and out of the image. Specifically, for a zoom parameter $z$,
+every point in the chaos game is scaled by $\text{pow}(2, z)$ prior to plotting. For example, if the point is $(1, 1)$,
+a zoom of 1 means we actually plot $(1, 1) \cdot \text{pow}(2, 1) = (2, 2)$.
+
+```
+[x, y] = [
+  x * Math.pow(2, zoom),
+  y * Math.pow(2, zoom)
+];
+```
+
+:::info
+In addition to scaling the image, renderers also [scale the image quality](https://github.com/scottdraves/flam3/blob/f8b6c782012e4d922ef2cc2f0c2686b612c32504/rect.c#L796-L797)
+to compensate for the zoom parameter.
+:::
+
+### Scale
+
+Finally, we need to convert from fractal flame coordinates to individual pixels. The scale parameter defines
+how many pixels are in one unit of the fractal flame coordinate system. For example, if you open the
+[reference parameters](../params.flame) in a text editor, you'll see the following:
 
 ```xml
 <flame name="final xform" size="600 600" center="0 0" scale="150">
@@ -61,29 +123,57 @@ with 150 pixels per unit. Dividing 600 by 150 gives us an image that is 4 units 
 And because the center is at $(0, 0)$, the final image is effectively looking at the range $[-2, 2]$ in the
 fractal coordinate system (as mentioned above).
 
+To go from the fractal coordinate system to a pixel coordinate system, we multiply by the scale,
+then subtract half the image width and height:
+
+```typescript
+[pixelX, pixelY] = [
+  x * scale - imageWidth / 2,
+  y * scale - imageHeight / 2
+]
+```
+
 Scale can be used to implement a kind of "zoom" in images. If the reference parameters instead used `scale="300"`,
 the same 600 pixels would instead be looking at the range $[-1, 1]$ in the fractal coordinate system.
 
-This also demonstrates the biggest problem with using scale: it's a parameter that only controls the output image.
-If the output image changed to `size="1200 1200"`, and scale stayed the same, the output image would have
-a lot more white space. Instead, it's usually better to use a different parameter for controlling image size.
+However, this also demonstrates the biggest problem with using scale: it's a parameter that only controls the output image.
+If the output image changed to `size="1200 1200"` and we kept `scale="150"`, the output image would
+be looking at the range $[-4, 4]$ - nothing but white space. Because, using the zoom parameter
+is the preferred way to zoom in and out of an image.
 
-## Zoom
+:::info
+One final note about the camera controls: every step in this process (position, rotation, zoom, scale)
+is an affine transformation. And because affine transformations can be chained together, it's possible to
+express all of our camera controls as a single transformation matrix. This is important for software optimization;
+rather than applying individual camera controls step-by-step, apply all of them at once.
 
+Additionally, because the camera controls are an affine transformation, they could be implemented
+as a transform after the final transform. In practice though, it's helpful to control them separately.
+:::
 
-## Rotation
+## Camera
 
-## Offset
-
-
+With the individual steps defined, we can put together a more robust "camera" for viewing the fractal flame.
 
 import CodeBlock from "@theme/CodeBlock";
-
 import cameraSource from "!!raw-loader!./camera"
 
 <CodeBlock language="typescript">{cameraSource}</CodeBlock>
+
+For demonstration, the output image has a 4:3 aspect ratio, removing the previous restriction of a square image.
+In addition, the scale is automatically chosen to make sure the width of the image covers the range $[-2, 2]$.
+As a result of the aspect ratio, the image height effectively covers the range $[-1.5, 1.5]$.
 
 import {SquareCanvas} from "../src/Canvas";
 import FlameCamera from "./FlameCamera";
 
 <SquareCanvas name={"flame_camera"} width={'95%'} aspectRatio={'4/3'}><FlameCamera /></SquareCanvas>
+
+## Summary
+
+The fractal images so far relied on critical assumptions about the output format to make sure everything
+looked correct. However, we can implement a 2D "camera" with a series of affine transformations - going from
+the fractal flame coordinate system to pixel coordinates. Later implementations of fractal flame renderers like
+[Fractorium](http://fractorium.com/) operate in 3D, and have to implement the camera slightly differently.
+
+But for this blog series, it's nice to achieve feature parity with the existing code.

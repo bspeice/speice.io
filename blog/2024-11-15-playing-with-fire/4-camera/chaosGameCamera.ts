@@ -1,4 +1,3 @@
-// hidden-start
 import { Props as ChaosGameColorProps } from "../3-log-density/chaosGameColor";
 import { randomBiUnit } from "../src/randomBiUnit";
 import { randomChoice } from "../src/randomChoice";
@@ -10,14 +9,13 @@ import {paintColor} from "../3-log-density/paintColor";
 
 const quality = 10;
 const step = 100_000;
-// hidden-end
 
 export type Props = ChaosGameColorProps & {
-  scale: number;
-  zoom: number,
+  positionX: number;
+  positionY: number;
   rotate: number;
-  offsetX: number;
-  offsetY: number;
+  zoom: number,
+  scale: number;
 }
 
 export function* chaosGameCamera(
@@ -29,16 +27,15 @@ export function* chaosGameCamera(
     palette,
     colors,
     finalColor,
-    scale,
-    zoom,
+    positionX,
+    positionY,
     rotate,
-    offsetX,
-    offsetY,
+    zoom,
+    scale,
   }: Props
 ) {
   const pixels = width * height;
 
-  // highlight-start
   const imgRed = Array<number>(pixels)
     .fill(0);
   const imgGreen = Array<number>(pixels)
@@ -54,7 +51,7 @@ export function* chaosGameCamera(
     c: number
   ) => {
     const [pixelX, pixelY] =
-      camera(x, y, width, height, scale, zoom, rotate, offsetX, offsetY);
+      camera(x, y, width, height, positionX, positionY, rotate, zoom, scale);
 
     if (
       pixelX < 0 ||
@@ -75,7 +72,6 @@ export function* chaosGameCamera(
     imgBlue[hIndex] += b;
     imgAlpha[hIndex] += 1;
   }
-  // highlight-end
 
   let [x, y] = [
     randomBiUnit(),

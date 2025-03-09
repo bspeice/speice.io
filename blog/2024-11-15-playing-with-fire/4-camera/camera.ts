@@ -3,19 +3,17 @@ export function camera(
     y: number,
     width: number,
     height: number,
-    scale: number,
-    zoom: number,
+    positionX: number,
+    positionY: number,
     rotate: number,
-    offsetX: number,
-    offsetY: number,
+    zoom: number,
+    scale: number,
 ): [number, number] {
-    const zoomFactor = Math.pow(2, zoom);
-
-    // Zoom, offset, and rotation are
+    // Position, rotation, and zoom are
     // applied in IFS coordinates
     [x, y] = [
-        (x - offsetX) * zoomFactor,
-        (y - offsetY) * zoomFactor,
+        (x - positionX),
+        (y - positionY),
     ];
 
     [x, y] = [
@@ -23,7 +21,12 @@ export function camera(
         y * Math.sin(rotate),
         x * Math.sin(rotate) +
         y * Math.cos(rotate),
-    ]
+    ];
+
+    [x, y] = [
+      x * Math.pow(2, zoom),
+      y * Math.pow(2, zoom)
+    ];
 
     // Scale transforms IFS coordinates
     // to pixel coordinates. Shift by half

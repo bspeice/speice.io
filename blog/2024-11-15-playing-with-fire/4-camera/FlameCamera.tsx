@@ -16,14 +16,14 @@ export default function FlameCamera({ children }: Props) {
 
   const [zoom, setZoom] = React.useState(0);
   const [rotate, setRotate] = React.useState(0);
-  const [offsetX, setOffsetX] = React.useState(0);
-  const [offsetY, setOffsetY] = React.useState(0);
+  const [positionX, setPositionX] = React.useState(0);
+  const [positionY, setPositionY] = React.useState(0);
 
   const resetCamera = () => {
     setZoom(0);
     setRotate(0);
-    setOffsetX(0);
-    setOffsetY(0);
+    setPositionX(0);
+    setPositionY(0);
   }
   const resetButton = <button className={styles.inputReset} onClick={resetCamera}>Reset</button>;
 
@@ -42,12 +42,12 @@ export default function FlameCamera({ children }: Props) {
       finalColor: { color: params.xformFinalColor, colorSpeed: 0.5 },
       scale,
       zoom,
-      rotate: rotate / 180 * Math.PI,
-      offsetX,
-      offsetY
+      rotate: -rotate / 180 * Math.PI,
+      positionX,
+      positionY
     };
     setPainter(chaosGameCamera(gameParams));
-  }, [scale, zoom, rotate, offsetX, offsetY]);
+  }, [scale, zoom, rotate, positionX, positionY]);
 
   return (
       <>
@@ -64,14 +64,14 @@ export default function FlameCamera({ children }: Props) {
                    onInput={e => setRotate(Number(e.currentTarget.value))}/>
           </div>
           <div className={styles.inputElement}>
-            <p>Offset X: {offsetX}</p>
-            <input type={"range"} min={-2} max={2} step={0.01} value={offsetX}
-                   onInput={e => setOffsetX(Number(e.currentTarget.value))}/>
+            <p>Offset X: {positionX}</p>
+            <input type={"range"} min={-2} max={2} step={0.01} value={positionX}
+                   onInput={e => setPositionX(Number(e.currentTarget.value))}/>
           </div>
           <div className={styles.inputElement}>
-            <p>Offset Y: {offsetY}</p>
-            <input type={"range"} min={-2} max={2} step={0.01} value={offsetY}
-                   onInput={e => setOffsetY(Number(e.currentTarget.value))}/>
+            <p>Offset Y: {positionY}</p>
+            <input type={"range"} min={-2} max={2} step={0.01} value={positionY}
+                   onInput={e => setPositionY(Number(e.currentTarget.value))}/>
           </div>
         </div>
         {children}
