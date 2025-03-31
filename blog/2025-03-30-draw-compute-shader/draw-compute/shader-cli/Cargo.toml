@@ -1,0 +1,13 @@
+[package]
+name = "shader-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+spirv-builder = { git = "https://github.com/rust-gpu/rust-gpu", rev = "698f10ac14b7c952394ac5620004e4e973308902" }
+
+# On Windows, link.exe has a maximum of 65536 symbols.
+# These options are required to stay within that limit
+[profile.dev]
+opt-level = 3
+codegen-units = 256
