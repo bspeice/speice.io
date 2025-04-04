@@ -1,27 +1,41 @@
 #![no_std]
+
+use glam::Vec4Swizzles;
 use spirv_std::spirv;
 
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 #[repr(C)]
 pub struct Viewport {
-    pub offset_x: u32,
-    pub offset_y: u32,
-    pub width: u32,
-    pub height: u32,
+    pub image_size: glam::UVec2,
+    pub viewport_offset: glam::UVec2,
+    pub viewport_size: glam::UVec2,
 }
 
 const BLOCK_SIZE: u32 = 16;
 const BLACK: glam::Vec4 = glam::vec4(0.0, 0.0, 0.0, 1.0);
 const WHITE: glam::Vec4 = glam::vec4(1.0, 1.0, 1.0, 1.0);
 
+fn image_index(x: usize, y: usize, width: usize) -> usize {
+    y * width + x
+}
+
 #[spirv(compute(threads(1)))]
 pub fn main_cs(
     #[spirv(uniform, descriptor_set = 0, binding = 0)] viewport: &Viewport,
     #[spirv(storage_buffer, descriptor_set = 0, binding = 1)] image: &mut [glam::Vec4],
 ) {
-    for x in 0..viewport.width as usize {
-        for y in 0..viewport.height as usize {
-            let image_index = y * viewport.width as usize + x;
+    let width = viewport.image_size.x as usize;
+    let height = viewport.image_size.y as usize;
+    for x in 0..width {
+        for y in 0..height {
+            let index = image_index(x, y, width);
+            if x == 0
+                || x == width - 1
+                || y == 0
+                || y == height - 1
+            {
+                image[index] = WHITE;
+            }
         }
     }
 }
@@ -42,5 +56,13 @@ pub fn main_fs(
     #[spirv(storage_buffer, descriptor_set = 0, binding = 1)] image: &mut [glam::Vec4],
     output: &mut glam::Vec4,
 ) {
-    *output = BLACK;
+    let pixel_coordinate = frag_coord.xy().as_usizevec2();
+    let (pixel_x, pixel_y) = (pixel_coordinate.x, pixel_coordinate.y);
+    let index = image_index(pixel_x, pixel_y, viewport.viewport_size.x as usize);
+
+    *output = if index < image.len() {
+        image[index]
+    } else {
+        BLACK
+    };
 }

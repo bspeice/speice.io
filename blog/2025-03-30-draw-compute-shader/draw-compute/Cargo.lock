@@ -774,9 +774,11 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 name = "draw-compute"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "eframe",
  "egui",
  "egui-wgpu",
+ "glam 0.30.1",
  "shader",
  "wgpu",
 ]

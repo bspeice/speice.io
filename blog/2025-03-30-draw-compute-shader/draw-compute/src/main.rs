@@ -3,6 +3,7 @@ use eframe::wgpu::{CommandBuffer, CommandEncoder, Device, Queue, RenderPass};
 use eframe::Frame;
 use egui::{Context, Sense};
 use egui_wgpu::{CallbackResources, CallbackTrait, ScreenDescriptor};
+use shader::Viewport;
 
 struct DrawResources {
     device: wgpu::Device,
@@ -10,6 +11,7 @@ struct DrawResources {
     bind_group: wgpu::BindGroup,
     viewport_buffer: wgpu::Buffer,
     image_buffer: wgpu::Buffer,
+    image_buffer_size: glam::UVec2,
     compute_pipeline: wgpu::ComputePipeline,
     render_pipeline: wgpu::RenderPipeline,
 }
@@ -148,6 +150,7 @@ impl DrawResources {
         let bind_group_layout = Self::bind_group_layout(device);
         let viewport_buffer = Self::viewport_buffer(device);
         let image_buffer = Self::image_buffer(device, width, height);
+        let image_buffer_size = glam::uvec2(width as u32, height as u32);
 
         let bind_group =
             Self::bind_group(device, &bind_group_layout, &viewport_buffer, &image_buffer);
@@ -162,6 +165,7 @@ impl DrawResources {
             bind_group,
             viewport_buffer,
             image_buffer,
+            image_buffer_size,
             compute_pipeline,
             render_pipeline,
         }
@@ -187,25 +191,37 @@ impl CallbackTrait for DrawCallback {
     fn prepare(
         &self,
         _device: &Device,
-        _queue: &Queue,
+        queue: &Queue,
         _screen_descriptor: &ScreenDescriptor,
         egui_encoder: &mut CommandEncoder,
         callback_resources: &mut CallbackResources,
     ) -> Vec<CommandBuffer> {
+
+        let resources = callback_resources
+            .get_mut::<DrawResources>()
+            .expect("missing draw resources");
+
+        let mut viewport = Viewport {
+            image_size: resources.image_buffer_size,
+            viewport_offset: glam::uvec2(self.draw_rect.min.x as u32, self.draw_rect.min.y as u32),
+            viewport_size: glam::uvec2(self.draw_rect.size().x as u32, self.draw_rect.size().y as u32),
+        };
+
         if !self.draw_resize {
+            queue.write_buffer(&resources.viewport_buffer, 0, bytemuck::cast_slice(&[viewport]));
             return vec![];
         }
+
+        let draw_size = self.draw_rect.size();
+        resources.resize(draw_size.x as u64, draw_size.y as u64);
+
+        viewport.image_size = resources.image_buffer_size;
+        queue.write_buffer(&resources.viewport_buffer, 0, bytemuck::cast_slice(&[viewport]));
 
         let mut compute_pass = egui_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("compute"),
             timestamp_writes: None,
         });
-
-        let resources = callback_resources
-            .get_mut::<DrawResources>()
-            .expect("missing draw resources");
-        let draw_size = self.draw_rect.size();
-        resources.resize(draw_size.x as u64, draw_size.y as u64);
 
         compute_pass.set_pipeline(&resources.compute_pipeline);
         compute_pass.set_bind_group(0, &resources.bind_group, &[]);
