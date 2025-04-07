@@ -172,6 +172,7 @@ impl DrawResources {
 
     fn resize(&mut self, width: u64, height: u64) {
         self.image_buffer = Self::image_buffer(&self.device, width, height);
+        self.image_size = glam::uvec2(width as u32, height as u32);
         self.bind_group = Self::bind_group(
             &self.device,
             &self.bind_group_layout,
@@ -206,7 +207,7 @@ impl CallbackTrait for DrawCallback {
             );
         }
 
-        let mut viewport = shader::Viewport {
+        let viewport = shader::Viewport {
             image: resources.image_size,
             offset: glam::uvec2(self.draw_rect.min.x as u32, self.draw_rect.min.y as u32),
             size: glam::uvec2(
@@ -273,6 +274,13 @@ impl eframe::App for ComputeDraw {
             callback_resources.insert(DrawResources::new(&device, &format, 800, 600));
         }
 
+        egui::TopBottomPanel::bottom("bottom").show(ctx, |ui| {
+            let wgpu_render_state = frame.wgpu_render_state().expect("missing WGPU state");
+            let image_size = wgpu_render_state.renderer.as_ref().read().callback_resources.get::<DrawResources>().unwrap().image_size;
+
+            ui.label(format!("Viewport: image={image_size}"))
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::Frame::canvas(ui.style()).show(ui, |ui| {
                 let interact_rect = ui.available_rect_before_wrap();
@@ -301,7 +309,7 @@ fn main() {
     eframe::run_native(
         "Compute Draw",
         native_options,
-        Box::new(|cc| Ok(Box::new(ComputeDraw { initial_draw: true }))),
+        Box::new(|_cc| Ok(Box::new(ComputeDraw { initial_draw: true }))),
     )
     .unwrap()
 }

@@ -54,12 +54,16 @@ pub fn main_fs(
     #[spirv(storage_buffer, descriptor_set = 0, binding = 1)] image: &mut [glam::Vec4],
     output: &mut glam::Vec4,
 ) {
-    let pixel_coordinate = frag_coord.xy().as_usizevec2();
-    let (pixel_x, pixel_y) = (pixel_coordinate.x, pixel_coordinate.y);
+    let vp_size = viewport.size.as_vec2();
+    let img_size = viewport.image.as_vec2();
 
-    *output = if pixel_x < viewport.image.x as usize && pixel_y < viewport.image.y as usize {
-        image[image_index(pixel_x, pixel_y, viewport.image.x as usize)]
+    let scale = (vp_size / img_size).min_element();
+    let img_offset = (vp_size / scale - img_size) / 2.0;
+    let img_coord = (frag_coord.xy() - viewport.offset.as_vec2()) / scale - img_offset;
+
+    *output = if img_coord.cmpge(glam::Vec2::ZERO).all() && img_coord.cmple(img_size).all() {
+        image[image_index(img_coord.x as usize, img_coord.y as usize, viewport.image.x as usize)]
     } else {
         BLACK
-    };
+    }
 }
