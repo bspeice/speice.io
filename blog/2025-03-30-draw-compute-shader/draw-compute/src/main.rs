@@ -276,7 +276,14 @@ impl eframe::App for ComputeDraw {
 
         egui::TopBottomPanel::bottom("bottom").show(ctx, |ui| {
             let wgpu_render_state = frame.wgpu_render_state().expect("missing WGPU state");
-            let image_size = wgpu_render_state.renderer.as_ref().read().callback_resources.get::<DrawResources>().unwrap().image_size;
+            let image_size = wgpu_render_state
+                .renderer
+                .as_ref()
+                .read()
+                .callback_resources
+                .get::<DrawResources>()
+                .unwrap()
+                .image_size;
 
             ui.label(format!("Viewport: image={image_size}"))
         });

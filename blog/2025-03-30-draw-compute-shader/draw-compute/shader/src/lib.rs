@@ -62,7 +62,11 @@ pub fn main_fs(
     let img_coord = (frag_coord.xy() - viewport.offset.as_vec2()) / scale - img_offset;
 
     *output = if img_coord.cmpge(glam::Vec2::ZERO).all() && img_coord.cmple(img_size).all() {
-        image[image_index(img_coord.x as usize, img_coord.y as usize, viewport.image.x as usize)]
+        image[image_index(
+            img_coord.x as usize,
+            img_coord.y as usize,
+            viewport.image.x as usize,
+        )]
     } else {
         BLACK
     }
