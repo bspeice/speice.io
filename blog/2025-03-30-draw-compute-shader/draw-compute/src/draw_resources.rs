@@ -1,26 +1,34 @@
-use eframe::epaint::PaintCallbackInfo;
-use eframe::wgpu::{CommandBuffer, CommandEncoder, Device, Queue, RenderPass};
-use eframe::Frame;
-use egui::{Context, Sense};
-use egui_wgpu::{CallbackResources, CallbackTrait, ScreenDescriptor};
+use shader::DrawSettings;
+use std::marker::PhantomData;
 
-struct DrawResources {
-    device: wgpu::Device,
-    bind_group_layout: wgpu::BindGroupLayout,
-    bind_group: wgpu::BindGroup,
-    viewport_buffer: wgpu::Buffer,
-    image_buffer: wgpu::Buffer,
-    image_size: glam::UVec2,
-    compute_pipeline: wgpu::ComputePipeline,
-    render_pipeline: wgpu::RenderPipeline,
+pub trait ShaderSettings: Send + Sync {
+    type DrawSettings: DrawSettings;
+
+    fn compute_shader() -> &'static str;
+    fn fragment_shader() -> &'static str;
+
+    fn new(interact_rect: egui::Rect) -> Self;
+
+    fn write_buffer(&self, queue: &wgpu::Queue, buffer: &wgpu::Buffer, image_size: glam::UVec2);
 }
 
-impl DrawResources {
+pub struct DrawResources<S: ShaderSettings> {
+    bind_group_layout: wgpu::BindGroupLayout,
+    pub bind_group: wgpu::BindGroup,
+    pub viewport_buffer: wgpu::Buffer,
+    image_buffer: wgpu::Buffer,
+    pub image_size: glam::UVec2,
+    pub compute_pipeline: wgpu::ComputePipeline,
+    pub render_pipeline: wgpu::RenderPipeline,
+    settings: PhantomData<S>,
+}
+
+impl<S: ShaderSettings> DrawResources<S> {
     fn bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("compute_draw"),
             entries: &[
-                // viewport
+                // draw_settings
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT,
@@ -71,7 +79,7 @@ impl DrawResources {
     fn viewport_buffer(device: &wgpu::Device) -> wgpu::Buffer {
         device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("viewport"),
-            size: size_of::<shader::Viewport>() as u64,
+            size: size_of::<S::DrawSettings>() as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
             mapped_at_creation: false,
         })
@@ -105,7 +113,7 @@ impl DrawResources {
             label: Some("compute"),
             layout: Some(&pipeline_layout),
             module: &module,
-            entry_point: Some("main_cs"),
+            entry_point: Some(S::compute_shader()),
             compilation_options: Default::default(),
             cache: None,
         })
@@ -136,7 +144,7 @@ impl DrawResources {
             multisample: Default::default(),
             fragment: Some(wgpu::FragmentState {
                 module,
-                entry_point: Some("main_fs"),
+                entry_point: Some(S::fragment_shader()),
                 compilation_options: Default::default(),
                 targets: &[Some((*format).into())],
             }),
@@ -145,7 +153,12 @@ impl DrawResources {
         })
     }
 
-    fn new(device: &wgpu::Device, format: &wgpu::TextureFormat, width: u64, height: u64) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        format: &wgpu::TextureFormat,
+        width: u64,
+        height: u64,
+    ) -> Self {
         let bind_group_layout = Self::bind_group_layout(device);
         let viewport_buffer = Self::viewport_buffer(device);
         let image_buffer = Self::image_buffer(device, width, height);
@@ -159,7 +172,6 @@ impl DrawResources {
         let render_pipeline = Self::render_pipeline(device, &module, &bind_group_layout, format);
 
         Self {
-            device: device.clone(),
             bind_group_layout,
             bind_group,
             viewport_buffer,
@@ -167,156 +179,18 @@ impl DrawResources {
             image_size,
             compute_pipeline,
             render_pipeline,
+            settings: PhantomData,
         }
     }
 
-    fn resize(&mut self, width: u64, height: u64) {
-        self.image_buffer = Self::image_buffer(&self.device, width, height);
+    pub fn resize(&mut self, device: &wgpu::Device, width: u64, height: u64) {
+        self.image_buffer = Self::image_buffer(device, width, height);
         self.image_size = glam::uvec2(width as u32, height as u32);
         self.bind_group = Self::bind_group(
-            &self.device,
+            device,
             &self.bind_group_layout,
             &self.viewport_buffer,
             &self.image_buffer,
         );
     }
-}
-
-struct DrawCallback {
-    draw_rect: egui::Rect,
-    draw_resize: bool,
-}
-
-impl CallbackTrait for DrawCallback {
-    fn prepare(
-        &self,
-        _device: &Device,
-        queue: &Queue,
-        _screen_descriptor: &ScreenDescriptor,
-        egui_encoder: &mut CommandEncoder,
-        callback_resources: &mut CallbackResources,
-    ) -> Vec<CommandBuffer> {
-        let resources = callback_resources
-            .get_mut::<DrawResources>()
-            .expect("missing draw resources");
-
-        if self.draw_resize {
-            resources.resize(
-                self.draw_rect.size().x as u64,
-                self.draw_rect.size().y as u64,
-            );
-        }
-
-        let viewport = shader::Viewport {
-            image: resources.image_size,
-            offset: glam::uvec2(self.draw_rect.min.x as u32, self.draw_rect.min.y as u32),
-            size: glam::uvec2(
-                self.draw_rect.size().x as u32,
-                self.draw_rect.size().y as u32,
-            ),
-        };
-
-        queue.write_buffer(
-            &resources.viewport_buffer,
-            0,
-            bytemuck::cast_slice(&[viewport]),
-        );
-
-        if self.draw_resize {
-            let mut compute_pass = egui_encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("compute"),
-                timestamp_writes: None,
-            });
-
-            compute_pass.set_pipeline(&resources.compute_pipeline);
-            compute_pass.set_bind_group(0, &resources.bind_group, &[]);
-            compute_pass.dispatch_workgroups(1, 1, 1);
-        }
-
-        vec![]
-    }
-
-    fn paint(
-        &self,
-        _info: PaintCallbackInfo,
-        render_pass: &mut RenderPass<'static>,
-        callback_resources: &CallbackResources,
-    ) {
-        let resources = callback_resources.get::<DrawResources>().unwrap();
-
-        render_pass.set_pipeline(&resources.render_pipeline);
-        render_pass.set_bind_group(0, &resources.bind_group, &[]);
-        render_pass.draw(0..3, 0..1);
-    }
-}
-
-#[derive(Copy, Clone)]
-struct ComputeDraw {
-    initial_draw: bool,
-}
-
-impl eframe::App for ComputeDraw {
-    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
-        let initial_draw = self.initial_draw;
-        self.initial_draw = false;
-
-        if initial_draw {
-            let wgpu_render_state = frame.wgpu_render_state().expect("missing WGPU state");
-            let device = wgpu_render_state.device.clone();
-            let format = wgpu_render_state.target_format.clone();
-            let callback_resources = &mut wgpu_render_state
-                .renderer
-                .as_ref()
-                .write()
-                .callback_resources;
-
-            // Guess an initial size for initializing GPU resources, it will be adjusted later
-            callback_resources.insert(DrawResources::new(&device, &format, 800, 600));
-        }
-
-        egui::TopBottomPanel::bottom("bottom").show(ctx, |ui| {
-            let wgpu_render_state = frame.wgpu_render_state().expect("missing WGPU state");
-            let image_size = wgpu_render_state
-                .renderer
-                .as_ref()
-                .read()
-                .callback_resources
-                .get::<DrawResources>()
-                .unwrap()
-                .image_size;
-
-            ui.label(format!("Viewport: image={image_size}"))
-        });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                let interact_rect = ui.available_rect_before_wrap();
-                let (response, painter) = ui.allocate_painter(interact_rect.size(), Sense::click());
-
-                let callback = DrawCallback {
-                    draw_rect: interact_rect,
-                    draw_resize: initial_draw || response.clicked(),
-                };
-
-                painter.add(egui_wgpu::Callback::new_paint_callback(
-                    interact_rect,
-                    callback,
-                ))
-            });
-        });
-    }
-}
-
-fn main() {
-    let native_options = eframe::NativeOptions {
-        renderer: eframe::Renderer::Wgpu,
-        ..Default::default()
-    };
-
-    eframe::run_native(
-        "Compute Draw",
-        native_options,
-        Box::new(|_cc| Ok(Box::new(ComputeDraw { initial_draw: true }))),
-    )
-    .unwrap()
 }
