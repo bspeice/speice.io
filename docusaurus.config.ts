@@ -37,6 +37,10 @@ const config: Config = {
         docs: false,
         blog: {
           routeBasePath: '/',
+          exclude: [
+              "**/_*.md",
+              "**/target/**"
+          ],
           blogSidebarTitle: 'All posts',
           blogSidebarCount: 'ALL',
           showReadingTime: true,
