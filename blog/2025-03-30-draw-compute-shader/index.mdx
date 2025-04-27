@@ -1,0 +1,107 @@
+---
+slug: 2025/04/drawing-compute-shader
+title: "Drawing with a compute shader"
+date: 2025-04-27 12:00:00
+authors: [bspeice]
+tags: []
+---
+
+My goal studying the [fractal flame algorithm](../2024-11-15-playing-with-fire/1-introduction/index.mdx) was not just
+to satisfy an inner curiosity. The algorithm has been ported to GPUs, but those implementations require either CUDA
+(for [flam4](https://sourceforge.net/projects/flam4/)) or OpenCL (for [Fractorium](http://fractorium.com/)).
+I'd like to try implementing a fractal flame editor using standard GPU shaders.
+
+The first step is showing an application window and drawing to it using a GPU. This post covers:
+
+- Setting up an application window using [`egui`](https://github.com/emilk/egui)
+- Writing and compiling shaders written in Rust with [Rust GPU](https://rust-gpu.github.io/)
+- Rendering an image using a compute shader, and displaying the image using a fragment shader
+
+Not that interesting if you're already familiar with shaders and GPU programming, but I found myself wishing
+there were more detailed resources on how to get started.
+
+TODO: Image of the end goal here?
+
+<!-- truncate -->
+
+## GUIs in Rust with `egui`
+
+:::note
+This section focuses on creating an application that displays the GPU results. If that's not your style,
+you can [skip ahead to the shaders](#shaders-in-rust).
+:::
+
+## Shaders in Rust
+
+All the code in this post is written in Rust - including the parts that run on a GPU. Rust GPU
+compiles Rust code into a shader that runs on a graphics card. There are three primary shader types used:
+
+- [Compute shader](https://www.khronos.org/opengl/wiki/Compute_Shader); can run arbitrary computation, but can't
+    display to a screen
+- [Vertex shader](https://www.khronos.org/opengl/wiki/Vertex_Shader); used to define the output image area
+- [Fragment shader](https://www.khronos.org/opengl/wiki/Fragment_Shader); draws an image by returning
+    a color for each pixel
+
+The application will output pixel information into an image buffer using a compute shader, then display that image
+using a combination of vertex and fragment shaders.
+
+### Compute shader
+
+<details>
+    <summary>Why the focus on compute shaders if they can't display an image on screen? Why not use a fragment shader?</summary>
+
+    The answer is related to how fragment shaders run on a graphics card. Fragment shaders are functions that receive
+    an input coordinate and return the color of that coordinate in the output. By running the fragment shader once per
+    pixel, we build up an image to display.
+
+    This "run once per pixel" mode maps poorly to the fractal flame algorithm. Specifically, the "[chaos game](https://en.wikipedia.org/wiki/Chaos_game)"
+    jumps around to random locations; only by iterating many times can we figure out what the color of a pixel
+    should be. However, once the fragment shader ends, we'd lose all the information gathered about the other pixels.
+
+    Using a compute shader avoids this "discarded information" problem. Because it can run arbitrary computations,
+    we can record information about the whole image and make it available later. Compute shaders are overkill
+    for the examples in this blog post, but are important to a GPU implementation of the fractal flame algorithm.
+</details>
+
+The first compute shader example is nothing special; it draws a white rectangle at the edges of an image:
+
+```rust
+const BLACK: glam::Vec4 = glam::vec4(0.0, 0.0, 0.0, 1.0);
+const WHITE: glam::Vec4 = glam::vec4(1.0, 1.0, 1.0, 1.0);
+
+pub struct DrawSized {
+    pub image_size: glam::UVec2,
+    pub viewport_size: glam::UVec2,
+}
+
+// The `#[spirv]` annotations describe some details of how this code should run
+// on the GPU; they can be ignored for now
+
+#[spirv(compute(threads(1)))]
+pub fn main_cs_bounding(
+    #[spirv(uniform, descriptor_set = 0, binding = 0)] viewport: &DrawSized,
+    #[spirv(storage_buffer, descriptor_set = 0, binding = 1)] image: &mut [glam::Vec4],
+) {
+    let width = viewport.image_size.x as usize;
+    let height = viewport.image_size.y as usize;
+
+    for x in 0..width {
+        for y in 0..height {
+            image[image_index(x, y, width)] =
+                if x == 0 || x == width - 1 || y == 0 || y == height - 1 {
+                    WHITE
+                } else {
+                    BLACK
+                }
+        }
+    }
+}
+```
+
+After running this code, the contents of the `image` buffer should look something like this:
+
+![White square with black interior](./bounding%20box.png)
+
+## Vertex/Fragment shaders
+
+
